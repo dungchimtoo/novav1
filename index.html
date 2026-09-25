@@ -178,14 +178,11 @@ let groupCache=[];
 const KEY_CHARS="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 /* =====================================================
-   HELPERS & SAFE SNAPSHOT CHECK
+   HELPERS & SAFE CHECK SNAPSHOT
 ===================================================== */
-// Kiểm tra an toàn cho DocumentSnapshot / QuerySnapshot.exists
-function checkSnapExists(snap) {
-  if (!snap) return false;
-  if (typeof snap.exists === 'function') {
-    return snap.exists();
-  }
+function checkSnapExists(snap){
+  if(!snap)return false;
+  if(typeof snap.exists==='function')return snap.exists();
   return Boolean(snap.exists);
 }
 
@@ -369,7 +366,7 @@ async function createPost(){
     toast("Đã đăng bài 🚀");
   }catch(e){toast("Không thể đăng bài")}
 }
-function renderFeed(){/* realtime listener tự cập nhật */}
+function renderFeed(){}
 function renderFeedDocs(posts){
   const feed=document.getElementById("feed");
   if(!posts.length){
