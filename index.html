@@ -178,8 +178,17 @@ let groupCache=[];
 const KEY_CHARS="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 /* =====================================================
-   HELPERS
+   HELPERS & SAFE SNAPSHOT CHECK
 ===================================================== */
+// Kiểm tra an toàn cho DocumentSnapshot / QuerySnapshot.exists
+function checkSnapExists(snap) {
+  if (!snap) return false;
+  if (typeof snap.exists === 'function') {
+    return snap.exists();
+  }
+  return Boolean(snap.exists);
+}
+
 function toast(text){
   const t=document.getElementById("toast");
   t.textContent=text;t.classList.add("show");
@@ -263,7 +272,7 @@ auth.onAuthStateChanged(async user=>{
   currentUser=user;
   const ref=userRef(user.uid);
   const snap=await ref.get();
-  if(!snap.exists()){
+  if(!checkSnapExists(snap)){
     await ref.set({
       uid:user.uid,
       name:user.displayName||"Nova User",
@@ -385,7 +394,7 @@ function renderFeedDocs(posts){
 }
 async function likePost(id){
   const ref=db.collection("posts").doc(id);
-  const snap=await ref.get();if(!snap.exists)return;
+  const snap=await ref.get();if(!checkSnapExists(snap))return;
   const likes=snap.data().likes||[];
   await ref.update({likes:likes.includes(currentUser.uid)?firebase.firestore.FieldValue.arrayRemove(currentUser.uid):firebase.firestore.FieldValue.arrayUnion(currentUser.uid)});
 }
@@ -396,14 +405,14 @@ function toggleComments(id){
 async function addComment(id){
   const input=document.getElementById("comment-"+id);
   const text=input.value.trim();if(!text)return;
-  const ref=db.collection("posts").doc(id);const snap=await ref.get();if(!snap.exists)return;
+  const ref=db.collection("posts").doc(id);const snap=await ref.get();if(!checkSnapExists(snap))return;
   const comments=snap.data().comments||[];
   comments.push({id:crypto.randomUUID(),userId:currentUser.uid,text,createdAt:new Date().toISOString()});
   await ref.update({comments});
   input.value="";
 }
 async function sharePost(id){
-  const snap=await db.collection("posts").doc(id).get();if(!snap.exists)return;
+  const snap=await db.collection("posts").doc(id).get();if(!checkSnapExists(snap))return;
   const p=snap.data();
   try{
     await db.collection("shares").doc(currentUser.uid+"_"+id).set({
@@ -447,12 +456,12 @@ async function findFriend(){
 async function areFriends(a,b){
   const id=[a,b].sort().join("_");
   const s=await db.collection("friendships").doc(id).get();
-  return s.exists;
+  return checkSnapExists(s);
 }
 async function sendFriendRequest(to){
   const id=currentUser.uid+"_"+to;
   const existing=await db.collection("friendRequests").doc(id).get();
-  if(existing.exists)return toast("Đã gửi lời mời rồi");
+  if(checkSnapExists(existing))return toast("Đã gửi lời mời rồi");
   if(await areFriends(currentUser.uid,to))return toast("Đã là bạn bè");
   await db.collection("friendRequests").doc(id).set({
     id,from:currentUser.uid,to,createdAt:firebase.firestore.FieldValue.serverTimestamp()
@@ -475,7 +484,7 @@ async function renderRequests(){
   out.innerHTML=arr.join("");
 }
 async function acceptFriend(id){
-  const ref=db.collection("friendRequests").doc(id);const snap=await ref.get();if(!snap.exists)return;
+  const ref=db.collection("friendRequests").doc(id);const snap=await ref.get();if(!checkSnapExists(snap))return;
   const r=snap.data();const fid=[r.from,r.to].sort().join("_");
   const batch=db.batch();
   batch.set(db.collection("friendships").doc(fid),{id:fid,a:r.from,b:r.to,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
@@ -525,7 +534,7 @@ async function decryptText(msg,key){
 async function getOrCreatePrivateChat(friendId){
   const id="private_"+[currentUser.uid,friendId].sort().join("_");
   const ref=db.collection("chats").doc(id);const snap=await ref.get();
-  if(!snap.exists){
+  if(!checkSnapExists(snap)){
     const key=generateChatKey();
     await ref.set({id,type:"private",members:[currentUser.uid,friendId].sort(),key,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
   }
