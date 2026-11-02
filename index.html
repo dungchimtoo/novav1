@@ -1,636 +1,322 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>NOVA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Happy Birthday Phương Thúi ❤️</title>
 
 <style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
-body{background:#050507;color:#fff;min-height:100vh}
-button,input,textarea{font:inherit}button{cursor:pointer}
-:root{--purple:#9b4dff;--light:#c18aff;--dark:#0d0d12;--border:#272731}
-#auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at 50% 20%,#6d28d933,transparent 38%),#050507}
-.auth-box{width:100%;max-width:420px;background:#0d0d12;border:1px solid var(--border);border-radius:25px;padding:30px;box-shadow:0 0 60px #8d3cff18}
-.nova-logo{position:relative;width:115px;height:105px;margin:0 auto 5px}.nova-logo .n{position:absolute;left:30px;top:13px;font-size:70px;font-weight:900;font-style:italic;color:#b77aff;text-shadow:0 0 8px #a855f7,0 0 30px #7c3aed;z-index:2}.orbit{position:absolute;left:4px;top:31px;width:108px;height:42px;border:4px solid #a855f7;border-radius:50%;transform:rotate(-25deg);box-shadow:0 0 10px #9333ea,0 0 25px #7c3aed;z-index:3}.star{position:absolute;right:3px;top:3px;color:#dfc5ff;font-size:19px;text-shadow:0 0 12px #c084fc;z-index:4}.wordmark{text-align:center;letter-spacing:8px;font-size:24px;font-weight:bold;color:#d5b5ff;text-shadow:0 0 15px #8b5cf6;margin-bottom:8px}.subtitle{text-align:center;color:#777;margin-bottom:25px}
-.input{width:100%;background:#15151c;color:white;border:1px solid var(--border);padding:13px;border-radius:12px;margin-bottom:11px;outline:none}.input:focus{border-color:var(--purple)}
-.primary{border:0;background:linear-gradient(135deg,#7628e8,#b866ff);color:#fff;padding:13px;border-radius:12px;font-weight:bold}.full{width:100%}.secondary{border:1px solid #383843;background:#15151c;color:#fff;padding:12px;border-radius:12px}.switch{text-align:center;color:#777;margin-top:17px;font-size:14px}.switch span{color:#b875ff;cursor:pointer}
-#app{display:none;min-height:100vh}.topbar{height:70px;position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:0 17px;background:#07070aeF;border-bottom:1px solid #20202a;backdrop-filter:blur(15px)}.mini-logo{display:flex;align-items:center;gap:8px}.mini-n{font-size:31px;font-weight:900;font-style:italic;color:#b77aff}.mini-word{font-size:18px;letter-spacing:4px;color:#d2b0ff}.icon-btn{width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:#15151c;color:#fff}
-.main{max-width:720px;margin:auto;padding:20px 15px 90px}.page{display:none}.page.active{display:block}.card{background:#0d0d12;border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px}.create textarea{width:100%;min-height:95px;resize:none;background:#15151c;border:1px solid var(--border);color:#fff;border-radius:14px;padding:13px;outline:none}.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.anonymous{color:#ad70ff;font-size:13px}.post-head{display:flex;justify-content:space-between;margin-bottom:8px}.user{color:#bd87ff;font-weight:bold}.time{color:#666;font-size:12px}.post-id{font-size:11px;color:#6d6d79;margin:4px 0 12px}.post-text{line-height:1.6;white-space:pre-wrap}.actions{display:flex;gap:7px;margin-top:14px}.action{flex:1;background:#15151b;border:1px solid #292933;color:#aaa;padding:9px;border-radius:10px}.action:hover{border-color:#8b45ed;color:white}.comments{border-top:1px solid #25252d;margin-top:13px;padding-top:10px}.comment{background:#15151b;padding:9px;border-radius:9px;margin-top:7px;font-size:14px}.comment-box{display:flex;gap:7px;margin-top:9px}.comment-box input{flex:1;background:#15151c;border:1px solid #292934;color:white;border-radius:9px;padding:9px}.comment-box button{background:#7628e8;color:white;border:0;border-radius:9px;padding:0 13px}
-.search-friend{display:flex;gap:8px}.search-friend input{flex:1}.friend-result{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#15151c;border:1px solid #292934;padding:12px;border-radius:12px;margin-top:10px}.friend-name{font-weight:bold}.friend-email{font-size:12px;color:#777;margin-top:3px}.badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:20px;background:#8b3dff;color:#fff;font-size:11px;padding:0 6px}
-.chat-tabs{display:flex;gap:8px;overflow:auto;margin-bottom:12px}.chat-tab{white-space:nowrap;background:#121219;color:#888;border:1px solid #282832;border-radius:20px;padding:9px 13px}.chat-tab.active{color:white;border-color:#914cff}.chat-window{height:calc(100vh - 255px);min-height:330px;background:#09090e;border:1px solid #25252f;border-radius:18px;padding:13px;overflow-y:auto}.chat-key{background:#111119;border:1px solid #713bc0;border-radius:13px;padding:11px;margin-bottom:13px}.key-title{font-size:11px;color:#888}.key-value{color:#c994ff;font-weight:bold;letter-spacing:2px;word-break:break-all;margin-top:5px;font-size:13px}.key-actions{display:flex;gap:7px;margin-top:8px}.key-actions button{background:#19151f;border:1px solid #39234f;color:#c994ff;border-radius:8px;padding:7px 9px}.message{max-width:78%;padding:10px 13px;border-radius:14px;margin:7px 0;line-height:1.5;word-break:break-word}.message.me{margin-left:auto;background:#6d28d9}.message.other{background:#181820;color:#ddd}.chat-input{display:flex;gap:8px;margin-top:9px}.chat-input input{flex:1;background:#15151c;border:1px solid #292934;color:#fff;border-radius:12px;padding:13px}.chat-input button{background:#7b2cff;color:#fff;border:0;border-radius:12px;padding:0 18px}
-.profile{text-align:center}.avatar{width:78px;height:78px;border-radius:50%;background:linear-gradient(135deg,#6725cc,#c275ff);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:30px;font-weight:bold}.profile-name{font-size:22px;font-weight:bold}.muted{color:#777;font-size:13px}.setting{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #24242b}.danger{color:#ff5875}.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:66px;display:flex;justify-content:space-around;align-items:center;background:#08080bee;border-top:1px solid #20202a;backdrop-filter:blur(15px);z-index:30}.nav-btn{background:none;border:0;color:#777;font-size:11px}.nav-btn.active{color:#bd7fff}.nav-icon{display:block;font-size:21px;margin-bottom:2px}
-#toast{position:fixed;left:50%;bottom:82px;transform:translate(-50%,20px);background:#19191f;border:1px solid #703bb2;padding:10px 15px;border-radius:11px;opacity:0;pointer-events:none;transition:.25s;z-index:100}#toast.show{opacity:1;transform:translate(-50%,0)}
-.loading{color:#777;text-align:center;padding:20px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#09020d;color:white;
+  font-family:Georgia,serif;
+  overflow:hidden;
+}
+.page{
+  position:fixed;inset:0;
+  display:none;align-items:center;
+  justify-content:center;flex-direction:column;
+  text-align:center;padding:18px;
+}
+.page.active{display:flex;animation:fade .8s}
+@keyframes fade{
+  from{opacity:0;transform:scale(.96)}
+  to{opacity:1;transform:scale(1)}
+}
+button{
+  border:1px solid #ffc6f0;
+  background:linear-gradient(90deg,#a42bcb,#f044a8);
+  color:white;padding:13px 25px;
+  border-radius:30px;font-size:16px;
+  margin-top:20px;cursor:pointer;
+  box-shadow:0 0 20px #ff44cf88;
+}
+
+/* TRANG 1 */
+#page1{
+  background:radial-gradient(circle,#401044,#100514 65%,#000);
+}
+canvas{position:absolute;inset:0;width:100%;height:100%}
+.intro{
+  position:absolute;top:10%;z-index:2;
+  font-size:clamp(28px,7vw,43px);
+  color:#ffe0fa;
+  text-shadow:0 0 15px #ff38dd,0 0 35px #a23bff;
+}
+.hint{
+  position:absolute;bottom:19%;z-index:2;
+  font:13px Arial;letter-spacing:2px;
+  color:#ffc9f1;
+}
+#page1 button{position:absolute;bottom:8%;z-index:3}
+
+/* TRANG 2 */
+#page2{
+  background:radial-gradient(circle,#521347,#140619);
+  gap:15px;
+}
+.heading{
+  font-size:clamp(25px,6vw,40px);
+  color:#ffd2f4;
+  text-shadow:0 0 18px #ff35c5;
+}
+.banner{
+  width:min(95%,950px);
+  max-height:65vh;
+  object-fit:contain;
+  border-radius:16px;
+  border:2px solid #ffc2ed;
+  box-shadow:0 0 25px #ff36d077;
+}
+.wish{
+  max-width:700px;
+  line-height:1.7;
+  font-size:clamp(15px,3.5vw,19px);
+  color:#ffe8f8;
+}
+
+/* TRANG 3 */
+#page3{
+  background:radial-gradient(circle,#541044,#140518);
+  gap:15px;
+}
+.photos{
+  width:min(95%,850px);
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+.photos img{
+  width:100%;
+  height:min(45vh,420px);
+  object-fit:cover;
+  border-radius:15px;
+  border:2px solid #ffc5ef;
+  box-shadow:0 0 20px #ff42c477;
+}
+.love{
+  font-size:clamp(28px,7vw,48px);
+  color:#ffd0f2;
+  text-shadow:0 0 18px #ff35c5;
+}
+.message{
+  font-size:clamp(16px,4vw,22px);
+  line-height:1.7;
+}
+.signature{
+  font-size:23px;
+  color:#ffbce8;
+  text-shadow:0 0 15px #ff43cb;
+}
+
+.floating{
+  position:fixed;bottom:-30px;
+  pointer-events:none;
+  animation:float 4s linear forwards;
+}
+@keyframes float{
+  to{transform:translateY(-110vh) rotate(360deg);opacity:0}
+}
+
+@media(max-width:600px){
+  .photos{grid-template-columns:1fr 1fr}
+  .photos img{height:30vh}
+  .photos img:first-child{
+    grid-column:span 2;height:35vh;
+  }
+  .banner{max-height:55vh}
+}
 </style>
 </head>
+
 <body>
 
-<section id="auth">
-<div class="auth-box">
-<div class="nova-logo"><div class="n">N</div><div class="orbit"></div><div class="star">✦</div></div>
-<div class="wordmark">NOVA</div>
-<div class="subtitle">Mạng xã hội ẩn danh</div>
+<!-- TRANG 1: TRÁI TIM CẦU VỒNG -->
 
-<div id="loginForm">
-<input id="loginEmail" class="input" type="email" placeholder="Gmail">
-<input id="loginPassword" class="input" type="password" placeholder="Mật khẩu">
-<button class="primary full" onclick="login()">Đăng nhập</button>
-<button class="secondary full" style="margin-top:10px" onclick="googleLogin()">🌐 Tiếp tục với Google</button>
-<div class="switch">Chưa có tài khoản? <span onclick="showRegister()">Đăng ký</span></div>
-</div>
+<section class="page active" id="page1">
+  <canvas id="heart"></canvas>
 
-<div id="registerForm" style="display:none">
-<input id="registerName" class="input" placeholder="Tên hiển thị">
-<input id="registerEmail" class="input" type="email" placeholder="Gmail">
-<input id="registerPassword" class="input" type="password" placeholder="Mật khẩu">
-<button class="primary full" onclick="register()">Tạo tài khoản</button>
-<div class="switch">Đã có tài khoản? <span onclick="showLogin()">Đăng nhập</span></div>
-</div>
-</div>
+  <h1 class="intro">
+    Happy Birthday<br>Phương Thúi 💗
+  </h1>
+
+  <div class="hint" id="hint">
+    CHẠM VÀO TRÁI TIM ĐI EM ✨
+  </div>
+
+  <button onclick="go(2)">
+    Mở món quà tiếp theo →
+  </button>
 </section>
 
-<section id="app">
-<header class="topbar">
-<div class="mini-logo"><span class="mini-n">N</span><span class="mini-word">NOVA</span></div>
-<button class="icon-btn" onclick="showPage('settings')">⚙</button>
-</header>
+<!-- TRANG 2: THIỆP SINH NHẬT -->
 
-<main class="main">
-<section id="home" class="page active">
-<div class="card create">
-<textarea id="postText" placeholder="Bạn đang nghĩ gì?"></textarea>
-<div class="row" style="margin-top:9px"><span class="anonymous">◉ Anonymous</span><button class="primary" style="padding:9px 18px" onclick="createPost()">Đăng</button></div>
-</div>
-<div id="feed"><div class="loading">Đang tải Feed...</div></div>
+<section class="page" id="page2">
+
+  <h1 class="heading">
+    Happy Birthday My Love 🎂
+  </h1>
+
+  <img class="banner"
+       src="data:image/jpeg;base64,BASE64_ANH_THIEP"
+       alt="Thiệp sinh nhật Phương">
+
+  <p class="wish">
+    Chúc em luôn vui vẻ, mạnh khỏe, xinh đẹp
+    và gặp thật nhiều may mắn nhé! ❤️<br>
+    Mong rằng tuổi mới sẽ mang đến cho em
+    thật nhiều điều tuyệt vời.
+  </p>
+
+  <button onclick="go(3)">
+    Anh còn điều muốn nói... 💌
+  </button>
 </section>
 
-<section id="search" class="page">
-<div class="card"><h2>🔎 Tìm kiếm</h2><input id="searchInput" class="input" style="margin-top:15px" placeholder="Tìm bài viết..." oninput="searchPosts()"><div id="searchResults"></div></div>
+<!-- TRANG 3: ẢNH NGƯỜI YÊU -->
+
+<section class="page" id="page3">
+
+  <h1 class="love">
+    CÔ GÁI ANH YÊU 💗
+  </h1>
+
+  <div class="photos">
+    <img src="data:image/jpeg;base64,BASE64_ANH_PHUONG_1"
+         alt="Phương 1">
+
+    <img src="data:image/jpeg;base64,BASE64_ANH_PHUONG_2"
+         alt="Phương 2">
+
+    <img src="data:image/jpeg;base64,BASE64_ANH_PHUONG_3"
+         alt="Phương 3">
+  </div>
+
+  <p class="message">
+    Anh iu em chụt chụt 💋<br>
+    Chúc em tuổi mới luôn hạnh phúc.<br>
+    Cảm ơn em vì đã xuất hiện trong cuộc đời anh.
+  </p>
+
+  <div class="signature">
+    Yêu em nhiều lắm ❤️<br>
+    DŨNG CHIM TO
+  </div>
+
+  <button onclick="go(1)">
+    Xem lại từ đầu ↻
+  </button>
+
 </section>
-
-<section id="friends" class="page">
-<h2>👥 Bạn bè</h2>
-<div class="card" style="margin-top:15px">
-<p style="color:#aaa;margin-bottom:12px">Nhập UID hoặc Gmail để tìm người dùng Nova.</p>
-<div class="search-friend"><input id="friendEmail" class="input" placeholder="UID hoặc example@gmail.com"><button class="primary" onclick="findFriend()">Tìm</button></div>
-<div id="friendResult"></div>
-</div>
-<div class="card"><h3>📨 Lời mời kết bạn</h3><div id="requests" style="margin-top:10px"></div></div>
-<div class="card"><h3>🤝 Bạn bè của bạn</h3><div id="friendList" style="margin-top:10px"></div></div>
-</section>
-
-<section id="chat" class="page">
-<h2>💬 Chat</h2>
-<div id="chatTabs" class="chat-tabs" style="margin-top:14px"></div>
-<div class="chat-window">
-<div class="chat-key">
-<div class="key-title">🔐 MÃ CUỘC TRÒ CHUYỆN — 24 KÝ TỰ</div>
-<div id="chatKey" class="key-value">--</div>
-<div class="key-actions"><button onclick="copyChatKey()">📋 Copy</button><button onclick="newChatKey()">🔄 Đổi mã</button></div>
-</div>
-<div id="messages"></div>
-</div>
-<div class="chat-input"><input id="messageInput" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter')sendMessage()"><button onclick="sendMessage()">Gửi</button></div>
-</section>
-
-<section id="groups" class="page">
-<h2>👥 Group</h2>
-<div class="card" style="margin-top:15px"><input id="groupName" class="input" placeholder="Tên group"><button class="primary full" onclick="createGroup()">＋ Tạo group</button></div>
-<div id="groupList"></div>
-</section>
-
-<section id="notifications" class="page">
-<h2>🔔 Thông báo</h2><div id="notificationList" style="margin-top:15px"></div>
-</section>
-
-<section id="profile" class="page">
-<div class="card profile">
-<div id="avatar" class="avatar">N</div>
-<div id="profileName" class="profile-name">Nova</div>
-<div id="profileEmail" class="muted">--</div>
-<div class="muted" style="margin-top:8px">UID: <span id="profileUID">--</span></div>
-</div>
-<div class="card">
-<div class="setting"><span>📝 Bài viết</span><strong id="postCount">0</strong></div>
-<div class="setting"><span>🤝 Bạn bè</span><strong id="friendCount">0</strong></div>
-</div>
-</section>
-
-<section id="settings" class="page">
-<h2>⚙️ Cài đặt</h2>
-<div class="card" style="margin-top:15px">
-<div class="setting"><span>🔐 Tin nhắn</span><span style="color:#bd7fff">AES-GCM</span></div>
-<div class="setting"><span>🌌 Giao diện</span><span>Dark</span></div>
-<div class="setting"><span class="danger">Đăng xuất</span><button class="secondary" onclick="logout()">Thoát</button></div>
-</div>
-</section>
-</main>
-
-<nav class="bottom-nav">
-<button class="nav-btn active" onclick="showPage('home',this)"><span class="nav-icon">⌂</span>Feed</button>
-<button class="nav-btn" onclick="showPage('search',this)"><span class="nav-icon">⌕</span>Search</button>
-<button class="nav-btn" onclick="showPage('friends',this)"><span class="nav-icon">♧</span>Friends</button>
-<button class="nav-btn" onclick="showPage('chat',this)"><span class="nav-icon">◌</span>Chat</button>
-<button class="nav-btn" onclick="showPage('groups',this)"><span class="nav-icon">♧</span>Group</button>
-<button class="nav-btn" onclick="showPage('profile',this)"><span class="nav-icon">◉</span>Me</button>
-</nav>
-</section>
-
-<div id="toast"></div>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
 <script>
-/* =====================================================
-   FIREBASE CONFIG — NOVA
-===================================================== */
-const firebaseConfig={
-  apiKey:"AIzaSyAvZQWFacocqYNuJH5YG7mrV_xuPVvfN8s",
-  authDomain:"nova-9a504.firebaseapp.com",
-  projectId:"nova-9a504",
-  storageBucket:"nova-9a504.firebasestorage.app",
-  messagingSenderId:"1040280362414",
-  appId:"1:1040280362414:web:9fffa61fd30123ec267c3f"
-};
 
-firebase.initializeApp(firebaseConfig);
-const auth=firebase.auth();
-const db=firebase.firestore();
-const storage=firebase.storage();
-const googleProvider=new firebase.auth.GoogleAuthProvider();
+/* CHUYỂN TRANG */
 
-let currentUser=null;
-let currentProfile=null;
-let currentChat=null;
-let currentChatUnsubscribe=null;
-let feedUnsubscribe=null;
-let requestUnsubscribe=null;
-let notificationUnsubscribe=null;
-let friendUnsubscribes=[];
-let chatCache={};
-let groupCache=[];
+function go(n){
+  document.querySelectorAll('.page')
+    .forEach(p=>p.classList.remove('active'));
 
-const KEY_CHARS="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  document.getElementById('page'+n)
+    .classList.add('active');
 
-/* =====================================================
-   HELPERS & SAFE CHECK SNAPSHOT
-===================================================== */
-function checkSnapExists(snap){
-  if(!snap)return false;
-  if(typeof snap.exists==='function')return snap.exists();
-  return Boolean(snap.exists);
+  if(n===3){
+    for(let i=0;i<30;i++)
+      setTimeout(sparkle,i*100);
+  }
 }
 
-function toast(text){
-  const t=document.getElementById("toast");
-  t.textContent=text;t.classList.add("show");
-  setTimeout(()=>t.classList.remove("show"),2200);
-}
-function showRegister(){document.getElementById("loginForm").style.display="none";document.getElementById("registerForm").style.display="block"}
-function showLogin(){document.getElementById("loginForm").style.display="block";document.getElementById("registerForm").style.display="none"}
-function escapeHTML(t){return String(t??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
-function ago(date){
-  const s=Math.floor((Date.now()-new Date(date))/1000);
-  if(s<60)return"vừa xong";const m=Math.floor(s/60);
-  if(m<60)return m+" phút trước";const h=Math.floor(m/60);
-  if(h<24)return h+" giờ trước";return Math.floor(h/24)+" ngày trước";
-}
-function generatePostId(){
-  let x="";const arr=new Uint32Array(8);crypto.getRandomValues(arr);
-  for(let i=0;i<8;i++)x+=KEY_CHARS[arr[i]%KEY_CHARS.length];
-  return"NOVA-"+x;
-}
-function generateChatKey(){
-  let out="";const arr=new Uint32Array(24);crypto.getRandomValues(arr);
-  for(let i=0;i<24;i++)out+=KEY_CHARS[arr[i]%KEY_CHARS.length];
-  return out;
-}
-function userRef(uid){return db.collection("users").doc(uid)}
+/* HIỆU ỨNG TRÁI TIM */
 
-/* =====================================================
-   AUTH
-===================================================== */
-async function register(){
-  const name=document.getElementById("registerName").value.trim();
-  const email=document.getElementById("registerEmail").value.trim().toLowerCase();
-  const password=document.getElementById("registerPassword").value;
-  if(!name||!email||!password)return toast("Nhập đầy đủ thông tin");
-  if(!email.endsWith("@gmail.com"))return toast("Hãy dùng Gmail");
-  if(password.length<6)return toast("Mật khẩu cần ít nhất 6 ký tự");
-  try{
-    const cred=await auth.createUserWithEmailAndPassword(email,password);
-    await userRef(cred.user.uid).set({
-      uid:cred.user.uid,name,email,provider:"password",
-      createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    });
-    toast("Tạo tài khoản thành công 💜");
-  }catch(e){handleFirebaseError(e)}
-}
-async function login(){
-  const email=document.getElementById("loginEmail").value.trim().toLowerCase();
-  const password=document.getElementById("loginPassword").value;
-  if(!email||!password)return toast("Nhập Gmail và mật khẩu");
-  try{await auth.signInWithEmailAndPassword(email,password)}
-  catch(e){handleFirebaseError(e)}
-}
-async function googleLogin(){
-  try{await auth.signInWithPopup(googleProvider)}
-  catch(e){handleFirebaseError(e)}
-}
-async function logout(){
-  cleanupListeners();
-  await auth.signOut();
-}
-function handleFirebaseError(e){
-  const map={
-    "auth/email-already-in-use":"Gmail này đã tồn tại",
-    "auth/invalid-email":"Gmail không hợp lệ",
-    "auth/weak-password":"Mật khẩu quá yếu",
-    "auth/user-not-found":"Không tìm thấy tài khoản",
-    "auth/wrong-password":"Sai mật khẩu",
-    "auth/invalid-credential":"Gmail hoặc mật khẩu sai",
-    "auth/popup-closed-by-user":"Đã đóng cửa sổ Google"
+const canvas=document.getElementById('heart');
+const ctx=canvas.getContext('2d');
+
+let W,H,particles=[],hue=0,burst=0;
+
+function point(t,s){
+  return {
+    x:16*Math.pow(Math.sin(t),3)*s,
+    y:-(13*Math.cos(t)-5*Math.cos(2*t)
+      -2*Math.cos(3*t)-Math.cos(4*t))*s
   };
-  toast(map[e.code]||("Firebase: "+e.message));
 }
 
-auth.onAuthStateChanged(async user=>{
-  if(!user){
-    currentUser=null;currentProfile=null;
-    document.getElementById("app").style.display="none";
-    document.getElementById("auth").style.display="flex";
-    return;
-  }
-  currentUser=user;
-  const ref=userRef(user.uid);
-  const snap=await ref.get();
-  if(!checkSnapExists(snap)){
-    await ref.set({
-      uid:user.uid,
-      name:user.displayName||"Nova User",
-      email:user.email||"",
-      provider:"google",
-      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+function resize(){
+  W=canvas.width=innerWidth;
+  H=canvas.height=innerHeight;
+  particles=[];
+
+  let s=Math.min(W*.018,H*.014,11);
+
+  for(let i=0;i<2200;i++){
+    let t=Math.random()*Math.PI*2;
+    let p=point(t,s*(.15+Math.sqrt(Math.random())*.85));
+
+    particles.push({
+      x:p.x,y:p.y,
+      r:.5+Math.random()*1.5,
+      h:Math.random()*360,
+      a:Math.random()*6.28
     });
   }
-  const profileSnap=await ref.get();
-  currentProfile=profileSnap.data();
-  openApp();
+}
+
+function animate(time){
+  ctx.clearRect(0,0,W,H);
+  hue+=.4;
+  burst*=.94;
+
+  let pulse=1+Math.sin(time*.002)*.02;
+  ctx.globalCompositeOperation='lighter';
+
+  particles.forEach(p=>{
+    let glow=.5+.5*Math.sin(time*.004+p.a);
+    let d=Math.hypot(p.x,p.y);
+
+    let x=W/2+p.x*pulse+p.x/(d+1)*burst*35;
+    let y=H/2+p.y*pulse+p.y/(d+1)*burst*35;
+
+    let color=(p.h+hue)%360;
+
+    ctx.beginPath();
+    ctx.fillStyle=`hsla(${color},100%,70%,${glow})`;
+    ctx.shadowColor=`hsl(${color},100%,65%)`;
+    ctx.shadowBlur=10;
+
+    ctx.arc(x,y,p.r*glow,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  ctx.shadowBlur=0;
+  ctx.globalCompositeOperation='source-over';
+  requestAnimationFrame(animate);
+}
+
+canvas.addEventListener('pointerdown',()=>{
+  burst=1;
+  document.getElementById('hint').innerText=
+    'TRÁI TIM NÀY DÀNH RIÊNG CHO EM 🌈';
 });
 
-/* =====================================================
-   APP / NAV
-===================================================== */
-function openApp(){
-  document.getElementById("auth").style.display="none";
-  document.getElementById("app").style.display="block";
-  updateProfile();
-  startRealtime();
-  renderGroups();
-  renderChatTabs();
-}
-function cleanupListeners(){
-  if(feedUnsubscribe)feedUnsubscribe();
-  if(requestUnsubscribe)requestUnsubscribe();
-  if(notificationUnsubscribe)notificationUnsubscribe();
-  if(currentChatUnsubscribe)currentChatUnsubscribe();
-  friendUnsubscribes.forEach(fn=>fn());
-  friendUnsubscribes=[];
-  feedUnsubscribe=requestUnsubscribe=notificationUnsubscribe=currentChatUnsubscribe=null;
-}
-function showPage(page,btn){
-  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-  document.getElementById(page).classList.add("active");
-  if(btn){
-    document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
-    btn.classList.add("active");
-  }
-  if(page==="home")renderFeed();
-  if(page==="friends"){renderRequests();renderFriendList()}
-  if(page==="chat")renderChatTabs();
-  if(page==="groups")renderGroups();
-  if(page==="notifications")renderNotifications();
-  if(page==="profile")updateProfile();
+/* HIỆU ỨNG BAY */
+
+function sparkle(){
+  let e=document.createElement('span');
+  e.className='floating';
+  e.innerText=['💗','💕','✨','🌸','💖'][
+    Math.floor(Math.random()*5)
+  ];
+  e.style.left=Math.random()*100+'vw';
+  e.style.fontSize=(18+Math.random()*20)+'px';
+  document.body.appendChild(e);
+  setTimeout(()=>e.remove(),4000);
 }
 
-/* =====================================================
-   REALTIME
-===================================================== */
-function startRealtime(){
-  cleanupListeners();
+window.addEventListener('resize',resize);
+resize();
+requestAnimationFrame(animate);
 
-  feedUnsubscribe=db.collection("posts")
-    .orderBy("createdAt","desc").limit(100)
-    .onSnapshot(snap=>{
-      renderFeedDocs(snap.docs.map(d=>({id:d.id,...d.data()})));
-      updateProfile();
-    },err=>console.error(err));
-
-  requestUnsubscribe=db.collection("friendRequests")
-    .where("to","==",currentUser.uid)
-    .onSnapshot(()=>renderRequests(),err=>console.error(err));
-
-  notificationUnsubscribe=db.collection("notifications")
-    .where("to","==",currentUser.uid)
-    .orderBy("createdAt","desc").limit(50)
-    .onSnapshot(()=>renderNotifications(),err=>console.error(err));
-
-  renderGroups();
-  renderFriendList();
-  renderRequests();
-  renderNotifications();
-}
-
-/* =====================================================
-   POSTS
-===================================================== */
-async function createPost(){
-  const text=document.getElementById("postText").value.trim();
-  if(!text)return toast("Hãy viết gì đó");
-  try{
-    await db.collection("posts").add({
-      postCode:generatePostId(),
-      userId:currentUser.uid,
-      anonymous:true,
-      text,
-      likes:[],
-      comments:[],
-      createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    });
-    document.getElementById("postText").value="";
-    toast("Đã đăng bài 🚀");
-  }catch(e){toast("Không thể đăng bài")}
-}
-function renderFeed(){}
-function renderFeedDocs(posts){
-  const feed=document.getElementById("feed");
-  if(!posts.length){
-    feed.innerHTML='<div class="card" style="text-align:center;color:#777">New Feed chưa có bài viết nào.</div>';
-    return;
-  }
-  feed.innerHTML=posts.map(p=>`
-  <div class="card">
-    <div class="post-head"><span class="user">◉ Anonymous</span><span class="time">${p.createdAt?.toDate?ago(p.createdAt.toDate()):"vừa xong"}</span></div>
-    <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
-    <div class="post-text">${escapeHTML(p.text)}</div>
-    <div class="actions">
-      <button class="action" onclick="likePost('${p.id}')">♥ ${(p.likes||[]).length}</button>
-      <button class="action" onclick="toggleComments('${p.id}')">💬 ${(p.comments||[]).length}</button>
-      <button class="action" onclick="sharePost('${p.id}')">↗ Share</button>
-    </div>
-    <div id="comments-${p.id}" class="comments" style="display:none">
-      ${(p.comments||[]).map(c=>`<div class="comment"><b>Anonymous:</b> ${escapeHTML(c.text)}</div>`).join("")}
-      <div class="comment-box"><input id="comment-${p.id}" placeholder="Viết bình luận..."><button onclick="addComment('${p.id}')">Gửi</button></div>
-    </div>
-  </div>`).join("");
-}
-async function likePost(id){
-  const ref=db.collection("posts").doc(id);
-  const snap=await ref.get();if(!checkSnapExists(snap))return;
-  const likes=snap.data().likes||[];
-  await ref.update({likes:likes.includes(currentUser.uid)?firebase.firestore.FieldValue.arrayRemove(currentUser.uid):firebase.firestore.FieldValue.arrayUnion(currentUser.uid)});
-}
-function toggleComments(id){
-  const el=document.getElementById("comments-"+id);
-  if(el)el.style.display=el.style.display==="none"?"block":"none";
-}
-async function addComment(id){
-  const input=document.getElementById("comment-"+id);
-  const text=input.value.trim();if(!text)return;
-  const ref=db.collection("posts").doc(id);const snap=await ref.get();if(!checkSnapExists(snap))return;
-  const comments=snap.data().comments||[];
-  comments.push({id:crypto.randomUUID(),userId:currentUser.uid,text,createdAt:new Date().toISOString()});
-  await ref.update({comments});
-  input.value="";
-}
-async function sharePost(id){
-  const snap=await db.collection("posts").doc(id).get();if(!checkSnapExists(snap))return;
-  const p=snap.data();
-  try{
-    await db.collection("shares").doc(currentUser.uid+"_"+id).set({
-      userId:currentUser.uid,postId:id,createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    });
-  }catch(e){}
-  const text=`NOVA\nPost ID: ${p.postCode}\n\n${p.text}`;
-  if(navigator.share){try{await navigator.share({title:"NOVA",text})}catch(e){}}
-  else{await navigator.clipboard.writeText(text);toast("Đã copy bài viết")}
-}
-async function searchPosts(){
-  const q=document.getElementById("searchInput").value.toLowerCase().trim();
-  const out=document.getElementById("searchResults");
-  if(!q){out.innerHTML="";return}
-  const snap=await db.collection("posts").orderBy("createdAt","desc").limit(100).get();
-  const found=snap.docs.map(d=>({id:d.id,...d.data()})).filter(p=>(p.text||"").toLowerCase().includes(q)||(p.postCode||"").toLowerCase().includes(q));
-  out.innerHTML=found.length?found.map(p=>`<div class="card" style="margin-top:10px"><div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>${escapeHTML(p.text)}</div>`).join(""):'<p style="color:#777;margin-top:15px">Không tìm thấy.</p>';
-}
-
-/* =====================================================
-   FRIENDS
-===================================================== */
-async function findFriend(){
-  const q=document.getElementById("friendEmail").value.trim().toLowerCase();
-  const out=document.getElementById("friendResult");
-  if(!q)return toast("Nhập UID hoặc Gmail");
-  let snap=await db.collection("users").where("email","==",q).limit(1).get();
-  if(snap.empty)snap=await db.collection("users").where("uid","==",q).limit(1).get();
-  if(snap.empty){
-    out.innerHTML='<div class="friend-result"><div><div class="friend-name">Không tìm thấy</div><div class="friend-email">UID/Gmail này chưa đăng ký Nova.</div></div></div>';return;
-  }
-  const u=snap.docs[0].data();
-  if(u.uid===currentUser.uid)return toast("Đây là tài khoản của bạn");
-  const friends=await areFriends(currentUser.uid,u.uid);
-  if(friends){
-    out.innerHTML=`<div class="friend-result"><div><div class="friend-name">${escapeHTML(u.name)}</div><div class="friend-email">${escapeHTML(u.email)}</div></div><span>✓ Bạn bè</span></div>`;
-    return;
-  }
-  out.innerHTML=`<div class="friend-result"><div><div class="friend-name">${escapeHTML(u.name)}</div><div class="friend-email">${escapeHTML(u.email)}</div><div class="friend-email">UID: ${escapeHTML(u.uid)}</div></div><button class="primary" onclick="sendFriendRequest('${u.uid}')">Kết bạn</button></div>`;
-}
-async function areFriends(a,b){
-  const id=[a,b].sort().join("_");
-  const s=await db.collection("friendships").doc(id).get();
-  return checkSnapExists(s);
-}
-async function sendFriendRequest(to){
-  const id=currentUser.uid+"_"+to;
-  const existing=await db.collection("friendRequests").doc(id).get();
-  if(checkSnapExists(existing))return toast("Đã gửi lời mời rồi");
-  if(await areFriends(currentUser.uid,to))return toast("Đã là bạn bè");
-  await db.collection("friendRequests").doc(id).set({
-    id,from:currentUser.uid,to,createdAt:firebase.firestore.FieldValue.serverTimestamp()
-  });
-  await db.collection("notifications").add({
-    to,text:`${currentProfile.name} đã gửi lời mời kết bạn.`,type:"friend_request",
-    createdAt:firebase.firestore.FieldValue.serverTimestamp()
-  });
-  toast("Đã gửi lời mời 🤝");
-}
-async function renderRequests(){
-  if(!currentUser)return;
-  const snap=await db.collection("friendRequests").where("to","==",currentUser.uid).get();
-  const out=document.getElementById("requests");
-  if(snap.empty){out.innerHTML='<p style="color:#666;margin-top:10px">Không có lời mời mới.</p>';return}
-  const arr=await Promise.all(snap.docs.map(async d=>{
-    const r=d.data();const u=(await userRef(r.from).get()).data()||{};
-    return `<div class="friend-result"><div><div class="friend-name">${escapeHTML(u.name||"Unknown")}</div><div class="friend-email">${escapeHTML(u.email||"")}</div></div><div style="display:flex;gap:5px"><button class="primary" onclick="acceptFriend('${d.id}')">✓</button><button class="secondary" onclick="rejectFriend('${d.id}')">×</button></div></div>`;
-  }));
-  out.innerHTML=arr.join("");
-}
-async function acceptFriend(id){
-  const ref=db.collection("friendRequests").doc(id);const snap=await ref.get();if(!checkSnapExists(snap))return;
-  const r=snap.data();const fid=[r.from,r.to].sort().join("_");
-  const batch=db.batch();
-  batch.set(db.collection("friendships").doc(fid),{id:fid,a:r.from,b:r.to,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-  batch.delete(ref);
-  batch.set(db.collection("notifications").doc(),{to:r.from,text:`${currentProfile.name} đã chấp nhận lời mời kết bạn.`,type:"friend_accept",createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-  await batch.commit();toast("Đã trở thành bạn bè 🤝");renderFriendList();renderRequests();
-}
-async function rejectFriend(id){await db.collection("friendRequests").doc(id).delete();renderRequests()}
-async function renderFriendList(){
-  if(!currentUser)return;
-  const a=await db.collection("friendships").where("a","==",currentUser.uid).get();
-  const b=await db.collection("friendships").where("b","==",currentUser.uid).get();
-  const docs=[...a.docs,...b.docs];const out=document.getElementById("friendList");
-  if(!docs.length){out.innerHTML='<p style="color:#666">Bạn chưa có bạn bè.</p>';return}
-  const rows=await Promise.all(docs.map(async d=>{
-    const f=d.data();const id=f.a===currentUser.uid?f.b:f.a;const u=(await userRef(id).get()).data()||{};
-    return `<div class="friend-result"><div><div class="friend-name">${escapeHTML(u.name||"Unknown")}</div><div class="friend-email">${escapeHTML(u.email||"")}</div><div class="friend-email">UID: ${escapeHTML(u.uid||id)}</div></div><button class="primary" onclick="openPrivateChat('${id}')">💬 Chat</button></div>`;
-  }));
-  out.innerHTML=rows.join("");
-}
-
-/* =====================================================
-   CHAT / AES-GCM
-===================================================== */
-async function deriveKey(chatKey){
-  const hash=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(chatKey));
-  return crypto.subtle.importKey("raw",hash,{name:"AES-GCM"},false,["encrypt","decrypt"]);
-}
-function b64(buffer){
-  const bytes=new Uint8Array(buffer);let s="";bytes.forEach(b=>s+=String.fromCharCode(b));return btoa(s)
-}
-function unb64(str){
-  const s=atob(str);const bytes=new Uint8Array(s.length);for(let i=0;i<s.length;i++)bytes[i]=s.charCodeAt(i);return bytes.buffer
-}
-async function encryptText(text,key){
-  const aes=await deriveKey(key);const iv=crypto.getRandomValues(new Uint8Array(12));
-  const encrypted=await crypto.subtle.encrypt({name:"AES-GCM",iv},aes,new TextEncoder().encode(text));
-  return{cipher:b64(encrypted),iv:b64(iv)}
-}
-async function decryptText(msg,key){
-  try{
-    const aes=await deriveKey(key);
-    const plain=await crypto.subtle.decrypt({name:"AES-GCM",iv:new Uint8Array(unb64(msg.iv))},aes,unb64(msg.cipher));
-    return new TextDecoder().decode(plain);
-  }catch{return"🔒 Không thể giải mã"}
-}
-async function getOrCreatePrivateChat(friendId){
-  const id="private_"+[currentUser.uid,friendId].sort().join("_");
-  const ref=db.collection("chats").doc(id);const snap=await ref.get();
-  if(!checkSnapExists(snap)){
-    const key=generateChatKey();
-    await ref.set({id,type:"private",members:[currentUser.uid,friendId].sort(),key,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-  }
-  return id;
-}
-async function openPrivateChat(friendId){
-  currentChat=await getOrCreatePrivateChat(friendId);
-  showPage("chat");renderChatTabs();subscribeChat();
-}
-async function createGroup(){
-  const name=document.getElementById("groupName").value.trim();if(!name)return toast("Nhập tên group");
-  const a=await db.collection("friendships").where("a","==",currentUser.uid).get();
-  const b=await db.collection("friendships").where("b","==",currentUser.uid).get();
-  const ids=new Set([currentUser.uid]);
-  [...a.docs,...b.docs].forEach(d=>{const f=d.data();ids.add(f.a===currentUser.uid?f.b:f.a)});
-  const id="group_"+crypto.randomUUID();const key=generateChatKey();
-  await db.collection("groups").doc(id).set({id,name,members:[...ids],key,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-  await db.collection("chats").doc(id).set({id,type:"group",members:[...ids],key,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-  document.getElementById("groupName").value="";toast("Đã tạo group 👥");renderGroups();
-}
-async function renderGroups(){
-  if(!currentUser)return;
-  const snap=await db.collection("groups").where("members","array-contains",currentUser.uid).get();
-  groupCache=snap.docs.map(d=>({id:d.id,...d.data()}));
-  const out=document.getElementById("groupList");
-  if(!groupCache.length){out.innerHTML='<div class="card" style="color:#666">Chưa có group.</div>';return}
-  out.innerHTML=groupCache.map(g=>`<div class="card"><div class="row"><div><strong>👥 ${escapeHTML(g.name)}</strong><div class="muted">${g.members.length} thành viên</div></div><button class="primary" onclick="openGroup('${g.id}')">Mở chat</button></div></div>`).join("");
-}
-function openGroup(id){currentChat=id;showPage("chat");renderChatTabs();subscribeChat()}
-async function renderChatTabs(){
-  if(!currentUser)return;
-  const out=document.getElementById("chatTabs");const tabs=[];
-  const chatSnap=await db.collection("chats").where("members","array-contains",currentUser.uid).get();
-  for(const d of chatSnap.docs){
-    const c=d.data();let name="Chat";
-    if(c.type==="group"){const g=groupCache.find(x=>x.id===c.id);name="👥 "+(g?.name||"Group")}
-    else{const other=c.members.find(x=>x!==currentUser.uid);const u=(await userRef(other).get()).data();name="💬 "+(u?.name||"Chat")}
-    tabs.push(`<button class="chat-tab ${currentChat===c.id?"active":""}" onclick="openExistingChat('${c.id}')">${escapeHTML(name)}</button>`);
-  }
-  out.innerHTML=tabs.join("");
-}
-function openExistingChat(id){currentChat=id;renderChatTabs();subscribeChat()}
-function subscribeChat(){
-  if(currentChatUnsubscribe)currentChatUnsubscribe();
-  if(!currentChat){document.getElementById("chatKey").textContent="--";return}
-  const ref=db.collection("chats").doc(currentChat);
-  currentChatUnsubscribe=ref.collection("messages").orderBy("createdAt","asc").onSnapshot(async snap=>{
-    const chat=(await ref.get()).data();if(!chat)return;
-    document.getElementById("chatKey").textContent=chat.key;
-    const out=document.getElementById("messages");out.innerHTML="";
-    for(const d of snap.docs){
-      const m=d.data();const text=await decryptText(m,chat.key);
-      const div=document.createElement("div");div.className="message "+(m.sender===currentUser.uid?"me":"other");div.textContent=text;out.appendChild(div);
-    }
-    out.scrollTop=out.scrollHeight;
-  },err=>console.error(err));
-}
-async function sendMessage(){
-  if(!currentChat)return toast("Hãy mở một cuộc trò chuyện");
-  const input=document.getElementById("messageInput");const text=input.value.trim();if(!text)return;
-  const ref=db.collection("chats").doc(currentChat);const chat=(await ref.get()).data();if(!chat)return;
-  const encrypted=await encryptText(text,chat.key);
-  await ref.collection("messages").add({sender:currentUser.uid,cipher:encrypted.cipher,iv:encrypted.iv,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-  input.value="";
-}
-async function copyChatKey(){
-  if(!currentChat)return;const c=(await db.collection("chats").doc(currentChat).get()).data();if(!c)return;
-  await navigator.clipboard.writeText(c.key);toast("Đã copy Chat Key 📋");
-}
-async function newChatKey(){
-  if(!currentChat)return;await db.collection("chats").doc(currentChat).update({key:generateChatKey()});toast("Đã tạo Chat Key mới 🔐");
-}
-
-/* =====================================================
-   NOTIFICATIONS
-===================================================== */
-async function renderNotifications(){
-  if(!currentUser)return;
-  const snap=await db.collection("notifications").where("to","==",currentUser.uid).orderBy("createdAt","desc").limit(50).get();
-  const out=document.getElementById("notificationList");
-  if(snap.empty){out.innerHTML='<div class="card" style="color:#666">Chưa có thông báo.</div>';return}
-  out.innerHTML=snap.docs.map(d=>{const n=d.data();return`<div class="card">🔔 ${escapeHTML(n.text)}<div class="muted" style="margin-top:6px">${n.createdAt?.toDate?ago(n.createdAt.toDate()):"vừa xong"}</div></div>`}).join("");
-}
-
-/* =====================================================
-   PROFILE
-===================================================== */
-async function updateProfile(){
-  if(!currentUser||!currentProfile)return;
-  document.getElementById("profileName").textContent=currentProfile.name||"Nova";
-  document.getElementById("profileEmail").textContent=currentProfile.email||currentUser.email||"--";
-  document.getElementById("profileUID").textContent=currentUser.uid;
-  document.getElementById("avatar").textContent=(currentProfile.name||"N").charAt(0).toUpperCase();
-  const posts=await db.collection("posts").where("userId","==",currentUser.uid).get();
-  const a=await db.collection("friendships").where("a","==",currentUser.uid).get();
-  const b=await db.collection("friendships").where("b","==",currentUser.uid).get();
-  document.getElementById("postCount").textContent=posts.size;
-  document.getElementById("friendCount").textContent=a.size+b.size;
-}
 </script>
 </body>
 </html>
