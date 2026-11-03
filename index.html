@@ -8,7 +8,7 @@
 <!-- Tailwind CSS CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Firebase App & Auth SDK (Modular qua CDN) -->
+<!-- Firebase App, Auth & Firestore SDK (v10.12.0) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { 
@@ -20,8 +20,24 @@
       GoogleAuthProvider,
       signInWithPopup 
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { 
+      getFirestore, 
+      doc, 
+      setDoc, 
+      getDoc, 
+      getDocs, 
+      collection, 
+      query, 
+      where, 
+      addDoc, 
+      onSnapshot, 
+      orderBy,
+      updateDoc,
+      arrayUnion,
+      arrayRemove
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // Cấu hình Firebase chuẩn từ dự án của bạn[cite: 1]
+  // Cấu hình Firebase
   const firebaseConfig = {
       apiKey: "AIzaSyAvZQWFacocqYNuJH5YG7mrV_xuPVvfN8s",
       authDomain: "nova-9a504.firebaseapp.com",
@@ -31,18 +47,35 @@
       appId: "1:1040280362414:web:9fffa61fd30123ec267c3f"
   };
 
-  // Khởi tạo Firebase[cite: 1]
+  // Khởi tạo Firebase
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
+  const db = getFirestore(app);
 
-  // Đưa các hàm xác thực ra phạm vi toàn cục (window) để giao diện HTML gọi được
+  // Đưa các hàm xác thực & Firestore ra phạm vi toàn cục (window)
   window.fbAuth = auth;
+  window.fbDb = db;
   window.fbSignInWithEmailAndPassword = signInWithEmailAndPassword;
   window.fbCreateUserWithEmailAndPassword = createUserWithEmailAndPassword;
   window.fbSignOut = signOut;
   window.fbOnAuthStateChanged = onAuthStateChanged;
   window.fbGoogleProvider = new GoogleAuthProvider();
   window.fbSignInWithPopup = signInWithPopup;
+
+  // Firestore Utils
+  window.fsDoc = doc;
+  window.fsSetDoc = setDoc;
+  window.fsGetDoc = getDoc;
+  window.fsGetDocs = getDocs;
+  window.fsCollection = collection;
+  window.fsQuery = query;
+  window.fsWhere = where;
+  window.fsAddDoc = addDoc;
+  window.fsOnSnapshot = onSnapshot;
+  window.fsOrderBy = orderBy;
+  window.fsUpdateDoc = updateDoc;
+  window.fsArrayUnion = arrayUnion;
+  window.fsArrayRemove = arrayRemove;
 </script>
 
 <style>
@@ -190,12 +223,6 @@ button{cursor:pointer}
 .friend-name{font-weight:bold}
 .friend-email{font-size:12px;color:#777;margin-top:3px}
 
-.badge{
- display:inline-flex;align-items:center;justify-content:center;
- min-width:20px;height:20px;border-radius:20px;
- background:#8b3dff;color:#fff;font-size:11px;padding:0 6px
-}
-
 /* CHAT */
 .chat-tabs{display:flex;gap:8px;overflow:auto;margin-bottom:12px}
 .chat-tab{
@@ -301,18 +328,13 @@ button{cursor:pointer}
 
 <div id="loginForm">
 
-<input id="loginEmail" class="input" type="email"
-placeholder="Gmail">
+<input id="loginEmail" class="input" type="email" placeholder="Gmail">
 
-<input id="loginPassword" class="input" type="password"
-placeholder="Mật khẩu">
+<input id="loginPassword" class="input" type="password" placeholder="Mật khẩu">
 
-<button class="primary full" onclick="login()">
-Đăng nhập
-</button>
+<button class="primary full" onclick="login()">Đăng nhập</button>
 
-<button class="secondary full" style="margin-top:10px"
-onclick="googleLogin()">
+<button class="secondary full" style="margin-top:10px" onclick="googleLogin()">
 🌐 Tiếp tục với Google
 </button>
 
@@ -326,18 +348,13 @@ Chưa có tài khoản?
 
 <div id="registerForm" style="display:none">
 
-<input id="registerName" class="input"
-placeholder="Tên hiển thị">
+<input id="registerName" class="input" placeholder="Tên hiển thị">
 
-<input id="registerEmail" class="input"
-type="email" placeholder="Gmail">
+<input id="registerEmail" class="input" type="email" placeholder="Gmail">
 
-<input id="registerPassword" class="input"
-type="password" placeholder="Mật khẩu">
+<input id="registerPassword" class="input" type="password" placeholder="Mật khẩu">
 
-<button class="primary full" onclick="register()">
-Tạo tài khoản
-</button>
+<button class="primary full" onclick="register()">Tạo tài khoản</button>
 
 <div class="switch">
 Đã có tài khoản?
@@ -374,18 +391,13 @@ Tạo tài khoản
 
 <div class="card create">
 
-<textarea id="postText"
-placeholder="Bạn đang nghĩ gì?"></textarea>
+<textarea id="postText" placeholder="Bạn đang nghĩ gì?"></textarea>
 
 <div class="row" style="margin-top:9px">
 
 <span class="anonymous">◉ Anonymous</span>
 
-<button class="primary"
-style="padding:9px 18px"
-onclick="createPost()">
-Đăng
-</button>
+<button class="primary" style="padding:9px 18px" onclick="createPost()">Đăng</button>
 
 </div>
 </div>
@@ -403,11 +415,7 @@ onclick="createPost()">
 
 <h2>🔎 Tìm kiếm</h2>
 
-<input id="searchInput"
-class="input"
-style="margin-top:15px"
-placeholder="Tìm bài viết..."
-oninput="searchPosts()">
+<input id="searchInput" class="input" style="margin-top:15px" placeholder="Tìm bài viết..." oninput="searchPosts()">
 
 <div id="searchResults"></div>
 
@@ -424,20 +432,13 @@ oninput="searchPosts()">
 
 <div class="card" style="margin-top:15px">
 
-<p style="color:#aaa;margin-bottom:12px">
-Nhập Gmail để tìm người dùng Nova.
-</p>
+<p style="color:#aaa;margin-bottom:12px">Nhập Gmail để tìm người dùng Nova.</p>
 
 <div class="search-friend">
 
-<input id="friendEmail"
-class="input"
-placeholder="example@gmail.com">
+<input id="friendEmail" class="input" placeholder="example@gmail.com">
 
-<button class="primary"
-onclick="findFriend()">
-Tìm
-</button>
+<button class="primary" onclick="findFriend()">Tìm</button>
 
 </div>
 
@@ -450,7 +451,7 @@ Tìm
 
 <h3>📨 Lời mời kết bạn</h3>
 
-<div id="requests" style="margin-top:10px"></div>
+<div id="requestsList" style="margin-top:10px"></div>
 
 </div>
 
@@ -472,30 +473,21 @@ Tìm
 
 <h2>💬 Chat</h2>
 
-<div id="chatTabs" class="chat-tabs"
-style="margin-top:14px"></div>
+<div id="chatTabs" class="chat-tabs" style="margin-top:14px"></div>
 
 <div class="chat-window">
 
 <div class="chat-key">
 
-<div class="key-title">
-🔐 MÃ CUỘC TRÒ CHUYỆN — 24 KÝ TỰ
-</div>
+<div class="key-title">🔐 MÃ CUỘC TRÒ CHUYỆN — 24 KÝ TỰ</div>
 
-<div id="chatKey" class="key-value">
---
-</div>
+<div id="chatKey" class="key-value">--</div>
 
 <div class="key-actions">
 
-<button onclick="copyChatKey()">
-📋 Copy
-</button>
+<button onclick="copyChatKey()">📋 Copy</button>
 
-<button onclick="newChatKey()">
-🔄 Đổi mã
-</button>
+<button onclick="newChatKey()">🔄 Đổi mã</button>
 
 </div>
 
@@ -507,37 +499,11 @@ style="margin-top:14px"></div>
 
 <div class="chat-input">
 
-<input id="messageInput"
-placeholder="Nhập tin nhắn..."
-onkeydown="if(event.key==='Enter')sendMessage()">
+<input id="messageInput" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter')sendMessage()">
 
 <button onclick="sendMessage()">Gửi</button>
 
 </div>
-
-</section>
-
-
-<!-- ================= GROUP ================= -->
-
-<section id="groups" class="page">
-
-<h2>👥 Group</h2>
-
-<div class="card" style="margin-top:15px">
-
-<input id="groupName"
-class="input"
-placeholder="Tên group">
-
-<button class="primary full"
-onclick="createGroup()">
-＋ Tạo group
-</button>
-
-</div>
-
-<div id="groupList"></div>
 
 </section>
 
@@ -548,8 +514,7 @@ onclick="createGroup()">
 
 <h2>🔔 Thông báo</h2>
 
-<div id="notificationList"
-style="margin-top:15px"></div>
+<div id="notificationList" style="margin-top:15px"></div>
 
 </section>
 
@@ -562,13 +527,9 @@ style="margin-top:15px"></div>
 
 <div id="avatar" class="avatar">N</div>
 
-<div id="profileName" class="profile-name">
-Nova
-</div>
+<div id="profileName" class="profile-name">Nova</div>
 
-<div id="profileEmail" class="muted">
---
-</div>
+<div id="profileEmail" class="muted">--</div>
 
 </div>
 
@@ -599,7 +560,7 @@ Nova
 
 <div class="setting">
 <span>🔐 Tin nhắn</span>
-<span style="color:#bd7fff">AES-GCM</span>
+<span style="color:#bd7fff">AES-GCM (Firestore Sync)</span>
 </div>
 
 <div class="setting">
@@ -611,10 +572,7 @@ Nova
 
 <span class="danger">Đăng xuất</span>
 
-<button class="secondary"
-onclick="logout()">
-Thoát
-</button>
+<button class="secondary" onclick="logout()">Thoát</button>
 
 </div>
 
@@ -629,38 +587,27 @@ Thoát
 
 <nav class="bottom-nav">
 
-<button class="nav-btn active"
-onclick="showPage('home',this)">
+<button class="nav-btn active" onclick="showPage('home',this)">
 <span class="nav-icon">⌂</span>
 Feed
 </button>
 
-<button class="nav-btn"
-onclick="showPage('search',this)">
+<button class="nav-btn" onclick="showPage('search',this)">
 <span class="nav-icon">⌕</span>
 Search
 </button>
 
-<button class="nav-btn"
-onclick="showPage('friends',this)">
+<button class="nav-btn" onclick="showPage('friends',this)">
 <span class="nav-icon">♧</span>
 Friends
 </button>
 
-<button class="nav-btn"
-onclick="showPage('chat',this)">
+<button class="nav-btn" onclick="showPage('chat',this)">
 <span class="nav-icon">◌</span>
 Chat
 </button>
 
-<button class="nav-btn"
-onclick="showPage('groups',this)">
-<span class="nav-icon">♧</span>
-Group
-</button>
-
-<button class="nav-btn"
-onclick="showPage('profile',this)">
+<button class="nav-btn" onclick="showPage('profile',this)">
 <span class="nav-icon">◉</span>
 Me
 </button>
@@ -675,52 +622,41 @@ Me
 <script>
 
 /* =====================================================
-   DATA
+   GLOBAL STATE & FIRESTORE LISTENERS
 ===================================================== */
 
-let users =
-JSON.parse(localStorage.getItem("nova_users") || "[]");
-
-let posts =
-JSON.parse(localStorage.getItem("nova_posts") || "[]");
-
 let currentUser = null;
+let currentChatId = null;
+let activeChatUnsubscribe = null;
+let activeChatsListUnsubscribe = null;
 
-let friendships =
-JSON.parse(localStorage.getItem("nova_friendships") || "[]");
-
-let requests =
-JSON.parse(localStorage.getItem("nova_requests") || "[]");
-
-let chats =
-JSON.parse(localStorage.getItem("nova_chats") || "{}");
-
-let groups =
-JSON.parse(localStorage.getItem("nova_groups") || "[]");
-
-let notifications =
-JSON.parse(localStorage.getItem("nova_notifications") || "[]");
-
-let currentChat=null;
-
+function toast(text){
+    const t=document.getElementById("toast");
+    t.textContent=text;
+    t.classList.add("show");
+    setTimeout(()=>t.classList.remove("show"),2200);
+}
 
 /* =====================================================
-   FIREBASE AUTH LISTENER
+   FIREBASE AUTH LISTENERS
 ===================================================== */
 setTimeout(() => {
     if (window.fbOnAuthStateChanged) {
-        window.fbOnAuthStateChanged(window.fbAuth, (user) => {
+        window.fbOnAuthStateChanged(window.fbAuth, async (user) => {
             if (user) {
-                currentUser = {
-                    id: user.uid,
-                    name: user.displayName || user.email.split('@')[0],
-                    email: user.email
-                };
+                const userRef = window.fsDoc(window.fbDb, "users", user.uid);
+                const snap = await window.fsGetDoc(userRef);
                 
-                // Đồng bộ user vào danh sách cục bộ nếu chưa có
-                if (!users.some(u => u.id === user.uid)) {
-                    users.push(currentUser);
-                    save();
+                if (snap.exists()) {
+                    currentUser = snap.data();
+                } else {
+                    currentUser = {
+                        id: user.uid,
+                        name: user.displayName || user.email.split('@')[0],
+                        email: user.email.toLowerCase(),
+                        friends: []
+                    };
+                    await window.fsSetDoc(userRef, currentUser);
                 }
 
                 openApp();
@@ -734,115 +670,87 @@ setTimeout(() => {
     }
 }, 500);
 
-
 /* =====================================================
-   SAVE
-===================================================== */
-
-function save(){
-
-localStorage.setItem("nova_users",JSON.stringify(users));
-localStorage.setItem("nova_posts",JSON.stringify(posts));
-localStorage.setItem("nova_friendships",JSON.stringify(friendships));
-localStorage.setItem("nova_requests",JSON.stringify(requests));
-localStorage.setItem("nova_chats",JSON.stringify(chats));
-localStorage.setItem("nova_groups",JSON.stringify(groups));
-localStorage.setItem("nova_notifications",JSON.stringify(notifications));
-
-}
-
-
-function toast(text){
-
-const t=document.getElementById("toast");
-
-t.textContent=text;
-t.classList.add("show");
-
-setTimeout(()=>t.classList.remove("show"),2200);
-
-}
-
-
-/* =====================================================
-   AUTH
+   AUTH FUNCTIONS
 ===================================================== */
 
 function showRegister(){
-
-loginForm.style.display="none";
-registerForm.style.display="block";
-
+    loginForm.style.display="none";
+    registerForm.style.display="block";
 }
 
 function showLogin(){
-
-loginForm.style.display="block";
-registerForm.style.display="none";
-
+    loginForm.style.display="block";
+    registerForm.style.display="none";
 }
-
 
 async function register(){
+    const name=registerName.value.trim();
+    const email=registerEmail.value.trim().toLowerCase();
+    const password=registerPassword.value;
 
-const name=registerName.value.trim();
-const email=registerEmail.value.trim().toLowerCase();
-const password=registerPassword.value;
+    if(!name||!email||!password){
+        toast("Nhập đầy đủ thông tin");
+        return;
+    }
 
-if(!name||!email||!password){
-toast("Nhập đầy đủ thông tin");
-return;
-}
-
-if(!email.includes("@gmail.com")){
-toast("Hãy dùng Gmail");
-return;
-}
-
-try {
-    await window.fbCreateUserWithEmailAndPassword(window.fbAuth, email, password);
-    toast("Tạo tài khoản thành công 💜");
-} catch(err) {
-    if(err.code === 'auth/email-already-in-use') {
-        toast("Email này đã được đăng ký. Hãy chuyển sang Đăng nhập!");
-    } else {
-        toast(err.message);
+    try {
+        const res = await window.fbCreateUserWithEmailAndPassword(window.fbAuth, email, password);
+        const userData = {
+            id: res.user.uid,
+            name,
+            email,
+            friends: []
+        };
+        await window.fsSetDoc(window.fsDoc(window.fbDb, "users", res.user.uid), userData);
+        toast("Tạo tài khoản thành công 💜");
+    } catch(err) {
+        if(err.code === 'auth/email-already-in-use') {
+            toast("Email này đã được đăng ký!");
+        } else {
+            toast(err.message);
+        }
     }
 }
 
-}
-
-
 async function login(){
+    const email=loginEmail.value.trim().toLowerCase();
+    const password=loginPassword.value;
 
-const email=loginEmail.value.trim().toLowerCase();
-const password=loginPassword.value;
+    if(!email||!password){
+        toast("Nhập đầy đủ email và mật khẩu");
+        return;
+    }
 
-if(!email||!password){
-toast("Nhập đầy đủ email và mật khẩu");
-return;
+    try {
+        await window.fbSignInWithEmailAndPassword(window.fbAuth, email, password);
+    } catch(err) {
+        toast("Gmail hoặc mật khẩu sai");
+    }
 }
-
-try {
-    await window.fbSignInWithEmailAndPassword(window.fbAuth, email, password);
-} catch(err) {
-    toast("Gmail hoặc mật khẩu sai");
-}
-
-}
-
 
 async function googleLogin(){
     try {
-        await window.fbSignInWithPopup(window.fbAuth, window.fbGoogleProvider);
+        const res = await window.fbSignInWithPopup(window.fbAuth, window.fbGoogleProvider);
+        const userRef = window.fsDoc(window.fbDb, "users", res.user.uid);
+        const snap = await window.fsGetDoc(userRef);
+        if(!snap.exists()) {
+            await window.fsSetDoc(userRef, {
+                id: res.user.uid,
+                name: res.user.displayName || res.user.email.split('@')[0],
+                email: res.user.email.toLowerCase(),
+                friends: []
+            });
+        }
     } catch(err) {
         toast("Đăng nhập Google thất bại");
     }
 }
 
-
 async function logout(){
     try {
+        if(activeChatUnsubscribe) activeChatUnsubscribe();
+        if(activeChatsListUnsubscribe) activeChatsListUnsubscribe();
         await window.fbSignOut(window.fbAuth);
         app.style.display="none";
         auth.style.display="flex";
@@ -852,1109 +760,556 @@ async function logout(){
     }
 }
 
-
 /* =====================================================
-   OPEN APP
+   OPEN APP & NAVIGATION
 ===================================================== */
 
 function openApp(){
+    auth.style.display="none";
+    app.style.display="block";
 
-auth.style.display="none";
-app.style.display="block";
-
-renderFeed();
-renderFriends();
-renderRequests();
-renderFriendList();
-renderGroups();
-renderNotifications();
-updateProfile();
-
+    listenToFeed();
+    listenToRequests();
+    listenToFriends();
+    listenToNotifications();
+    updateProfile();
 }
-
-
-/* =====================================================
-   NAV
-===================================================== */
 
 function showPage(page,btn){
+    document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+    document.getElementById(page).classList.add("active");
 
-document.querySelectorAll(".page")
-.forEach(p=>p.classList.remove("active"));
+    if(btn){
+        document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
+    }
 
-document.getElementById(page)
-.classList.add("active");
-
-if(btn){
-
-document.querySelectorAll(".nav-btn")
-.forEach(b=>b.classList.remove("active"));
-
-btn.classList.add("active");
-
+    if(page==="chat") listenToChatsList();
+    if(page==="profile") updateProfile();
 }
-
-if(page==="home")renderFeed();
-if(page==="friends"){
-renderFriends();
-renderRequests();
-renderFriendList();
-}
-if(page==="chat")renderChatTabs();
-if(page==="groups")renderGroups();
-if(page==="notifications")renderNotifications();
-if(page==="profile")updateProfile();
-
-}
-
 
 /* =====================================================
-   POST ID
+   POSTS (FEED) REALTIME
 ===================================================== */
 
 function generatePostId(){
-
-const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-let x="";
-
-const arr=new Uint32Array(8);
-
-crypto.getRandomValues(arr);
-
-for(let i=0;i<8;i++){
-x+=chars[arr[i]%chars.length];
+    const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let x="";
+    const arr=new Uint32Array(8);
+    crypto.getRandomValues(arr);
+    for(let i=0;i<8;i++){ x+=chars[arr[i]%chars.length]; }
+    return "NOVA-"+x;
 }
 
-return "NOVA-"+x;
+async function createPost(){
+    const text=postText.value.trim();
+    if(!text){ toast("Hãy viết gì đó"); return; }
 
+    try {
+        await window.fsAddDoc(window.fsCollection(window.fbDb, "posts"), {
+            postCode: generatePostId(),
+            userId: currentUser.id,
+            text,
+            likes: [],
+            comments: [],
+            createdAt: new Date().toISOString()
+        });
+        postText.value="";
+        toast("Đã đăng bài 🚀");
+    } catch(e) {
+        toast("Không thể đăng bài");
+    }
 }
 
-
-/* =====================================================
-   POSTS
-===================================================== */
-
-function createPost(){
-
-const text=postText.value.trim();
-
-if(!text){
-toast("Hãy viết gì đó");
-return;
+function listenToFeed(){
+    const q = window.fsQuery(window.fsCollection(window.fbDb, "posts"), window.fsOrderBy("createdAt", "desc"));
+    window.fsOnSnapshot(q, (snapshot) => {
+        const posts = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        renderFeed(posts);
+    });
 }
-
-posts.unshift({
-
-id:crypto.randomUUID(),
-
-postCode:generatePostId(),
-
-userId:currentUser.id,
-
-text,
-
-likes:[],
-
-comments:[],
-
-createdAt:new Date().toISOString()
-
-});
-
-save();
-
-postText.value="";
-
-renderFeed();
-
-toast("Đã đăng bài 🚀");
-
-}
-
 
 function ago(date){
-
-const s=Math.floor(
-(Date.now()-new Date(date))/1000
-);
-
-if(s<60)return"vừa xong";
-
-const m=Math.floor(s/60);
-
-if(m<60)return m+" phút trước";
-
-const h=Math.floor(m/60);
-
-if(h<24)return h+" giờ trước";
-
-return Math.floor(h/24)+" ngày trước";
-
+    const s=Math.floor((Date.now()-new Date(date))/1000);
+    if(s<60)return"vừa xong";
+    const m=Math.floor(s/60);
+    if(m<60)return m+" phút trước";
+    const h=Math.floor(m/60);
+    if(h<24)return h+" giờ trước";
+    return Math.floor(h/24)+" ngày trước";
 }
-
 
 function escapeHTML(t){
-
-return String(t)
-.replaceAll("&","&amp;")
-.replaceAll("<","&lt;")
-.replaceAll(">","&gt;")
-.replaceAll('"',"&quot;")
-.replaceAll("'","&#039;");
-
+    return String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
 
+function renderFeed(posts){
+    const feed = document.getElementById("feed");
+    if(!posts.length){
+        feed.innerHTML=`<div class="card" style="text-align:center;color:#777">New Feed chưa có bài viết nào.</div>`;
+        return;
+    }
 
-function renderFeed(){
-
-if(!posts.length){
-
-feed.innerHTML=`
-<div class="card" style="text-align:center;color:#777">
-New Feed chưa có bài viết nào.
-</div>`;
-return;
-
+    feed.innerHTML=posts.map(p=>`
+        <div class="card">
+            <div class="post-head">
+                <span class="user">◉ Anonymous</span>
+                <span class="time">${ago(p.createdAt)}</span>
+            </div>
+            <div class="post-id">Post ID: ${p.postCode}</div>
+            <div class="post-text">${escapeHTML(p.text)}</div>
+            <div class="actions">
+                <button class="action" onclick="likePost('${p.id}', ${JSON.stringify(p.likes||[]).replaceAll('"', '&quot;')})">
+                    ♥ ${(p.likes||[]).length}
+                </button>
+                <button class="action" onclick="toggleComments('${p.id}')">
+                    💬 ${(p.comments||[]).length}
+                </button>
+                <button class="action" onclick="sharePost('${escapeHTML(p.postCode)}', '${escapeHTML(p.text)}')">
+                    ↗ Share
+                </button>
+            </div>
+            <div id="comments-${p.id}" class="comments" style="display:none">
+                ${(p.comments||[]).map(c=>`
+                    <div class="comment"><b>Anonymous:</b> ${escapeHTML(c.text)}</div>
+                `).join("")}
+                <div class="comment-box">
+                    <input id="comment-${p.id}" placeholder="Viết bình luận...">
+                    <button onclick="addComment('${p.id}')">Gửi</button>
+                </div>
+            </div>
+        </div>
+    `).join("");
 }
 
-feed.innerHTML=posts.map(p=>`
-
-<div class="card">
-
-<div class="post-head">
-
-<span class="user">◉ Anonymous</span>
-
-<span class="time">
-${ago(p.createdAt)}
-</span>
-
-</div>
-
-<div class="post-id">
-Post ID: ${p.postCode}
-</div>
-
-<div class="post-text">
-${escapeHTML(p.text)}
-</div>
-
-<div class="actions">
-
-<button class="action"
-onclick="likePost('${p.id}')">
-♥ ${p.likes.length}
-</button>
-
-<button class="action"
-onclick="toggleComments('${p.id}')">
-💬 ${p.comments.length}
-</button>
-
-<button class="action"
-onclick="sharePost('${p.id}')">
-↗ Share
-</button>
-
-</div>
-
-<div id="comments-${p.id}"
-class="comments"
-style="display:none">
-
-${
-p.comments.map(c=>`
-<div class="comment">
-<b>Anonymous:</b> ${escapeHTML(c.text)}
-</div>
-`).join("")
+async function likePost(id, likes){
+    const postRef = window.fsDoc(window.fbDb, "posts", id);
+    if(likes.includes(currentUser.id)) {
+        await window.fsUpdateDoc(postRef, { likes: window.fsArrayRemove(currentUser.id) });
+    } else {
+        await window.fsUpdateDoc(postRef, { likes: window.fsArrayUnion(currentUser.id) });
+    }
 }
-
-<div class="comment-box">
-
-<input id="comment-${p.id}"
-placeholder="Viết bình luận...">
-
-<button onclick="addComment('${p.id}')">
-Gửi
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-`).join("");
-
-}
-
-
-function likePost(id){
-
-const p=posts.find(x=>x.id===id);
-
-if(!p)return;
-
-const i=p.likes.indexOf(currentUser.id);
-
-if(i<0)p.likes.push(currentUser.id);
-else p.likes.splice(i,1);
-
-save();
-renderFeed();
-
-}
-
 
 function toggleComments(id){
-
-const el=document.getElementById("comments-"+id);
-
-el.style.display=
-el.style.display==="none"?"block":"none";
-
+    const el=document.getElementById("comments-"+id);
+    el.style.display = el.style.display==="none"?"block":"none";
 }
 
+async function addComment(id){
+    const input=document.getElementById("comment-"+id);
+    const text = input.value.trim();
+    if(!text) return;
 
-function addComment(id){
-
-const input=document.getElementById("comment-"+id);
-
-if(!input.value.trim())return;
-
-const p=posts.find(x=>x.id===id);
-
-p.comments.push({
-id:crypto.randomUUID(),
-userId:currentUser.id,
-text:input.value.trim()
-});
-
-save();
-renderFeed();
-
+    const postRef = window.fsDoc(window.fbDb, "posts", id);
+    await window.fsUpdateDoc(postRef, {
+        comments: window.fsArrayUnion({
+            id: crypto.randomUUID(),
+            userId: currentUser.id,
+            text
+        })
+    });
+    input.value="";
 }
 
-
-async function sharePost(id){
-
-const p=posts.find(x=>x.id===id);
-
-if(!p)return;
-
-const text=
-`NOVA\nPost ID: ${p.postCode}\n\n${p.text}`;
-
-if(navigator.share){
-
-try{
-await navigator.share({title:"NOVA",text});
-}catch(e){}
-
-}else{
-
-await navigator.clipboard.writeText(text);
-toast("Đã copy bài viết");
-
+async function sharePost(postCode, text){
+    const shareText = `NOVA\nPost ID: ${postCode}\n\n${text}`;
+    if(navigator.share){
+        try{ await navigator.share({title:"NOVA", text: shareText}); }catch(e){}
+    }else{
+        await navigator.clipboard.writeText(shareText);
+        toast("Đã copy bài viết");
+    }
 }
-
-}
-
 
 /* =====================================================
    SEARCH
 ===================================================== */
 
-function searchPosts(){
+async function searchPosts(){
+    const q=searchInput.value.toLowerCase().trim();
+    if(!q){ searchResults.innerHTML=""; return; }
 
-const q=searchInput.value.toLowerCase().trim();
+    const snap = await window.fsGetDocs(window.fsCollection(window.fbDb, "posts"));
+    const found = snap.docs
+        .map(doc => ({id: doc.id, ...doc.data()}))
+        .filter(p => p.text.toLowerCase().includes(q) || p.postCode.toLowerCase().includes(q));
 
-if(!q){
-searchResults.innerHTML="";
-return;
+    searchResults.innerHTML = found.length ? found.map(p=>`
+        <div class="card" style="margin-top:10px">
+            <div class="post-id">Post ID: ${p.postCode}</div>
+            ${escapeHTML(p.text)}
+        </div>
+    `).join("") : `<p style="color:#777;margin-top:15px">Không tìm thấy.</p>`;
 }
-
-const found=posts.filter(
-p=>p.text.toLowerCase().includes(q)
-||p.postCode.toLowerCase().includes(q)
-);
-
-searchResults.innerHTML=found.length
-?found.map(p=>`
-<div class="card" style="margin-top:10px">
-<div class="post-id">Post ID: ${p.postCode}</div>
-${escapeHTML(p.text)}
-</div>`).join("")
-:`<p style="color:#777;margin-top:15px">
-Không tìm thấy.
-</p>`;
-
-}
-
 
 /* =====================================================
-   FRIEND SYSTEM
+   FRIEND SYSTEM REALTIME
 ===================================================== */
 
-function areFriends(a,b){
+async function findFriend(){
+    const email = friendEmail.value.trim().toLowerCase();
+    if(!email){ toast("Nhập Gmail"); return; }
+    if(email === currentUser.email){ toast("Đây là Gmail của bạn"); return; }
 
-return friendships.some(f=>
-(f.a===a&&f.b===b)||
-(f.a===b&&f.b===a)
-);
+    const q = window.fsQuery(window.fsCollection(window.fbDb, "users"), window.fsWhere("email", "==", email));
+    const snap = await window.fsGetDocs(q);
 
+    if(snap.empty){
+        friendResult.innerHTML = `
+            <div class="friend-result">
+                <div>
+                    <div class="friend-name">Không tìm thấy</div>
+                    <div class="friend-email">Gmail này chưa đăng ký Nova.</div>
+                </div>
+            </div>`;
+        return;
+    }
+
+    const targetUser = { id: snap.docs[0].id, ...snap.docs[0].data() };
+
+    if((currentUser.friends || []).includes(targetUser.id)){
+        friendResult.innerHTML = `
+            <div class="friend-result">
+                <div>
+                    <div class="friend-name">${escapeHTML(targetUser.name)}</div>
+                    <div class="friend-email">${escapeHTML(targetUser.email)}</div>
+                </div>
+                <span>✓ Bạn bè</span>
+            </div>`;
+        return;
+    }
+
+    friendResult.innerHTML = `
+        <div class="friend-result">
+            <div>
+                <div class="friend-name">${escapeHTML(targetUser.name)}</div>
+                <div class="friend-email">${escapeHTML(targetUser.email)}</div>
+            </div>
+            <button class="primary" onclick="sendFriendRequest('${targetUser.id}', '${escapeHTML(targetUser.name)}')">Kết bạn</button>
+        </div>`;
 }
 
+async function sendFriendRequest(toId, toName){
+    const reqQ = window.fsQuery(
+        window.fsCollection(window.fbDb, "requests"), 
+        window.fsWhere("from", "==", currentUser.id),
+        window.fsWhere("to", "==", toId)
+    );
+    const reqSnap = await window.fsGetDocs(reqQ);
 
-function findFriend(){
+    if(!reqSnap.empty){
+        toast("Đã gửi lời mời rồi");
+        return;
+    }
 
-const email=friendEmail.value.trim().toLowerCase();
+    await window.fsAddDoc(window.fsCollection(window.fbDb, "requests"), {
+        from: currentUser.id,
+        fromName: currentUser.name,
+        fromEmail: currentUser.email,
+        to: toId,
+        createdAt: new Date().toISOString()
+    });
 
-if(!email){
-toast("Nhập Gmail");
-return;
+    await window.fsAddDoc(window.fsCollection(window.fbDb, "notifications"), {
+        to: toId,
+        text: `${currentUser.name} đã gửi lời mời kết bạn.`,
+        createdAt: new Date().toISOString()
+    });
+
+    toast("Đã gửi lời mời 🤝");
 }
 
-const user=users.find(
-u=>u.email===email
-);
+function listenToRequests(){
+    const q = window.fsQuery(window.fsCollection(window.fbDb, "requests"), window.fsWhere("to", "==", currentUser.id));
+    window.fsOnSnapshot(q, (snapshot) => {
+        const reqs = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        const reqDiv = document.getElementById("requestsList");
 
-if(!user){
-friendResult.innerHTML=`
-<div class="friend-result">
-<div>
-<div class="friend-name">Không tìm thấy</div>
-<div class="friend-email">
-Gmail này chưa đăng ký Nova.
-</div>
-</div>
-</div>`;
-return;
+        if(!reqs.length){
+            reqDiv.innerHTML = `<p style="color:#666;margin-top:10px">Không có lời mời mới.</p>`;
+            return;
+        }
+
+        reqDiv.innerHTML = reqs.map(r => `
+            <div class="friend-result">
+                <div>
+                    <div class="friend-name">${escapeHTML(r.fromName || "User")}</div>
+                    <div class="friend-email">${escapeHTML(r.fromEmail || "")}</div>
+                </div>
+                <div style="display:flex;gap:5px">
+                    <button class="primary" onclick="acceptFriend('${r.id}', '${r.from}')">✓</button>
+                    <button class="secondary" onclick="rejectFriend('${r.id}')">×</button>
+                </div>
+            </div>
+        `).join("");
+    });
 }
 
-if(user.id===currentUser.id){
-toast("Đây là tài khoản của bạn");
-return;
+async function acceptFriend(reqId, fromId){
+    // Thêm vào danh sách bạn bè của cả 2
+    await window.fsUpdateDoc(window.fsDoc(window.fbDb, "users", currentUser.id), {
+        friends: window.fsArrayUnion(fromId)
+    });
+    await window.fsUpdateDoc(window.fsDoc(window.fbDb, "users", fromId), {
+        friends: window.fsArrayUnion(currentUser.id)
+    });
+
+    // Cập nhật state cục bộ
+    if(!currentUser.friends) currentUser.friends = [];
+    currentUser.friends.push(fromId);
+
+    // Xóa lời mời
+    await window.fsSetDoc(window.fsDoc(window.fbDb, "requests", reqId), {}, {merge: false});
+    // Hoặc xóa hẳn document
+    toast("Đã trở thành bạn bè 🤝");
 }
 
-if(areFriends(currentUser.id,user.id)){
-
-friendResult.innerHTML=`
-<div class="friend-result">
-<div>
-<div class="friend-name">${escapeHTML(user.name)}</div>
-<div class="friend-email">${escapeHTML(user.email)}</div>
-</div>
-<span>✓ Bạn bè</span>
-</div>`;
-
-return;
+async function rejectFriend(reqId){
+    await window.fsSetDoc(window.fsDoc(window.fbDb, "requests", reqId), {}, {merge: false});
 }
 
-friendResult.innerHTML=`
-<div class="friend-result">
+function listenToFriends(){
+    const userRef = window.fsDoc(window.fbDb, "users", currentUser.id);
+    window.fsOnSnapshot(userRef, async (docSnap) => {
+        if(!docSnap.exists()) return;
+        currentUser = docSnap.data();
+        const friendIds = currentUser.friends || [];
+        const listDiv = document.getElementById("friendList");
 
-<div>
-<div class="friend-name">
-${escapeHTML(user.name)}
-</div>
+        if(!friendIds.length){
+            listDiv.innerHTML = `<p style="color:#666">Bạn chưa có bạn bè.</p>`;
+            return;
+        }
 
-<div class="friend-email">
-${escapeHTML(user.email)}
-</div>
-</div>
+        const friendDocs = await Promise.all(friendIds.map(id => window.fsGetDoc(window.fsDoc(window.fbDb, "users", id))));
+        const friends = friendDocs.filter(d => d.exists()).map(d => ({id: d.id, ...d.data()}));
 
-<button class="primary"
-onclick="sendFriendRequest('${user.id}')">
-Kết bạn
-</button>
-
-</div>`;
-
+        listDiv.innerHTML = friends.map(u => `
+            <div class="friend-result">
+                <div>
+                    <div class="friend-name">${escapeHTML(u.name)}</div>
+                    <div class="friend-email">${escapeHTML(u.email)}</div>
+                </div>
+                <button class="primary" onclick="openPrivateChat('${u.id}')">💬 Chat</button>
+            </div>
+        `).join("");
+        
+        updateProfile();
+    });
 }
-
-
-function sendFriendRequest(to){
-
-if(requests.some(r=>
-r.from===currentUser.id&&r.to===to
-)){
-
-toast("Đã gửi lời mời rồi");
-return;
-
-}
-
-requests.push({
-id:crypto.randomUUID(),
-from:currentUser.id,
-to,
-createdAt:new Date().toISOString()
-});
-
-const u=users.find(x=>x.id===to);
-
-notifications.push({
-id:crypto.randomUUID(),
-to,
-text:`${currentUser.name} đã gửi lời mời kết bạn.`,
-createdAt:new Date().toISOString()
-});
-
-save();
-
-toast("Đã gửi lời mời 🤝");
-
-}
-
-
-function renderRequests(){
-
-const mine=requests.filter(
-r=>r.to===currentUser.id
-);
-
-if(!mine.length){
-
-requests.innerHTML=
-`<p style="color:#666;margin-top:10px">
-Không có lời mời mới.
-</p>`;
-
-return;
-
-}
-
-document.getElementById("requests").innerHTML=
-mine.map(r=>{
-
-const u=users.find(x=>x.id===r.from);
-
-return`
-<div class="friend-result">
-
-<div>
-<div class="friend-name">
-${escapeHTML(u?.name||"Unknown")}
-</div>
-<div class="friend-email">
-${escapeHTML(u?.email||"")}
-</div>
-</div>
-
-<div style="display:flex;gap:5px">
-
-<button class="primary"
-onclick="acceptFriend('${r.id}')">
-✓
-</button>
-
-<button class="secondary"
-onclick="rejectFriend('${r.id}')">
-×
-</button>
-
-</div>
-
-</div>`;
-
-}).join("");
-
-}
-
-
-function acceptFriend(id){
-
-const r=requests.find(x=>x.id===id);
-
-if(!r)return;
-
-friendships.push({
-id:crypto.randomUUID(),
-a:r.from,
-b:r.to
-});
-
-requests=requests.filter(x=>x.id!==id);
-
-save();
-
-renderRequests();
-renderFriendList();
-
-toast("Đã trở thành bạn bè 🤝");
-
-}
-
-
-function rejectFriend(id){
-
-requests=requests.filter(x=>x.id!==id);
-
-save();
-renderRequests();
-
-}
-
-
-function renderFriendList(){
-
-const mine=friendships.filter(
-f=>f.a===currentUser.id||f.b===currentUser.id
-);
-
-if(!mine.length){
-
-friendList.innerHTML=
-`<p style="color:#666">
-Bạn chưa có bạn bè.
-</p>`;
-
-return;
-
-}
-
-friendList.innerHTML=mine.map(f=>{
-
-const id=
-f.a===currentUser.id?f.b:f.a;
-
-const u=users.find(x=>x.id===id);
-
-if(!u) return "";
-
-return`
-<div class="friend-result">
-
-<div>
-<div class="friend-name">
-${escapeHTML(u.name)}
-</div>
-
-<div class="friend-email">
-${escapeHTML(u.email)}
-</div>
-</div>
-
-<button class="primary"
-onclick="openPrivateChat('${u.id}')">
-💬 Chat
-</button>
-
-</div>`;
-
-}).join("");
-
-}
-
-
-function openPrivateChat(friendId){
-
-const ids=[
-currentUser.id,
-friendId
-].sort();
-
-const chatId="private_"+ids.join("_");
-
-if(!chats[chatId]){
-
-chats[chatId]={
-id:chatId,
-type:"private",
-members:ids,
-key:generateChatKey(),
-messages:[]
-};
-
-save();
-
-}
-
-currentChat=chatId;
-
-showPage("chat");
-
-renderChatTabs();
-renderMessages();
-
-}
-
 
 /* =====================================================
-   GROUPS
+   CHAT SYSTEM REALTIME & AES-GCM
 ===================================================== */
 
-function createGroup(){
-
-const name=groupName.value.trim();
-
-if(!name){
-toast("Nhập tên group");
-return;
-}
-
-const myFriends=friendships.filter(
-f=>f.a===currentUser.id||f.b===currentUser.id
-);
-
-const members=[
-currentUser.id,
-...myFriends.map(f=>
-f.a===currentUser.id?f.b:f.a
-)
-];
-
-const group={
-id:"group_"+crypto.randomUUID(),
-name,
-members,
-key:generateChatKey(),
-messages:[]
-};
-
-groups.push(group);
-
-chats[group.id]={
-id:group.id,
-type:"group",
-members,
-key:group.key,
-messages:[]
-};
-
-save();
-
-groupName.value="";
-
-renderGroups();
-
-toast("Đã tạo group 👥");
-
-}
-
-
-function renderGroups(){
-
-const mine=groups.filter(
-g=>g.members.includes(currentUser.id)
-);
-
-if(!mine.length){
-
-groupList.innerHTML=`
-<div class="card" style="color:#666">
-Chưa có group.
-</div>`;
-
-return;
-
-}
-
-groupList.innerHTML=mine.map(g=>`
-
-<div class="card">
-
-<div class="row">
-
-<div>
-<strong>👥 ${escapeHTML(g.name)}</strong>
-<div class="muted">
-${g.members.length} thành viên
-</div>
-</div>
-
-<button class="primary"
-onclick="openGroup('${g.id}')">
-Mở chat
-</button>
-
-</div>
-
-</div>
-
-`).join("");
-
-}
-
-
-function openGroup(id){
-
-currentChat=id;
-
-showPage("chat");
-
-renderChatTabs();
-renderMessages();
-
-}
-
-
-/* =====================================================
-   CHAT KEY
-===================================================== */
-
-const KEY_CHARS=
-"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
+const KEY_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 function generateChatKey(){
-
-let out="";
-
-const arr=new Uint32Array(24);
-
-crypto.getRandomValues(arr);
-
-for(let i=0;i<24;i++){
-
-out+=KEY_CHARS[
-arr[i]%KEY_CHARS.length
-];
-
+    let out="";
+    const arr=new Uint32Array(24);
+    crypto.getRandomValues(arr);
+    for(let i=0;i<24;i++){ out+=KEY_CHARS[arr[i]%KEY_CHARS.length]; }
+    return out;
 }
-
-return out;
-
-}
-
-
-/* =====================================================
-   AES-GCM
-===================================================== */
 
 async function deriveKey(chatKey){
-
-const hash=await crypto.subtle.digest(
-"SHA-256",
-new TextEncoder().encode(chatKey)
-);
-
-return crypto.subtle.importKey(
-"raw",
-hash,
-{name:"AES-GCM"},
-false,
-["encrypt","decrypt"]
-);
-
+    const hash=await crypto.subtle.digest("SHA-256", new TextEncoder().encode(chatKey));
+    return crypto.subtle.importKey("raw", hash, {name:"AES-GCM"}, false, ["encrypt","decrypt"]);
 }
-
 
 function b64(buffer){
-
-const bytes=new Uint8Array(buffer);
-
-let s="";
-
-bytes.forEach(b=>s+=String.fromCharCode(b));
-
-return btoa(s);
-
+    const bytes=new Uint8Array(buffer);
+    let s="";
+    bytes.forEach(b=>s+=String.fromCharCode(b));
+    return btoa(s);
 }
-
 
 function unb64(str){
-
-const s=atob(str);
-
-const bytes=new Uint8Array(s.length);
-
-for(let i=0;i<s.length;i++)
-bytes[i]=s.charCodeAt(i);
-
-return bytes.buffer;
-
+    const s=atob(str);
+    const bytes=new Uint8Array(s.length);
+    for(let i=0;i<s.length;i++) bytes[i]=s.charCodeAt(i);
+    return bytes.buffer;
 }
-
 
 async function encrypt(text,key){
-
-const aes=await deriveKey(key);
-
-const iv=crypto.getRandomValues(
-new Uint8Array(12)
-);
-
-const encrypted=await crypto.subtle.encrypt(
-{name:"AES-GCM",iv},
-aes,
-new TextEncoder().encode(text)
-);
-
-return{
-cipher:b64(encrypted),
-iv:b64(iv)
-};
-
+    const aes=await deriveKey(key);
+    const iv=crypto.getRandomValues(new Uint8Array(12));
+    const encrypted=await crypto.subtle.encrypt({name:"AES-GCM",iv}, aes, new TextEncoder().encode(text));
+    return { cipher:b64(encrypted), iv:b64(iv) };
 }
-
 
 async function decrypt(msg,key){
-
-try{
-
-const aes=await deriveKey(key);
-
-const plain=await crypto.subtle.decrypt(
-{
-name:"AES-GCM",
-iv:new Uint8Array(unb64(msg.iv))
-},
-aes,
-unb64(msg.cipher)
-);
-
-return new TextDecoder().decode(plain);
-
-}catch{
-
-return "🔒 Không thể giải mã";
-
+    try{
+        const aes=await deriveKey(key);
+        const plain=await crypto.subtle.decrypt({name:"AES-GCM", iv:new Uint8Array(unb64(msg.iv))}, aes, unb64(msg.cipher));
+        return new TextDecoder().decode(plain);
+    }catch{
+        return "🔒 Không thể giải mã (Mã chat bị sai)";
+    }
 }
 
+async function openPrivateChat(friendId){
+    const ids = [currentUser.id, friendId].sort();
+    const chatId = "private_" + ids.join("_");
+
+    const chatRef = window.fsDoc(window.fbDb, "chats", chatId);
+    const chatSnap = await window.fsGetDoc(chatRef);
+
+    if(!chatSnap.exists()){
+        await window.fsSetDoc(chatRef, {
+            id: chatId,
+            members: ids,
+            key: generateChatKey(),
+            createdAt: new Date().toISOString()
+        });
+    }
+
+    currentChatId = chatId;
+    showPage("chat");
+    listenToMessages(chatId);
 }
 
+function listenToChatsList(){
+    if(activeChatsListUnsubscribe) activeChatsListUnsubscribe();
+    
+    const q = window.fsQuery(window.fsCollection(window.fbDb, "chats"), window.fsWhere("members", "array-contains", currentUser.id));
+    activeChatsListUnsubscribe = window.fsOnSnapshot(q, async (snapshot) => {
+        const chats = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+        const tabs = document.getElementById("chatTabs");
 
-/* =====================================================
-   CHAT
-===================================================== */
+        if(!chats.length){
+            tabs.innerHTML = `<span style="color:#666;font-size:13px">Chưa có cuộc trò chuyện nào</span>`;
+            return;
+        }
 
-function getCurrentChat(){
+        const tabsHTML = await Promise.all(chats.map(async (c) => {
+            const otherId = c.members.find(m => m !== currentUser.id);
+            const userSnap = await window.fsGetDoc(window.fsDoc(window.fbDb, "users", otherId));
+            const name = userSnap.exists() ? userSnap.data().name : "Chat";
+            return `
+                <button class="chat-tab ${currentChatId === c.id ? "active" : ""}" onclick="switchChat('${c.id}')">
+                    💬 ${escapeHTML(name)}
+                </button>
+            `;
+        }));
 
-return chats[currentChat];
-
+        tabs.innerHTML = tabsHTML.join("");
+    });
 }
 
-
-function renderChatTabs(){
-
-const tabs=document.getElementById("chatTabs");
-
-const arr=[];
-
-Object.values(chats).forEach(c=>{
-
-if(!c.members?.includes(currentUser.id))
-return;
-
-let name="Chat";
-
-if(c.type==="group"){
-
-const g=groups.find(x=>x.id===c.id);
-
-name="👥 "+(g?.name||"Group");
-
-}else{
-
-const other=c.members.find(
-x=>x!==currentUser.id
-);
-
-const u=users.find(x=>x.id===other);
-
-name="💬 "+(u?.name||"Chat");
-
+function switchChat(chatId){
+    currentChatId = chatId;
+    listenToChatsList();
+    listenToMessages(chatId);
 }
 
-arr.push(`
-<button class="chat-tab ${
-currentChat===c.id?"active":""
-}"
-onclick="openExistingChat('${c.id}')">
-${escapeHTML(name)}
-</button>
-`);
+function listenToMessages(chatId){
+    if(activeChatUnsubscribe) activeChatUnsubscribe();
 
-});
+    const chatRef = window.fsDoc(window.fbDb, "chats", chatId);
+    const msgsQ = window.fsQuery(window.fsCollection(chatRef, "messages"), window.fsOrderBy("createdAt", "asc"));
 
-tabs.innerHTML=arr.join("");
+    activeChatUnsubscribe = window.fsOnSnapshot(chatRef, async (chatSnap) => {
+        if(!chatSnap.exists()) return;
+        const chatData = chatSnap.data();
+        document.getElementById("chatKey").textContent = chatData.key;
 
+        window.fsOnSnapshot(msgsQ, async (msgsSnap) => {
+            const messagesContainer = document.getElementById("messages");
+            messagesContainer.innerHTML = "";
+
+            for(const docSnap of msgsSnap.docs){
+                const m = docSnap.data();
+                const text = await decrypt(m, chatData.key);
+                const div = document.createElement("div");
+                div.className = "message " + (m.sender === currentUser.id ? "me" : "other");
+                div.textContent = text;
+                messagesContainer.appendChild(div);
+            }
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        });
+    });
 }
-
-
-function openExistingChat(id){
-
-currentChat=id;
-
-renderChatTabs();
-renderMessages();
-
-}
-
-
-async function renderMessages(){
-
-if(!currentChat){
-
-document.getElementById("chatKey").textContent="--";
-
-messages.innerHTML=`
-<div style="color:#666;text-align:center;margin-top:40px">
-Hãy kết bạn và mở một cuộc trò chuyện.
-</div>`;
-
-return;
-
-}
-
-const chat=getCurrentChat();
-
-if(!chat)return;
-
-chatKey.textContent=chat.key;
-
-messages.innerHTML="";
-
-for(const m of chat.messages){
-
-const text=await decrypt(m,chat.key);
-
-const div=document.createElement("div");
-
-div.className=
-"message "+
-(m.sender===currentUser.id?"me":"other");
-
-div.textContent=text;
-
-messages.appendChild(div);
-
-}
-
-messages.scrollTop=messages.scrollHeight;
-
-}
-
 
 async function sendMessage(){
+    if(!currentChatId){ toast("Hãy mở một cuộc trò chuyện"); return; }
+    const input = document.getElementById("messageInput");
+    const text = input.value.trim();
+    if(!text) return;
 
-if(!currentChat){
+    const chatSnap = await window.fsGetDoc(window.fsDoc(window.fbDb, "chats", currentChatId));
+    if(!chatSnap.exists()) return;
+    const chatKey = chatSnap.data().key;
 
-toast("Hãy mở một cuộc trò chuyện");
-return;
+    const encrypted = await encrypt(text, chatKey);
 
+    await window.fsAddDoc(window.fsCollection(window.fsDoc(window.fbDb, "chats", currentChatId), "messages"), {
+        sender: currentUser.id,
+        cipher: encrypted.cipher,
+        iv: encrypted.iv,
+        createdAt: new Date().toISOString()
+    });
+
+    input.value = "";
 }
 
-const input=document.getElementById("messageInput");
-
-const text=input.value.trim();
-
-if(!text)return;
-
-const chat=getCurrentChat();
-
-const encrypted=await encrypt(
-text,
-chat.key
-);
-
-chat.messages.push({
-
-sender:currentUser.id,
-
-cipher:encrypted.cipher,
-
-iv:encrypted.iv,
-
-createdAt:new Date().toISOString()
-
-});
-
-save();
-
-input.value="";
-
-renderMessages();
-
+async function copyChatKey(){
+    if(!currentChatId) return;
+    const chatSnap = await window.fsGetDoc(window.fsDoc(window.fbDb, "chats", currentChatId));
+    if(chatSnap.exists()){
+        await navigator.clipboard.writeText(chatSnap.data().key);
+        toast("Đã copy Chat Key 📋");
+    }
 }
 
-
-function copyChatKey(){
-
-if(!currentChat)return;
-
-navigator.clipboard.writeText(
-getCurrentChat().key
-);
-
-toast("Đã copy Chat Key 📋");
-
+async function newChatKey(){
+    if(!currentChatId) return;
+    const newKey = generateChatKey();
+    await window.fsUpdateDoc(window.fsDoc(window.fbDb, "chats", currentChatId), { key: newKey });
+    toast("Đã tạo Chat Key mới 🔐");
 }
-
-
-function newChatKey(){
-
-if(!currentChat)return;
-
-getCurrentChat().key=generateChatKey();
-
-save();
-
-renderMessages();
-
-toast("Đã tạo Chat Key mới 🔐");
-
-}
-
 
 /* =====================================================
    NOTIFICATIONS
 ===================================================== */
 
-function renderNotifications(){
+function listenToNotifications(){
+    const q = window.fsQuery(window.fsCollection(window.fbDb, "notifications"), window.fsWhere("to", "==", currentUser.id));
+    window.fsOnSnapshot(q, (snapshot) => {
+        const notes = snapshot.docs.map(doc => doc.data());
+        const list = document.getElementById("notificationList");
 
-const mine=notifications.filter(
-n=>n.to===currentUser.id
-);
+        if(!notes.length){
+            list.innerHTML = `<div class="card" style="color:#666">Chưa có thông báo.</div>`;
+            return;
+        }
 
-if(!mine.length){
-
-notificationList.innerHTML=`
-<div class="card" style="color:#666">
-Chưa có thông báo.
-</div>`;
-
-return;
-
+        list.innerHTML = notes.reverse().map(n => `
+            <div class="card">
+                🔔 ${escapeHTML(n.text)}
+                <div class="muted" style="margin-top:6px">${ago(n.createdAt)}</div>
+            </div>
+        `).join("");
+    });
 }
-
-notificationList.innerHTML=
-mine.reverse().map(n=>`
-<div class="card">
-🔔 ${escapeHTML(n.text)}
-<div class="muted" style="margin-top:6px">
-${ago(n.createdAt)}
-</div>
-</div>
-`).join("");
-
-}
-
 
 /* =====================================================
    PROFILE
 ===================================================== */
 
-function updateProfile(){
+async function updateProfile(){
+    if(!currentUser) return;
+    profileName.textContent = currentUser.name;
+    profileEmail.textContent = currentUser.email;
+    avatar.textContent = currentUser.name.charAt(0).toUpperCase();
 
-profileName.textContent=currentUser.name;
-profileEmail.textContent=currentUser.email;
+    const friendCountEl = document.getElementById("friendCount");
+    friendCountEl.textContent = (currentUser.friends || []).length;
 
-avatar.textContent=
-currentUser.name.charAt(0).toUpperCase();
-
-postCount.textContent=
-posts.filter(p=>p.userId===currentUser.id).length;
-
-friendCount.textContent=
-friendships.filter(
-f=>f.a===currentUser.id||f.b===currentUser.id
-).length;
-
+    const postQ = window.fsQuery(window.fsCollection(window.fbDb, "posts"), window.fsWhere("userId", "==", currentUser.id));
+    const postSnap = await window.fsGetDocs(postQ);
+    document.getElementById("postCount").textContent = postSnap.size;
 }
 
 </script>
