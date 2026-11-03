@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>NOVA</title>
 
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
 <!-- Firebase App & Auth SDK (Modular qua CDN) -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -18,7 +21,7 @@
       signInWithPopup 
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-  // Cấu hình Firebase chuẩn từ dự án của bạn
+  // Cấu hình Firebase chuẩn từ dự án của bạn[cite: 1]
   const firebaseConfig = {
       apiKey: "AIzaSyAvZQWFacocqYNuJH5YG7mrV_xuPVvfN8s",
       authDomain: "nova-9a504.firebaseapp.com",
@@ -28,7 +31,7 @@
       appId: "1:1040280362414:web:9fffa61fd30123ec267c3f"
   };
 
-  // Khởi tạo Firebase
+  // Khởi tạo Firebase[cite: 1]
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
@@ -797,10 +800,14 @@ return;
 }
 
 try {
-    const userCredential = await window.fbCreateUserWithEmailAndPassword(window.fbAuth, email, password);
+    await window.fbCreateUserWithEmailAndPassword(window.fbAuth, email, password);
     toast("Tạo tài khoản thành công 💜");
 } catch(err) {
-    toast(err.message);
+    if(err.code === 'auth/email-already-in-use') {
+        toast("Email này đã được đăng ký. Hãy chuyển sang Đăng nhập!");
+    } else {
+        toast(err.message);
+    }
 }
 
 }
