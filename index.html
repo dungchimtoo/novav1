@@ -8,7 +8,7 @@
 <!-- Tailwind CSS CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Firebase App & Auth SDK (Modular qua CDN) -->
+<!-- Firebase SDK chuẩn từ cấu hình dự án của bạn -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { 
@@ -230,32 +230,34 @@ body{ background:var(--bg); color:var(--text); }
 }
 
 .message-wrapper{
- margin:10px 0; display:flex; flex-direction:column;
+ margin:12px 0; display:flex; flex-direction:column; position:relative;
 }
 .message-wrapper.me{ align-items:flex-end; }
 .message-wrapper.other{ align-items:flex-start; }
 
 .message{
- max-width:78%;padding:10px 13px;border-radius:14px;
+ max-width:78%;padding:10px 14px;border-radius:16px;
  line-height:1.5;word-break:break-word; position:relative;
 }
 .message.me{background:#6d28d9;color:#fff}
 .message.other{background:var(--card-bg);color:var(--text)}
 
 .message-reactions{
- display:flex; gap:4px; margin-top:2px; font-size:12px;
+ display:flex; gap:3px; margin-top:3px; font-size:13px; background:var(--card-bg);
+ padding:2px 8px; border-radius:12px; border:1px solid var(--border); width:fit-content;
 }
 .reaction-picker{
  display:none; gap:6px; background:var(--card-bg); border:1px solid var(--border);
- padding:4px 8px; border-radius:12px; margin-top:4px; font-size:16px;
+ padding:5px 10px; border-radius:20px; margin-top:4px; font-size:18px;
+ box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:10;
 }
 .message-wrapper:hover .reaction-picker{ display:flex; }
 
-/* GROUP LOGO */
+/* GROUP LOGO & BADGES */
 .group-logo-badge{
- width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg,#7628e8,#b866ff);
- display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:18px; color:#fff;
- box-shadow:0 0 10px #7c3aed44;
+ width:45px; height:45px; border-radius:14px; background:linear-gradient(135deg,#7628e8,#b866ff);
+ display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:20px; color:#fff;
+ box-shadow:0 0 12px #7c3aed55; flex-shrink:0;
 }
 
 .chat-input{display:flex;gap:8px;margin-top:9px}
@@ -907,7 +909,7 @@ function openPrivateChat(friendId){
     renderMessages();
 }
 
-/* GROUPS & LOGO MỚI + KICK THÀNH VIÊN */
+/* GROUPS & LOGO CÁCH ĐIỆU + KICK / THÊM THÀNH VIÊN */
 function createGroup(){
     const name=groupName.value.trim();
     if(!name){ toast("Nhập tên group"); return; }
@@ -943,11 +945,11 @@ function renderGroups(){
                 </div>
                 <button class="primary" onclick="openGroup('${g.id}')">Mở chat</button>
             </div>
-            <div style="margin-top:10px; border-top:1px solid var(--border); padding-top:10px;">
+            <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:10px;">
                 <div style="font-size:12px; color:var(--muted); margin-bottom:5px;">Thành viên trong nhóm:</div>
                 ${g.members.map(mId => {
                     const u = users.find(x => x.id === mId);
-                    return `<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; margin-top:4px;">
+                    return `<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; margin-top:5px;">
                         <span>${escapeHTML(u ? u.name : 'Thành viên')} (${u ? u.email : ''})</span>
                         ${isOwner && mId !== currentUser.id ? `<button style="background:#ff5875; color:#fff; border:0; border-radius:6px; padding:3px 8px; font-size:11px;" onclick="kickMember('${g.id}', '${mId}')">Kick</button>` : ''}
                     </div>`;
@@ -1095,14 +1097,14 @@ async function renderMessages(){
         msgDiv.className="message "+(m.sender===currentUser.id?"me":"other");
         msgDiv.textContent=text;
         
+        wrapper.appendChild(msgDiv);
+        
         if(m.reactions && Object.keys(m.reactions).length > 0) {
             const rxDiv = document.createElement("div");
             rxDiv.className = "message-reactions";
             rxDiv.textContent = Object.values(m.reactions).join(" ");
-            msgDiv.appendChild(rxDiv);
+            wrapper.appendChild(rxDiv);
         }
-        
-        wrapper.appendChild(msgDiv);
         
         const picker=document.createElement("div");
         picker.className="reaction-picker";
