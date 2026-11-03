@@ -31,7 +31,6 @@
       appId: "1:1040280362414:web:9fffa61fd30123ec267c3f"
   };
 
-  // Khởi tạo Firebase[cite: 1]
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
 
@@ -510,6 +509,8 @@ setTimeout(() => {
                 } else {
                     let existing = users.find(u => u.email === currentUser.email);
                     currentUser.id = existing.id;
+                    existing.name = currentUser.name;
+                    save();
                 }
                 openApp();
             } else {
@@ -729,7 +730,7 @@ async function sharePost(id){
     }
 }
 
-/* SEARCH THỰC TẾ (Tài khoản và bài viết) */
+/* SEARCH THỰC TẾ */
 function searchEverything(){
     const q=searchInput.value.toLowerCase().trim();
     if(!q){ searchResults.innerHTML=""; return; }
@@ -764,7 +765,7 @@ function searchEverything(){
     searchResults.innerHTML = html || `<p style="color:var(--muted);margin-top:15px">Không tìm thấy kết quả nào phù hợp.</p>`;
 }
 
-/* FRIENDS */
+/* FRIENDS & REQUESTS (Đã fix hiển thị thông tin người gửi chuẩn xác) */
 function areFriends(a,b){
     return friendships.some(f => (f.a===a && f.b===b) || (f.a===b && f.b===a));
 }
@@ -805,11 +806,13 @@ function renderRequests(){
     if(!mine.length){ requests.innerHTML=`<p style="color:var(--muted);margin-top:10px">Không có lời mời mới.</p>`; return; }
     document.getElementById("requests").innerHTML=mine.map(r=>{
         const u=users.find(x=>x.id===r.from);
+        const displayName = u ? u.name : "Thành viên Nova";
+        const displayEmail = u ? u.email : r.from;
         return`
         <div class="friend-result">
             <div>
-                <div class="friend-name">${escapeHTML(u?.name||"Unknown")}</div>
-                <div class="friend-email">${escapeHTML(u?.email||"")}</div>
+                <div class="friend-name">${escapeHTML(displayName)}</div>
+                <div class="friend-email">${escapeHTML(displayEmail)}</div>
             </div>
             <div style="display:flex;gap:5px">
                 <button class="primary" onclick="acceptFriend('${r.id}')">✓</button>
