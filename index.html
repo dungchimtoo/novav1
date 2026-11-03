@@ -6,6 +6,11 @@
     <title>NOVA - Mạng Xã Hội 0đ</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Firebase Compat SDK CDN (Đúng chuẩn cho HTML thuần) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800">
 
@@ -74,33 +79,9 @@
 
     </div>
 
-    <!-- Script Xử Lý Logic Firebase Modular SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { 
-            getAuth, 
-            signInWithEmailAndPassword, 
-            createUserWithEmailAndPassword, 
-            signOut, 
-            onAuthStateChanged 
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { 
-            getFirestore, 
-            collection, 
-            addDoc, 
-            doc, 
-            updateDoc, 
-            onSnapshot, 
-            orderBy, 
-            query, 
-            serverTimestamp, 
-            arrayUnion, 
-            arrayRemove, 
-            runTransaction,
-            getDoc 
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-        // Cấu hình Firebase chuẩn từ dự án NOVA
+    <!-- Script Xử Lý Logic -->
+    <script>
+        // CẤU HÌNH FIREBASE CHUẨN TỪ DỰ ÁN NOVA
         const firebaseConfig = {
             apiKey: "AIzaSyAvZQWFacocqYNuJH5YG7mrV_xuPVvfN8s",
             authDomain: "nova-9a504.firebaseapp.com",
@@ -111,33 +92,14 @@
         };
 
         // Khởi tạo Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
         let currentUser = null;
 
-        // Đưa các hàm ra biến toàn cục (window) để các nút bấm trong HTML gọi được
-        window.handleLogin = function() {
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-            if(!email || !password) return alert('Vui lòng nhập email và mật khẩu!');
-            signInWithEmailAndPassword(auth, email, password).catch(err => alert(err.message));
-        };
-
-        window.handleRegister = function() {
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-password').value;
-            if(!email || !password) return alert('Vui lòng nhập email và mật khẩu!');
-            createUserWithEmailAndPassword(auth, email, password).catch(err => alert(err.message));
-        };
-
-        window.handleLogout = function() {
-            signOut(auth);
-        };
-
-        // Quản lý trạng thái đăng nhập
-        onAuthStateChanged(auth, (user) => {
+        // Quản lý Trạng thái Đăng nhập
+        auth.onAuthStateChanged((user) => {
             if (user) {
                 currentUser = user;
                 document.getElementById('auth-screen').classList.add('hidden');
@@ -151,15 +113,33 @@
             }
         });
 
-        // Tạo bài viết mới
-        window.createNewPost = function() {
+        function handleLogin() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            if(!email || !password) return alert('Vui lòng nhập email và mật khẩu!');
+            auth.signInWithEmailAndPassword(email, password).catch(err => alert(err.message));
+        }
+
+        function handleRegister() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            if(!email || !password) return alert('Vui lòng nhập email và mật khẩu!');
+            auth.createUserWithEmailAndPassword(email, password).catch(err => alert(err.message));
+        }
+
+        function handleLogout() {
+            auth.signOut();
+        }
+
+        // Tạo Bài Viết Mới
+        function createNewPost() {
             const content = document.getElementById('post-input').value.trim();
             const mediaUrl = document.getElementById('post-media').value.trim();
             const isAnonymous = document.getElementById('post-anonymous').checked;
 
             if(!content) return alert('Nội dung bài viết không được để trống!');
 
-            addDoc(collection(db, 'posts'), {
+            db.collection('posts').add({
                 authorId: currentUser.uid,
                 authorEmail: isAnonymous ? 'Ẩn danh' : currentUser.email,
                 content: content,
@@ -167,18 +147,17 @@
                 isAnonymous: isAnonymous,
                 likes: [],
                 shares: 0,
-                createdAt: serverTimestamp()
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
                 document.getElementById('post-input').value = '';
                 document.getElementById('post-media').value = '';
                 document.getElementById('post-anonymous').checked = false;
             }).catch(err => alert(err.message));
-        };
+        }
 
-        // Tải bảng tin theo thời gian thực
+        // Tải Bảng Tin Thời Gian Thực
         function loadFeedPosts() {
-            const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
-            onSnapshot(q, (snapshot) => {
+            db.collection('posts').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
                 const feed = document.getElementById('feed-container');
                 feed.innerHTML = '';
                 
@@ -187,9 +166,9 @@
                     return;
                 }
 
-                snapshot.forEach((docSnap) => {
-                    const post = docSnap.data();
-                    const postId = docSnap.id;
+                snapshot.forEach((doc) => {
+                    const post = doc.data();
+                    const postId = doc.id;
                     const isLiked = post.likes && post.likes.includes(currentUser.uid);
 
                     let mediaContent = '';
@@ -210,7 +189,7 @@
                             <p class="text-sm text-slate-800 whitespace-pre-line">${post.content}</p>
                             ${mediaContent}
                             
-                            <!-- Tương tác -->
+                            <!-- Tương tác: Thích & Chia sẻ -->
                             <div class="flex gap-4 text-xs font-semibold text-slate-600 pt-2 border-t">
                                 <button onclick="toggleLike('${postId}', ${JSON.stringify(post.likes || [])})" class="${isLiked ? 'text-red-500 font-bold' : 'hover:text-red-500'}">
                                     ❤️ ${(post.likes || []).length} Thích
@@ -236,49 +215,45 @@
         }
 
         // Thả tim bài viết
-        window.toggleLike = function(postId, likes) {
-            const postRef = doc(db, 'posts', postId);
+        function toggleLike(postId, likes) {
+            const ref = db.collection('posts').doc(postId);
             if (likes.includes(currentUser.uid)) {
-                updateDoc(postRef, { likes: arrayRemove(currentUser.uid) });
+                ref.update({ likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) });
             } else {
-                updateDoc(postRef, { likes: arrayUnion(currentUser.uid) });
+                ref.update({ likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
             }
-        };
+        }
 
         // Chia sẻ bài viết
-        window.sharePost = function(postId) {
-            const postRef = doc(db, 'posts', postId);
-            runTransaction(db, async (transaction) => {
-                const sfDoc = await transaction.get(postRef);
-                if (!sfDoc.exists()) return;
-                const newShares = (sfDoc.data().shares || 0) + 1;
-                transaction.update(postRef, { shares: newShares });
-            }).then(() => alert('Đã chia sẻ bài viết thành công!'));
-        };
+        function sharePost(postId) {
+            const ref = db.collection('posts').doc(postId);
+            db.runTransaction(tx => tx.get(ref).then(doc => {
+                tx.update(ref, { shares: (doc.data().shares || 0) + 1 });
+            })).then(() => alert('Đã chia sẻ bài viết thành công!'));
+        }
 
         // Thêm bình luận
-        window.addComment = function(postId) {
+        function addComment(postId) {
             const input = document.getElementById(`comment-input-${postId}`);
             const text = input.value.trim();
             if(!text) return;
 
-            addDoc(collection(db, `posts/${postId}/comments`), {
+            db.collection(`posts/${postId}/comments`).add({
                 authorEmail: currentUser.email,
                 text: text,
-                createdAt: serverTimestamp()
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
                 input.value = '';
             });
-        };
+        }
 
         // Hiển thị bình luận thời gian thực
         function loadComments(postId) {
-            const q = query(collection(db, `posts/${postId}/comments`), orderBy('createdAt', 'asc'));
-            onSnapshot(q, (snapshot) => {
+            db.collection(`posts/${postId}/comments`).orderBy('createdAt', 'asc').onSnapshot((snapshot) => {
                 const container = document.getElementById(`comments-${postId}`);
                 container.innerHTML = '';
-                snapshot.forEach((docSnap) => {
-                    const c = docSnap.data();
+                snapshot.forEach((doc) => {
+                    const c = doc.data();
                     container.innerHTML += `
                         <div class="bg-slate-50 p-2 rounded-lg">
                             <span class="font-bold text-slate-700">${c.authorEmail}:</span> ${c.text}
@@ -288,10 +263,10 @@
             });
         }
 
-        window.switchTab = function(tabName) {
+        function switchTab(tabName) {
             if(tabName === 'home') return;
             alert(`Tính năng [${tabName.toUpperCase()}] đang được phát triển tiếp theo theo yêu cầu của bạn!`);
-        };
+        }
     </script>
 </body>
 </html>
