@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -323,7 +322,10 @@ h2{font-size:20px}
  <div class="chat-box">
   <div class="chat-head">
    <div class="chat-title" id="chatTitle">Chưa chọn cuộc trò chuyện</div>
-   <button class="secondary" style="padding:6px 10px;font-size:13px" onclick="toggleKeyPanel()">🔐 Mã</button>
+   <div style="display:flex;gap:6px;">
+    <button class="secondary" style="padding:6px 10px;font-size:13px" onclick="toggleKeyPanel()">🔐 Mã</button>
+    <button class="secondary" style="padding:6px 10px;font-size:13px;color:var(--danger);border-color:var(--danger);" onclick="lockChat()">🔒 Khóa lại</button>
+   </div>
   </div>
   <div id="keyPanel" class="chat-key">
    <div class="key-title">MÃ CUỘC TRÒ CHUYỆN — 24 KÝ TỰ (chỉ lưu trên máy bạn)</div>
@@ -622,7 +624,6 @@ async function ensureUserDoc(user){
     return { name, email, emailLower: email };
   }
   const data = snap.data();
-  // Chuẩn hóa các hồ sơ cũ để có thể tìm bằng Gmail khi thêm bạn vào group.
   const patch = {};
   if (email && data.email !== email) patch.email = email;
   if (email && data.emailLower !== email) patch.emailLower = email;
@@ -1049,10 +1050,7 @@ function attachMessages(){
   renderMessages();
 }
 
-// CẬP NHẬT RENDER TIN NHẮN KÈM GIAO DIỆN KHÓA / MỞ KHÓA
 async function renderMessages(stick){
-  // Tăng token NGAY khi bắt đầu render để mọi lần giải mã cũ bị hủy,
-  // kể cả khi cuộc trò chuyện vừa chuyển sang trạng thái khóa.
   const token = ++renderToken;
   const box = $("messages"); const win = $("chatWindow");
   const composer = document.querySelector("#chat .chat-input");
@@ -1071,10 +1069,8 @@ async function renderMessages(stick){
   $("chatKey").textContent = key || "🔒 Chưa mở khóa";
   $("keyActions").style.display = key ? "flex" : "none";
 
-  // Khi khóa: ẩn toàn bộ nội dung tin nhắn và thanh gửi tin/ảnh.
   if (composer) composer.style.display = key ? "flex" : "none";
 
-  // HIỂN THỊ KHUNG NHẬP MÃ TRỰC TIẾP NẾU CHƯA CÓ KEY
   if (!key) {
     box.innerHTML = `
       <div style="padding: 30px 20px; text-align: center; background: var(--input-bg); border-radius: 14px; margin: 15px; border: 1px dashed var(--purple); display: flex; flex-direction: column; align-items: center; gap: 12px;">
@@ -1142,7 +1138,6 @@ async function renderMessages(stick){
   if (stick || nearBottom) win.scrollTop = win.scrollHeight;
 }
 
-// Đảm bảo có các hàm xử lý khóa và mở khóa này trong script:
 window.submitDirectUnlock = async () => {
   const c = curChat(); if (!c) return;
   const inputEl = document.getElementById('directUnlockInput');
@@ -1159,7 +1154,6 @@ window.submitDirectUnlock = async () => {
 
 window.lockChat = () => {
   const c = curChat(); if (!c) return;
-  // Xóa quyền giải mã trên thiết bị này và vô hiệu hóa mọi lần render đang chạy.
   renderToken++;
   forgetKey(c.id);
   const box = $("messages");
@@ -1375,40 +1369,54 @@ window.kickMember = async (gid, uid) => {
 
 window.addMemberToGroup = async gid => {
   const input = $("add-member-" + gid); if (!input) return;
-  const email = input.value.trim().toLowerCase();
-  if (!email) { toast("Nhập Gmail người cần thêm"); return; }
+  const inputVal = input.value.trim().toLowerCase();
+  if (!inputVal) { toast("Nhập Gmail hoặc tên người cần thêm"); return; }
   const g = chats.find(c => c.id === gid); if (!g) return;
   if (g.owner !== me.id) { toast("Chỉ chủ group được thêm thành viên"); return; }
+  
   try {
     let uid = null;
 
-    // Ưu tiên đối chiếu danh sách bạn bè theo UID; cách này vẫn nhận ra
-    // tài khoản cũ dù hồ sơ Firestore chưa có trường emailLower.
     for (const friendship of friendships) {
       const friendUid = friendship.members.find(id => id !== me.id);
       if (!friendUid) continue;
       const friend = await getUser(friendUid);
-      if ((friend.email || "").trim().toLowerCase() === email) {
+      const fEmail = (friend.email || "").trim().toLowerCase();
+      const fName = (friend.name || "").trim().toLowerCase();
+      if (fEmail === inputVal || fName.includes(inputVal)) {
         uid = friendUid;
         break;
       }
     }
 
-    // Tìm theo emailLower (tài khoản mới), sau đó email (hồ sơ cũ).
     if (!uid) {
-      let s = await getDocs(query(collection(db,"users"), where("emailLower","==",email), limit(1)));
-      if (s.empty) s = await getDocs(query(collection(db,"users"), where("email","==",email), limit(1)));
+      let s = await getDocs(query(collection(db,"users"), where("emailLower","==",inputVal), limit(1)));
+      if (s.empty) s = await getDocs(query(collection(db,"users"), where("email","==",inputVal), limit(1)));
       if (!s.empty) uid = s.docs[0].id;
     }
 
-    if (!uid) { toast("Không tìm thấy tài khoản NOVA bằng Gmail này. Hãy kiểm tra Gmail hoặc chọn đúng bạn bè."); return; }
+    if (!uid) { 
+      toast("Không tìm thấy tài khoản NOVA này. Hãy kiểm tra lại Gmail hoặc tên."); 
+      return; 
+    }
     if (uid === me.id) { toast("Bạn không thể tự thêm chính mình"); return; }
-    if (g.members.includes(uid)) { toast("Người này đã có trong group"); return; }
+    if (g.members.includes(uid)) { toast("Người này đã có trong group rồi"); return; }
+
     await updateDoc(doc(db,"chats",gid), { members: arrayUnion(uid) });
-    await addDoc(collection(db,"notifications"), { to: uid, type: "group_add", text: `${me.name} đã thêm bạn vào group "${g.name}". Hãy xin mã từ chủ group để mở khóa tin nhắn.`, read: false, createdAt: serverTimestamp() });
+    await addDoc(collection(db,"notifications"), { 
+      to: uid, 
+      type: "group_add", 
+      text: `${me.name} đã thêm bạn vào group "${g.name}". Hãy xin mã từ chủ group để mở khóa tin nhắn.`, 
+      read: false, 
+      createdAt: serverTimestamp() 
+    });
+    
     input.value = "";
-    toast("Đã thêm thành viên ✓ Gửi mã group cho họ");
-  } catch (e) { console.error("addMemberToGroup error:", e); toast("Thêm thất bại — kiểm tra quyền Firestore và kết nối mạng"); }
+    toast("Đã thêm thành viên thành công ✓");
+  } catch (e) { 
+    console.error("addMemberToGroup error:", e); 
+    toast("Thêm thất bại — kiểm tra lại kết nối mạng"); 
+  }
 };
 
 window.leaveGroup = async gid => {
