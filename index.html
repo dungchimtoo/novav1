@@ -2,1191 +2,1050 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>NOVA - Mạng Xã Hội</title>
 
-<!-- Tailwind CSS CDN -->
-<script src="https://cdn.tailwindcss.com"></script>
-
-<!-- Firebase SDK chuẩn từ cấu hình dự án của bạn -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { 
-      getAuth, 
-      signInWithEmailAndPassword, 
-      createUserWithEmailAndPassword, 
-      signOut, 
-      onAuthStateChanged,
-      GoogleAuthProvider,
-      signInWithPopup 
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-  const firebaseConfig = {
-      apiKey: "AIzaSyAvZQWFacocqYNuJH5YG7mrV_xuPVvfN8s",
-      authDomain: "nova-9a504.firebaseapp.com",
-      projectId: "nova-9a504",
-      storageBucket: "nova-9a504.firebasestorage.app",
-      messagingSenderId: "1040280362414",
-      appId: "1:1040280362414:web:9fffa61fd30123ec267c3f"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  window.fbAuth = auth;
-  window.fbSignInWithEmailAndPassword = signInWithEmailAndPassword;
-  window.fbCreateUserWithEmailAndPassword = createUserWithEmailAndPassword;
-  window.fbSignOut = signOut;
-  window.fbOnAuthStateChanged = onAuthStateChanged;
-  window.fbGoogleProvider = new GoogleAuthProvider();
-  window.fbSignInWithPopup = signInWithPopup;
-</script>
-
 <style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
-body{background:#050507;color:#fff;min-height:100vh;transition:background 0.3s, color 0.3s}
-button,input,textarea{font:inherit}
-button{cursor:pointer}
-
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 :root{
- --bg:#050507;
- --card-bg:#0d0d12;
- --text:#fff;
- --muted:#777;
- --border:#272731;
- --input-bg:#15151c;
- --purple:#9b4dff;
+ --bg:#050507;--card-bg:#0d0d12;--text:#fff;--muted:#8a8a99;--border:#272731;
+ --input-bg:#15151c;--purple:#9b4dff;--bubble-me:#6d28d9;--danger:#ff5875;
 }
-
 body.light{
- --bg:#f3f4f6;
- --card-bg:#ffffff;
- --text:#1f2937;
- --muted:#6b7280;
- --border:#e5e7eb;
- --input-bg:#f9fafb;
+ --bg:#f3f4f6;--card-bg:#ffffff;--text:#1f2937;--muted:#6b7280;--border:#e5e7eb;
+ --input-bg:#f3f4f6;--bubble-me:#7c3aed;
 }
+body{background:var(--bg);color:var(--text);min-height:100vh;transition:background .3s,color .3s}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+h2{font-size:20px}
 
-body{ background:var(--bg); color:var(--text); }
-
-#auth{
- min-height:100vh;display:flex;align-items:center;
- justify-content:center;padding:20px;
- background:radial-gradient(circle at 50% 20%,#6d28d933,transparent 38%),var(--bg)
-}
-
-.auth-box{
- width:100%;max-width:420px;background:var(--card-bg);
- border:1px solid var(--border);border-radius:25px;padding:30px;
- box-shadow:0 0 60px #8d3cff18
-}
-
-.nova-logo{
- position:relative;width:115px;height:105px;margin:0 auto 5px
-}
-.nova-logo .n{
- position:absolute;left:30px;top:13px;
- font-size:70px;font-weight:900;font-style:italic;
- color:#b77aff;
- text-shadow:0 0 8px #a855f7,0 0 30px #7c3aed;
- z-index:2
-}
-.orbit{
- position:absolute;left:4px;top:31px;width:108px;height:42px;
- border:4px solid #a855f7;border-radius:50%;
- transform:rotate(-25deg);
- box-shadow:0 0 10px #9333ea,0 0 25px #7c3aed;
- z-index:3
-}
-.star{
- position:absolute;right:3px;top:3px;color:#dfc5ff;
- font-size:19px;text-shadow:0 0 12px #c084fc;z-index:4
-}
-.wordmark{
- text-align:center;letter-spacing:8px;font-size:24px;
- font-weight:bold;color:#d5b5ff;text-shadow:0 0 15px #8b5cf6;
- margin-bottom:8px
-}
-
+/* AUTH */
+#auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+ background:radial-gradient(circle at 50% 20%,#6d28d933,transparent 38%),var(--bg)}
+.auth-box{width:100%;max-width:420px;background:var(--card-bg);border:1px solid var(--border);
+ border-radius:25px;padding:30px;box-shadow:0 0 60px #8d3cff18}
+.nova-logo{position:relative;width:115px;height:105px;margin:0 auto 5px}
+.nova-logo .n{position:absolute;left:30px;top:13px;font-size:70px;font-weight:900;font-style:italic;
+ color:#b77aff;text-shadow:0 0 8px #a855f7,0 0 30px #7c3aed;z-index:2}
+.orbit{position:absolute;left:4px;top:31px;width:108px;height:42px;border:4px solid #a855f7;border-radius:50%;
+ transform:rotate(-25deg);box-shadow:0 0 10px #9333ea,0 0 25px #7c3aed;z-index:3}
+.star{position:absolute;right:3px;top:3px;color:#dfc5ff;font-size:19px;text-shadow:0 0 12px #c084fc;z-index:4}
+.wordmark{text-align:center;letter-spacing:8px;font-size:24px;font-weight:bold;color:#d5b5ff;
+ text-shadow:0 0 15px #8b5cf6;margin-bottom:8px}
 .subtitle{text-align:center;color:var(--muted);margin-bottom:25px}
-
-.input{
- width:100%;background:var(--input-bg);color:var(--text);
- border:1px solid var(--border);padding:13px;
- border-radius:12px;margin-bottom:11px;outline:none
-}
+.input{width:100%;background:var(--input-bg);color:var(--text);border:1px solid var(--border);
+ padding:13px;border-radius:12px;margin-bottom:11px;outline:none}
 .input:focus{border-color:var(--purple)}
-
-.primary{
- border:0;background:linear-gradient(135deg,#7628e8,#b866ff);
- color:#fff;padding:13px;border-radius:12px;font-weight:bold
-}
+.primary{border:0;background:linear-gradient(135deg,#7628e8,#b866ff);color:#fff;padding:12px 16px;
+ border-radius:12px;font-weight:bold;transition:opacity .2s}
+.primary:hover{opacity:.9}
+.primary:disabled{opacity:.5;cursor:not-allowed}
 .full{width:100%}
-
-.secondary{
- border:1px solid var(--border);background:var(--input-bg);
- color:var(--text);padding:12px;border-radius:12px
-}
-
+.secondary{border:1px solid var(--border);background:var(--input-bg);color:var(--text);padding:11px 14px;border-radius:12px}
+.secondary:hover{border-color:var(--purple)}
+.danger-btn{background:var(--danger);color:#fff;border:0;border-radius:8px;padding:5px 10px;font-size:12px}
 .switch{text-align:center;color:var(--muted);margin-top:17px;font-size:14px}
 .switch span{color:#b875ff;cursor:pointer}
+.err{color:var(--danger);font-size:13px;margin:-4px 0 10px;min-height:0}
 
 /* APP */
 #app{display:none;min-height:100vh}
-
-.topbar{
- height:70px;position:sticky;top:0;z-index:20;
- display:flex;align-items:center;justify-content:space-between;
- padding:0 17px;background:var(--card-bg);
- border-bottom:1px solid var(--border);backdrop-filter:blur(15px)
-}
-
+.topbar{height:64px;position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;
+ padding:0 17px;background:var(--card-bg);border-bottom:1px solid var(--border)}
 .mini-logo{display:flex;align-items:center;gap:2px}
-.mini-n{
- font-size:28px;font-weight:900;font-style:italic;color:#b77aff;
- text-shadow:0 0 8px #a855f7
-}
+.mini-n{font-size:28px;font-weight:900;font-style:italic;color:#b77aff;text-shadow:0 0 8px #a855f7}
 .mini-word{font-size:18px;letter-spacing:4px;color:#d2b0ff;font-weight:bold}
+.top-actions{display:flex;gap:8px}
+.icon-btn{position:relative;width:40px;height:40px;border-radius:50%;border:1px solid var(--border);
+ background:var(--input-bg);color:var(--text);font-size:16px}
+.badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;border-radius:9px;background:var(--danger);
+ color:#fff;font-size:11px;display:none;align-items:center;justify-content:center;padding:0 4px;font-weight:bold}
+.badge.show{display:flex}
 
-.icon-btn{
- width:40px;height:40px;border-radius:50%;
- border:1px solid var(--border);background:var(--input-bg);color:var(--text)
-}
-
-.main{max-width:720px;margin:auto;padding:20px 15px 90px}
+.main{max-width:720px;margin:auto;padding:18px 14px 96px}
 .page{display:none}.page.active{display:block}
-
-.card{
- background:var(--card-bg);border:1px solid var(--border);
- border-radius:18px;padding:16px;margin-bottom:14px
-}
-
-.create textarea{
- width:100%;min-height:95px;resize:none;
- background:var(--input-bg);border:1px solid var(--border);
- color:var(--text);border-radius:14px;padding:13px;outline:none
-}
-
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.anonymous{color:#ad70ff;font-size:13px}
+.muted{color:var(--muted);font-size:13px}
+.empty{text-align:center;color:var(--muted);padding:22px}
 
-.post-head{display:flex;justify-content:space-between;margin-bottom:8px}
+/* POSTS */
+.create textarea{width:100%;min-height:90px;resize:none;background:var(--input-bg);border:1px solid var(--border);
+ color:var(--text);border-radius:14px;padding:13px;outline:none}
+.create textarea:focus{border-color:var(--purple)}
+.anonymous{color:#ad70ff;font-size:13px}
+.post-head{display:flex;justify-content:space-between;margin-bottom:6px}
 .user{color:#bd87ff;font-weight:bold}
 .time{color:var(--muted);font-size:12px}
-.post-id{font-size:11px;color:var(--muted);margin:4px 0 12px}
-.post-text{line-height:1.6;white-space:pre-wrap}
-
+.post-id{font-size:11px;color:var(--muted);margin:2px 0 10px}
+.post-text{line-height:1.6;white-space:pre-wrap;word-break:break-word}
 .actions{display:flex;gap:7px;margin-top:14px}
-.action{
- flex:1;background:var(--input-bg);border:1px solid var(--border);
- color:var(--muted);padding:9px;border-radius:10px
-}
+.action{flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);padding:9px;border-radius:10px}
 .action:hover{border-color:#8b45ed;color:var(--text)}
-
+.action.liked{color:#ff6b9a;border-color:#ff6b9a}
 .comments{border-top:1px solid var(--border);margin-top:13px;padding-top:10px}
-.comment{background:var(--input-bg);padding:9px;border-radius:9px;margin-top:7px;font-size:14px}
+.comment{background:var(--input-bg);padding:9px;border-radius:9px;margin-top:7px;font-size:14px;word-break:break-word}
 .comment-box{display:flex;gap:7px;margin-top:9px}
-.comment-box input{
- flex:1;background:var(--input-bg);border:1px solid var(--border);
- color:var(--text);border-radius:9px;padding:9px
-}
-.comment-box button{background:#7628e8;color:white;border:0;border-radius:9px;padding:0 13px}
+.comment-box input{flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px;outline:none}
+.comment-box button{background:#7628e8;color:#fff;border:0;border-radius:9px;padding:0 13px}
 
-/* FRIENDS */
+/* LISTS */
+.item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--input-bg);
+ border:1px solid var(--border);padding:12px;border-radius:12px;margin-top:10px}
+.item-left{display:flex;align-items:center;gap:11px;min-width:0}
+.item-name{font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item-sub{font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis}
+.mini-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6725cc,#c275ff);
+ display:flex;align-items:center;justify-content:center;font-weight:bold;color:#fff;flex-shrink:0}
+.group-logo-badge{width:45px;height:45px;border-radius:14px;background:linear-gradient(135deg,#7628e8,#b866ff);
+ display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:20px;color:#fff;
+ box-shadow:0 0 12px #7c3aed55;flex-shrink:0}
+.btn-row{display:flex;gap:6px;flex-shrink:0}
 .search-friend{display:flex;gap:8px}
-.search-friend input{flex:1}
-.friend-result{
- display:flex;align-items:center;justify-content:space-between;
- gap:10px;background:var(--input-bg);border:1px solid var(--border);
- padding:12px;border-radius:12px;margin-top:10px
-}
-.friend-name{font-weight:bold}
-.friend-email{font-size:12px;color:var(--muted);margin-top:3px}
+.search-friend input{flex:1;margin-bottom:0}
+.pick{display:flex;align-items:center;gap:8px;padding:8px 4px;font-size:14px}
+.pick input{accent-color:#8b45ed;width:16px;height:16px}
 
 /* CHAT */
-.chat-tabs{display:flex;gap:8px;overflow:auto;margin-bottom:12px}
-.chat-tab{
- white-space:nowrap;background:var(--card-bg);color:var(--muted);
- border:1px solid var(--border);border-radius:20px;padding:9px 13px
-}
-.chat-tab.active{color:var(--text);border-color:#914cff}
-
-.chat-window{
- height:calc(100vh - 255px);min-height:330px;
- background:var(--input-bg);border:1px solid var(--border);
- border-radius:18px;padding:13px;overflow-y:auto
-}
-
-.chat-key{
- background:var(--card-bg);border:1px solid #713bc0;
- border-radius:13px;padding:11px;margin-bottom:13px
-}
+.chat-tabs{display:flex;gap:8px;overflow:auto;margin:12px 0;padding-bottom:4px}
+.chat-tab{white-space:nowrap;background:var(--card-bg);color:var(--muted);border:1px solid var(--border);
+ border-radius:20px;padding:9px 14px}
+.chat-tab.active{color:var(--text);border-color:#914cff;background:var(--input-bg)}
+.chat-box{background:var(--input-bg);border:1px solid var(--border);border-radius:18px;overflow:hidden}
+.chat-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;
+ background:var(--card-bg);border-bottom:1px solid var(--border)}
+.chat-title{font-weight:bold}
+.chat-window{height:calc(100vh - 370px);min-height:300px;padding:13px;overflow-y:auto}
+.chat-key{background:var(--card-bg);border-bottom:1px solid #713bc0;padding:11px 14px;display:none}
+.chat-key.open{display:block}
 .key-title{font-size:11px;color:var(--muted)}
-.key-value{
- color:#c994ff;font-weight:bold;letter-spacing:2px;
- word-break:break-all;margin-top:5px;font-size:13px
-}
+.key-value{color:#c994ff;font-weight:bold;letter-spacing:2px;word-break:break-all;margin-top:5px;font-size:13px}
 .key-actions{display:flex;gap:7px;margin-top:8px}
-.key-actions button{
- background:var(--input-bg);border:1px solid var(--border);
- color:#c994ff;border-radius:8px;padding:7px 9px
-}
+.key-actions button{background:var(--input-bg);border:1px solid var(--border);color:#c994ff;border-radius:8px;padding:7px 9px}
+.day-sep{text-align:center;color:var(--muted);font-size:11px;margin:14px 0 6px}
+.message-wrapper{margin:8px 0;display:flex;flex-direction:column;position:relative}
+.message-wrapper.me{align-items:flex-end}
+.message-wrapper.other{align-items:flex-start}
+.sender-name{font-size:11px;color:var(--muted);margin:0 6px 2px}
+.msg-line{display:flex;align-items:center;gap:6px;max-width:100%}
+.message-wrapper.me .msg-line{flex-direction:row-reverse}
+.message{max-width:100%;padding:9px 13px;border-radius:16px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
+.message.me{background:var(--bubble-me);color:#fff;border-bottom-right-radius:5px}
+.message.other{background:var(--card-bg);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:5px}
+.msg-line .bubble-wrap{max-width:78%}
+.msg-tools{display:none;gap:4px}
+.message-wrapper:hover .msg-tools,.message-wrapper.open .msg-tools{display:flex}
+.tool-btn{background:var(--card-bg);border:1px solid var(--border);color:var(--muted);border-radius:50%;width:26px;height:26px;font-size:12px}
+.msg-time{font-size:10px;color:var(--muted);margin:2px 6px 0}
+.reaction-picker{display:none;gap:6px;background:var(--card-bg);border:1px solid var(--border);padding:5px 10px;
+ border-radius:20px;margin-top:4px;font-size:18px;box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:10}
+.message-wrapper.open .reaction-picker{display:flex}
+.reaction-picker span{cursor:pointer}
+.reactions{display:flex;gap:4px;margin-top:3px;flex-wrap:wrap}
+.chip{font-size:12px;background:var(--card-bg);padding:2px 8px;border-radius:12px;border:1px solid var(--border);cursor:pointer}
+.chip.mine{border-color:#9b4dff}
+.chat-input{display:flex;gap:8px;padding:10px;background:var(--card-bg);border-top:1px solid var(--border)}
+.chat-input input{flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--text);
+ border-radius:12px;padding:12px;outline:none}
+.chat-input input:focus{border-color:var(--purple)}
+.chat-input button{background:#7b2cff;color:#fff;border:0;border-radius:12px;padding:0 18px}
 
-.message-wrapper{
- margin:12px 0; display:flex; flex-direction:column; position:relative;
-}
-.message-wrapper.me{ align-items:flex-end; }
-.message-wrapper.other{ align-items:flex-start; }
-
-.message{
- max-width:78%;padding:10px 14px;border-radius:16px;
- line-height:1.5;word-break:break-word; position:relative;
-}
-.message.me{background:#6d28d9;color:#fff}
-.message.other{background:var(--card-bg);color:var(--text)}
-
-.message-reactions{
- display:flex; gap:3px; margin-top:3px; font-size:13px; background:var(--card-bg);
- padding:2px 8px; border-radius:12px; border:1px solid var(--border); width:fit-content;
-}
-.reaction-picker{
- display:none; gap:6px; background:var(--card-bg); border:1px solid var(--border);
- padding:5px 10px; border-radius:20px; margin-top:4px; font-size:18px;
- box-shadow:0 4px 12px rgba(0,0,0,0.3); z-index:10;
-}
-.message-wrapper:hover .reaction-picker{ display:flex; }
-
-/* GROUP LOGO & BADGES */
-.group-logo-badge{
- width:45px; height:45px; border-radius:14px; background:linear-gradient(135deg,#7628e8,#b866ff);
- display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:20px; color:#fff;
- box-shadow:0 0 12px #7c3aed55; flex-shrink:0;
-}
-
-.chat-input{display:flex;gap:8px;margin-top:9px}
-.chat-input input{
- flex:1;background:var(--card-bg);border:1px solid var(--border);
- color:var(--text);border-radius:12px;padding:13px
-}
-.chat-input button{
- background:#7b2cff;color:#fff;border:0;border-radius:12px;padding:0 18px
-}
-
-/* PROFILE */
+/* PROFILE / SETTINGS */
 .profile{text-align:center}
-.avatar{
- width:78px;height:78px;border-radius:50%;
- background:linear-gradient(135deg,#6725cc,#c275ff);
- display:flex;align-items:center;justify-content:center;
- margin:0 auto 12px;font-size:30px;font-weight:bold;color:#fff
-}
+.avatar{width:78px;height:78px;border-radius:50%;background:linear-gradient(135deg,#6725cc,#c275ff);
+ display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:30px;font-weight:bold;color:#fff}
 .profile-name{font-size:22px;font-weight:bold}
-.muted{color:var(--muted);font-size:13px}
+.setting{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);gap:10px}
+.setting:last-child{border-bottom:0}
+.danger{color:var(--danger)}
 
-/* SETTINGS */
-.setting{
- display:flex;justify-content:space-between;
- align-items:center;padding:14px 0;border-bottom:1px solid var(--border)
-}
-.danger{color:#ff5875}
-
-/* BOTTOM */
-.bottom-nav{
- position:fixed;bottom:0;left:0;right:0;height:66px;
- display:flex;justify-content:space-around;align-items:center;
- background:var(--card-bg);border-top:1px solid var(--border);
- backdrop-filter:blur(15px);z-index:30
-}
-.nav-btn{background:none;border:0;color:var(--muted);font-size:11px}
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:66px;padding-bottom:env(safe-area-inset-bottom);
+ display:flex;justify-content:space-around;align-items:center;background:var(--card-bg);border-top:1px solid var(--border);z-index:30}
+.nav-btn{background:none;border:0;color:var(--muted);font-size:11px;position:relative}
 .nav-btn.active{color:#bd7fff}
 .nav-icon{display:block;font-size:21px;margin-bottom:2px}
+.dot{position:absolute;top:-2px;right:-2px;width:9px;height:9px;border-radius:50%;background:var(--danger);display:none}
+.dot.show{display:block}
 
-/* TOAST */
-#toast{
- position:fixed;left:50%;bottom:82px;
- transform:translate(-50%,20px);
- background:var(--card-bg);border:1px solid #703bb2;
- color:var(--text);
- padding:10px 15px;border-radius:11px;
- opacity:0;pointer-events:none;transition:.25s;z-index:100
-}
+#toast{position:fixed;left:50%;bottom:82px;transform:translate(-50%,20px);background:var(--card-bg);border:1px solid #703bb2;
+ color:var(--text);padding:10px 15px;border-radius:11px;opacity:0;pointer-events:none;transition:.25s;z-index:100;max-width:90%;text-align:center}
 #toast.show{opacity:1;transform:translate(-50%,0)}
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200;
+ color:#c994ff;letter-spacing:6px;font-weight:bold}
 </style>
 </head>
 
 <body>
+<div id="loading">NOVA…</div>
 
 <!-- ================= AUTH ================= -->
-<section id="auth">
+<section id="auth" style="display:none">
 <div class="auth-box">
-<div class="nova-logo">
- <div class="n">N</div>
- <div class="orbit"></div>
- <div class="star">✦</div>
-</div>
-<div class="wordmark">NOVA</div>
-<div class="subtitle">Mạng xã hội ẩn danh</div>
+ <div class="nova-logo"><div class="n">N</div><div class="orbit"></div><div class="star">✦</div></div>
+ <div class="wordmark">NOVA</div>
+ <div class="subtitle">Mạng xã hội ẩn danh</div>
 
-<div id="loginForm">
-<input id="loginEmail" class="input" type="email" placeholder="Gmail">
-<input id="loginPassword" class="input" type="password" placeholder="Mật khẩu">
-<button class="primary full" onclick="login()">Đăng nhập</button>
-<button class="secondary full" style="margin-top:10px" onclick="googleLogin()">🌐 Tiếp tục với Google</button>
-<div class="switch">Chưa có tài khoản? <span onclick="showRegister()">Đăng ký</span></div>
-</div>
+ <div id="loginForm">
+  <input id="loginEmail" class="input" type="email" placeholder="Gmail" autocomplete="email">
+  <input id="loginPassword" class="input" type="password" placeholder="Mật khẩu" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+  <div id="loginErr" class="err"></div>
+  <button class="primary full" onclick="login()">Đăng nhập</button>
+  <button class="secondary full" style="margin-top:10px" onclick="googleLogin()">🌐 Tiếp tục với Google</button>
+  <div class="switch"><span onclick="resetPassword()">Quên mật khẩu?</span></div>
+  <div class="switch" style="margin-top:8px">Chưa có tài khoản? <span onclick="showRegister()">Đăng ký</span></div>
+ </div>
 
-<div id="registerForm" style="display:none">
-<input id="registerName" class="input" placeholder="Tên hiển thị">
-<input id="registerEmail" class="input" type="email" placeholder="Gmail">
-<input id="registerPassword" class="input" type="password" placeholder="Mật khẩu">
-<button class="primary full" onclick="register()">Tạo tài khoản</button>
-<div class="switch">Đã có tài khoản? <span onclick="showLogin()">Đăng nhập</span></div>
-</div>
+ <div id="registerForm" style="display:none">
+  <input id="registerName" class="input" placeholder="Tên hiển thị" maxlength="30">
+  <input id="registerEmail" class="input" type="email" placeholder="Gmail" autocomplete="email">
+  <input id="registerPassword" class="input" type="password" placeholder="Mật khẩu (tối thiểu 6 ký tự)" autocomplete="new-password">
+  <div id="registerErr" class="err"></div>
+  <button class="primary full" onclick="register()">Tạo tài khoản</button>
+  <div class="switch">Đã có tài khoản? <span onclick="showLogin()">Đăng nhập</span></div>
+ </div>
 </div>
 </section>
 
 <!-- ================= APP ================= -->
 <section id="app">
 <header class="topbar">
-<div class="mini-logo">
- <span class="mini-n">N</span>
- <span class="mini-word">NOVA</span>
-</div>
-<button class="icon-btn" onclick="showPage('settings')">⚙</button>
+ <div class="mini-logo"><span class="mini-n">N</span><span class="mini-word">NOVA</span></div>
+ <div class="top-actions">
+  <button class="icon-btn" onclick="showPage('notifications')">🔔<span id="notifBadge" class="badge">0</span></button>
+  <button class="icon-btn" onclick="showPage('settings')">⚙</button>
+ </div>
 </header>
 
 <main class="main">
 
 <!-- FEED -->
 <section id="home" class="page active">
-<div class="card create">
-<textarea id="postText" placeholder="Bạn đang nghĩ gì?"></textarea>
-<div class="row" style="margin-top:9px">
-<span class="anonymous">◉ Anonymous</span>
-<button class="primary" style="padding:9px 18px" onclick="createPost()">Đăng</button>
-</div>
-</div>
-<div id="feed"></div>
+ <div class="card create">
+  <textarea id="postText" maxlength="1000" placeholder="Bạn đang nghĩ gì?"></textarea>
+  <div class="row" style="margin-top:9px">
+   <span class="anonymous">◉ Anonymous</span>
+   <button class="primary" onclick="createPost()">Đăng</button>
+  </div>
+ </div>
+ <div id="feed"></div>
 </section>
 
 <!-- SEARCH -->
 <section id="search" class="page">
-<div class="card">
-<h2>🔎 Tìm kiếm tài khoản & bài viết</h2>
-<input id="searchInput" class="input" style="margin-top:15px" placeholder="Nhập từ khóa bài viết hoặc tên/gmail người dùng..." oninput="searchEverything()">
-<div id="searchResults"></div>
-</div>
+ <div class="card">
+  <h2>🔎 Tìm kiếm tài khoản & bài viết</h2>
+  <input id="searchInput" class="input" style="margin-top:15px" placeholder="Tên, Gmail hoặc nội dung bài viết..." oninput="searchEverything()">
+  <div id="searchResults"></div>
+ </div>
 </section>
 
 <!-- FRIENDS -->
 <section id="friends" class="page">
-<h2>👥 Bạn bè</h2>
-<div class="card" style="margin-top:15px">
-<p style="color:var(--muted);margin-bottom:12px">Nhập Gmail chính xác để tìm và kết bạn.</p>
-<div class="search-friend">
-<input id="friendEmail" class="input" placeholder="example@gmail.com">
-<button class="primary" onclick="findFriend()">Tìm</button>
-</div>
-<div id="friendResult"></div>
-</div>
-<div class="card">
-<h3>📨 Lời mời kết bạn</h3>
-<div id="requests" style="margin-top:10px"></div>
-</div>
-<div class="card">
-<h3>🤝 Bạn bè của bạn</h3>
-<div id="friendList" style="margin-top:10px"></div>
-</div>
+ <h2>👥 Bạn bè</h2>
+ <div class="card" style="margin-top:15px">
+  <p class="muted" style="margin-bottom:12px">Nhập Gmail chính xác của người đã đăng ký NOVA để kết bạn.</p>
+  <div class="search-friend">
+   <input id="friendEmail" class="input" placeholder="example@gmail.com" onkeydown="if(event.key==='Enter')findFriend()">
+   <button class="primary" onclick="findFriend()">Tìm</button>
+  </div>
+  <div id="friendResult"></div>
+ </div>
+ <div class="card"><h3>📨 Lời mời kết bạn</h3><div id="requests"></div></div>
+ <div class="card"><h3>🤝 Bạn bè của bạn</h3><div id="friendList"></div></div>
 </section>
 
 <!-- CHAT -->
 <section id="chat" class="page">
-<h2>💬 Chat</h2>
-<div id="chatTabs" class="chat-tabs" style="margin-top:14px"></div>
-<div class="chat-window">
-<div class="chat-key">
-<div class="key-title">🔐 MÃ CUỘC TRÒ CHUYỆN — 24 KÝ TỰ</div>
-<div id="chatKey" class="key-value">--</div>
-<div class="key-actions">
-<button onclick="copyChatKey()">📋 Copy</button>
-<button onclick="newChatKey()">🔄 Đổi mã</button>
-</div>
-</div>
-<div id="messages"></div>
-</div>
-<div class="chat-input">
-<input id="messageInput" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter')sendMessage()">
-<button onclick="sendMessage()">Gửi</button>
-</div>
+ <h2>💬 Chat</h2>
+ <div id="chatTabs" class="chat-tabs"></div>
+ <div class="chat-box">
+  <div class="chat-head">
+   <div class="chat-title" id="chatTitle">Chưa chọn cuộc trò chuyện</div>
+   <button class="secondary" style="padding:6px 10px;font-size:13px" onclick="toggleKeyPanel()">🔐 Mã</button>
+  </div>
+  <div id="keyPanel" class="chat-key">
+   <div class="key-title">MÃ CUỘC TRÒ CHUYỆN — 24 KÝ TỰ</div>
+   <div id="chatKey" class="key-value">--</div>
+   <div class="key-actions">
+    <button onclick="copyChatKey()">📋 Copy</button>
+    <button onclick="newChatKey()">🔄 Đổi mã</button>
+   </div>
+  </div>
+  <div class="chat-window" id="chatWindow"><div id="messages"></div></div>
+  <div class="chat-input">
+   <input id="messageInput" placeholder="Nhập tin nhắn..." autocomplete="off" onkeydown="if(event.key==='Enter')sendMessage()">
+   <button onclick="sendMessage()">Gửi</button>
+  </div>
+ </div>
 </section>
 
 <!-- GROUPS -->
 <section id="groups" class="page">
-<h2>👥 Group & Thành viên</h2>
-<div class="card" style="margin-top:15px">
-<input id="groupName" class="input" placeholder="Tên group mới">
-<button class="primary full" onclick="createGroup()">＋ Tạo group</button>
-</div>
-<div id="groupList"></div>
+ <h2>👥 Group & Thành viên</h2>
+ <div class="card" style="margin-top:15px">
+  <input id="groupName" class="input" placeholder="Tên group mới" maxlength="40">
+  <div class="muted" style="margin-bottom:4px">Chọn bạn bè để thêm vào group:</div>
+  <div id="groupPicker" style="max-height:170px;overflow:auto;margin-bottom:10px"></div>
+  <button class="primary full" onclick="createGroup()">＋ Tạo group</button>
+ </div>
+ <div id="groupList"></div>
 </section>
 
 <!-- NOTIFICATIONS -->
 <section id="notifications" class="page">
-<h2>🔔 Thông báo</h2>
-<div id="notificationList" style="margin-top:15px"></div>
+ <div class="row"><h2>🔔 Thông báo</h2><button class="secondary" style="padding:7px 12px;font-size:13px" onclick="markAllRead()">Đã đọc hết</button></div>
+ <div id="notificationList" style="margin-top:15px"></div>
 </section>
 
 <!-- PROFILE -->
 <section id="profile" class="page">
-<div class="card profile">
-<div id="avatar" class="avatar">N</div>
-<div id="profileName" class="profile-name">Nova</div>
-<div id="profileEmail" class="muted">--</div>
-</div>
-<div class="card">
-<div class="setting">
-<span>📝 Bài viết</span>
-<strong id="postCount">0</strong>
-</div>
-<div class="setting">
-<span>🤝 Bạn bè</span>
-<strong id="friendCount">0</strong>
-</div>
-</div>
+ <div class="card profile">
+  <div id="avatar" class="avatar">N</div>
+  <div id="profileName" class="profile-name">Nova</div>
+  <div id="profileEmail" class="muted">--</div>
+ </div>
+ <div class="card">
+  <div class="setting"><span>📝 Bài viết</span><strong id="postCount">0</strong></div>
+  <div class="setting"><span>🤝 Bạn bè</span><strong id="friendCount">0</strong></div>
+  <div class="setting"><span>👥 Group</span><strong id="groupCount">0</strong></div>
+ </div>
 </section>
 
 <!-- SETTINGS -->
 <section id="settings" class="page">
-<h2>⚙️ Cài đặt</h2>
-<div class="card" style="margin-top:15px">
-<div class="setting">
-<span>🌌 Giao diện (Sáng / Tối)</span>
-<button class="secondary" onclick="toggleTheme()" id="themeBtn">Chuyển Sáng</button>
-</div>
-<div class="setting">
-<span>🔐 Tin nhắn mã hóa</span>
-<span style="color:#bd7fff">AES-GCM</span>
-</div>
-<div class="setting">
-<span class="danger">Đăng xuất</span>
-<button class="secondary" onclick="logout()">Thoát</button>
-</div>
-</div>
+ <h2>⚙️ Cài đặt</h2>
+ <div class="card" style="margin-top:15px">
+  <div class="setting" style="flex-direction:column;align-items:stretch">
+   <span>✏️ Tên hiển thị</span>
+   <div class="search-friend" style="margin-top:8px">
+    <input id="newName" class="input" maxlength="30" placeholder="Tên mới">
+    <button class="primary" onclick="changeName()">Lưu</button>
+   </div>
+  </div>
+  <div class="setting"><span>🌌 Giao diện</span><button class="secondary" onclick="toggleTheme()" id="themeBtn">Chuyển Sáng</button></div>
+  <div class="setting"><span>🔐 Tin nhắn mã hóa</span><span style="color:#bd7fff">AES-GCM</span></div>
+  <div class="setting"><span class="danger">Đăng xuất</span><button class="secondary" onclick="logout()">Thoát</button></div>
+ </div>
 </section>
 
 </main>
 
 <nav class="bottom-nav">
-<button class="nav-btn active" onclick="showPage('home',this)"><span class="nav-icon">⌂</span>Feed</button>
-<button class="nav-btn" onclick="showPage('search',this)"><span class="nav-icon">⌕</span>Search</button>
-<button class="nav-btn" onclick="showPage('friends',this)"><span class="nav-icon">♧</span>Friends</button>
-<button class="nav-btn" onclick="showPage('chat',this)"><span class="nav-icon">◌</span>Chat</button>
-<button class="nav-btn" onclick="showPage('groups',this)"><span class="nav-icon">♧</span>Group</button>
-<button class="nav-btn" onclick="showPage('profile',this)"><span class="nav-icon">◉</span>Me</button>
+ <button class="nav-btn active" data-page="home" onclick="showPage('home')"><span class="nav-icon">⌂</span>Feed</button>
+ <button class="nav-btn" data-page="search" onclick="showPage('search')"><span class="nav-icon">⌕</span>Search</button>
+ <button class="nav-btn" data-page="friends" onclick="showPage('friends')"><span class="nav-icon">♧</span>Friends<span id="friendDot" class="dot"></span></button>
+ <button class="nav-btn" data-page="chat" onclick="showPage('chat')"><span class="nav-icon">◌</span>Chat</button>
+ <button class="nav-btn" data-page="groups" onclick="showPage('groups')"><span class="nav-icon">❖</span>Group</button>
+ <button class="nav-btn" data-page="profile" onclick="showPage('profile')"><span class="nav-icon">◉</span>Me</button>
 </nav>
 </section>
 
 <div id="toast"></div>
 
-<script>
-let users = JSON.parse(localStorage.getItem("nova_users") || "[]");
-let posts = JSON.parse(localStorage.getItem("nova_posts") || "[]");
-let currentUser = null;
-let friendships = JSON.parse(localStorage.getItem("nova_friendships") || "[]");
-let requests = JSON.parse(localStorage.getItem("nova_requests") || "[]");
-let chats = JSON.parse(localStorage.getItem("nova_chats") || "{}");
-let groups = JSON.parse(localStorage.getItem("nova_groups") || "[]");
-let notifications = JSON.parse(localStorage.getItem("nova_notifications") || "[]");
-let currentChat = null;
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged,
+  GoogleAuthProvider, signInWithPopup, updateProfile, sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, query, where, orderBy, limit,
+  onSnapshot, getDocs, serverTimestamp, arrayUnion, arrayRemove, deleteField, writeBatch
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAvZQWFacocqYNuJH5YG7mrV_xuPVvfN8s",
+  authDomain: "nova-9a504.firebaseapp.com",
+  projectId: "nova-9a504",
+  storageBucket: "nova-9a504.firebasestorage.app",
+  messagingSenderId: "1040280362414",
+  appId: "1:1040280362414:web:9fffa61fd30123ec267c3f"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+
+/* ===================== STATE ===================== */
+const $ = id => document.getElementById(id);
+let me = null;                 // {id,name,email}
+let unsubs = [];
+let posts = [], incoming = [], outgoing = [], friendships = [], chats = [], notifs = [];
+let currentChat = null, msgDocs = [], msgUnsub = null, renderToken = 0;
 let currentTheme = localStorage.getItem("nova_theme") || "dark";
+let currentPage = "home";
+let initialChatsLoaded = false;
+const userCache = new Map();
+const decCache = new Map();
+const openComments = new Set();
+const EMOJIS = ["❤️","👍","😂","😢","🔥","🎉"];
 
-if(currentTheme === "light") {
-    document.body.classList.add("light");
-    document.getElementById("themeBtn").textContent = "Chuyển Tối";
-}
+if (currentTheme === "light") document.body.classList.add("light");
+$("themeBtn").textContent = currentTheme === "light" ? "Chuyển Tối" : "Chuyển Sáng";
 
-function toggleTheme() {
-    if(document.body.classList.contains("light")) {
-        document.body.classList.remove("light");
-        localStorage.setItem("nova_theme", "dark");
-        document.getElementById("themeBtn").textContent = "Chuyển Sáng";
-    } else {
-        document.body.classList.add("light");
-        localStorage.setItem("nova_theme", "light");
-        document.getElementById("themeBtn").textContent = "Chuyển Tối";
-    }
-}
-
-setTimeout(() => {
-    if (window.fbOnAuthStateChanged) {
-        window.fbOnAuthStateChanged(window.fbAuth, (user) => {
-            if (user) {
-                currentUser = {
-                    id: user.uid,
-                    name: user.displayName || user.email.split('@')[0],
-                    email: user.email.toLowerCase()
-                };
-                if (!users.some(u => u.email === currentUser.email)) {
-                    users.push(currentUser);
-                    save();
-                } else {
-                    let existing = users.find(u => u.email === currentUser.email);
-                    currentUser.id = existing.id;
-                    existing.name = currentUser.name;
-                    save();
-                }
-                openApp();
-            } else {
-                currentUser = null;
-                document.getElementById('app').style.display="none";
-                document.getElementById('auth').style.display="flex";
-                showLogin();
-            }
-        });
-    }
-}, 500);
-
-function save(){
-    localStorage.setItem("nova_users",JSON.stringify(users));
-    localStorage.setItem("nova_posts",JSON.stringify(posts));
-    localStorage.setItem("nova_friendships",JSON.stringify(friendships));
-    localStorage.setItem("nova_requests",JSON.stringify(requests));
-    localStorage.setItem("nova_chats",JSON.stringify(chats));
-    localStorage.setItem("nova_groups",JSON.stringify(groups));
-    localStorage.setItem("nova_notifications",JSON.stringify(notifications));
-}
-
+/* ===================== HELPERS ===================== */
+const escapeHTML = t => String(t ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 function toast(text){
-    const t=document.getElementById("toast");
-    t.textContent=text;
-    t.classList.add("show");
-    setTimeout(()=>t.classList.remove("show"),2200);
+  const t = $("toast"); t.textContent = text; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2400);
+}
+function toDate(ts){ if(!ts) return new Date(); if(ts.toDate) return ts.toDate(); return new Date(ts); }
+function ago(ts){
+  const s = Math.floor((Date.now() - toDate(ts)) / 1000);
+  if (s < 60) return "vừa xong";
+  const m = Math.floor(s/60); if (m < 60) return m + " phút trước";
+  const h = Math.floor(m/60); if (h < 24) return h + " giờ trước";
+  return Math.floor(h/24) + " ngày trước";
+}
+function hhmm(ts){ return toDate(ts).toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"}); }
+function dayLabel(ts){ return toDate(ts).toLocaleDateString("vi-VN",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"}); }
+function initial(name){ return (name || "?").trim().charAt(0).toUpperCase() || "?"; }
+function authErr(code){
+  const map = {
+    "auth/invalid-credential":"Gmail hoặc mật khẩu sai",
+    "auth/wrong-password":"Gmail hoặc mật khẩu sai",
+    "auth/user-not-found":"Tài khoản không tồn tại",
+    "auth/email-already-in-use":"Email đã tồn tại. Hãy đăng nhập!",
+    "auth/weak-password":"Mật khẩu quá yếu (tối thiểu 6 ký tự)",
+    "auth/invalid-email":"Email không hợp lệ",
+    "auth/too-many-requests":"Thử quá nhiều lần, hãy đợi một lát",
+    "auth/network-request-failed":"Lỗi mạng, kiểm tra kết nối"
+  };
+  return map[code] || "Có lỗi xảy ra, thử lại nhé";
+}
+async function getUser(uid){
+  if (userCache.has(uid)) return userCache.get(uid);
+  try {
+    const s = await getDoc(doc(db,"users",uid));
+    const u = s.exists() ? { id: uid, ...s.data() } : { id: uid, name: "Người dùng", email: "" };
+    userCache.set(uid, u); return u;
+  } catch { return { id: uid, name: "Người dùng", email: "" }; }
+}
+const sortKey = x => (x?.toMillis ? x.toMillis() : (x ? new Date(x).getTime() : Date.now()));
+
+/* ===================== THEME ===================== */
+window.toggleTheme = () => {
+  const light = document.body.classList.toggle("light");
+  localStorage.setItem("nova_theme", light ? "light" : "dark");
+  $("themeBtn").textContent = light ? "Chuyển Tối" : "Chuyển Sáng";
+};
+
+/* ===================== AUTH ===================== */
+window.showRegister = () => { $("loginForm").style.display="none"; $("registerForm").style.display="block"; };
+window.showLogin = () => { $("loginForm").style.display="block"; $("registerForm").style.display="none"; };
+
+window.register = async () => {
+  const name = $("registerName").value.trim();
+  const email = $("registerEmail").value.trim().toLowerCase();
+  const password = $("registerPassword").value;
+  $("registerErr").textContent = "";
+  if (!name || !email || !password) { $("registerErr").textContent = "Nhập đầy đủ thông tin"; return; }
+  try {
+    const res = await createUserWithEmailAndPassword(auth, email, password);
+    await updateProfile(res.user, { displayName: name });
+    await setDoc(doc(db,"users",res.user.uid), {
+      name, nameLower: name.toLowerCase(), email, emailLower: email, createdAt: serverTimestamp()
+    }, { merge: true });
+    userCache.delete(res.user.uid);
+    if (me && me.id === res.user.uid) { me.name = name; updateProfileView(); }
+    toast("Tạo tài khoản thành công 💜");
+  } catch (err) { $("registerErr").textContent = authErr(err.code); }
+};
+
+window.login = async () => {
+  const email = $("loginEmail").value.trim().toLowerCase();
+  const password = $("loginPassword").value;
+  $("loginErr").textContent = "";
+  if (!email || !password) { $("loginErr").textContent = "Nhập đầy đủ email và mật khẩu"; return; }
+  try { await signInWithEmailAndPassword(auth, email, password); }
+  catch (err) { $("loginErr").textContent = authErr(err.code); }
+};
+
+window.googleLogin = async () => {
+  try { await signInWithPopup(auth, googleProvider); }
+  catch (err) { if (err.code !== "auth/popup-closed-by-user") $("loginErr").textContent = "Đăng nhập Google thất bại"; }
+};
+
+window.resetPassword = async () => {
+  const email = $("loginEmail").value.trim().toLowerCase();
+  if (!email) { $("loginErr").textContent = "Nhập Gmail rồi bấm Quên mật khẩu"; return; }
+  try { await sendPasswordResetEmail(auth, email); toast("Đã gửi email đặt lại mật khẩu 📧"); }
+  catch (err) { $("loginErr").textContent = authErr(err.code); }
+};
+
+window.logout = async () => { try { await signOut(auth); } catch { toast("Lỗi đăng xuất"); } };
+
+async function ensureUserDoc(user){
+  const ref = doc(db,"users",user.uid);
+  const snap = await getDoc(ref);
+  const email = (user.email || "").toLowerCase();
+  if (!snap.exists()) {
+    const name = user.displayName || email.split("@")[0] || "Nova";
+    await setDoc(ref, { name, nameLower: name.toLowerCase(), email, emailLower: email, createdAt: serverTimestamp() });
+    return { name, email };
+  }
+  return snap.data();
 }
 
-function showRegister(){
-    loginForm.style.display="none";
-    registerForm.style.display="block";
-}
-function showLogin(){
-    loginForm.style.display="block";
-    registerForm.style.display="none";
-}
-
-async function register(){
-    const name=registerName.value.trim();
-    const email=registerEmail.value.trim().toLowerCase();
-    const password=registerPassword.value;
-    if(!name||!email||!password){ toast("Nhập đầy đủ thông tin"); return; }
-    if(!email.includes("@gmail.com")){ toast("Hãy dùng Gmail"); return; }
+onAuthStateChanged(auth, async user => {
+  $("loading").style.display = "none";
+  stopListeners();
+  if (user) {
     try {
-        const res = await window.fbCreateUserWithEmailAndPassword(window.fbAuth, email, password);
-        if(!users.some(u => u.email === email)) {
-            users.push({ id: res.user.uid, name, email });
-            save();
-        }
-        toast("Tạo tài khoản thành công 💜");
-    } catch(err) {
-        if(err.code === 'auth/email-already-in-use') {
-            toast("Email đã tồn tại. Hãy đăng nhập!");
-        } else {
-            toast(err.message);
-        }
+      const data = await ensureUserDoc(user);
+      me = { id: user.uid, name: data.name, email: (user.email || data.email || "").toLowerCase() };
+      userCache.set(me.id, { id: me.id, ...data });
+      $("auth").style.display = "none";
+      $("app").style.display = "block";
+      startListeners();
+      showPage("home");
+    } catch (e) {
+      console.error(e);
+      toast("Không truy cập được Firestore — kiểm tra Rules");
     }
-}
+  } else {
+    me = null; currentChat = null;
+    $("app").style.display = "none";
+    $("auth").style.display = "flex";
+    showLogin();
+  }
+});
 
-async function login(){
-    const email=loginEmail.value.trim().toLowerCase();
-    const password=loginPassword.value;
-    if(!email||!password){ toast("Nhập đầy đủ email và mật khẩu"); return; }
-    try {
-        await window.fbSignInWithEmailAndPassword(window.fbAuth, email, password);
-    } catch(err) {
-        toast("Gmail hoặc mật khẩu sai");
-    }
+/* ===================== LISTENERS ===================== */
+function listen(q, cb){
+  unsubs.push(onSnapshot(q, cb, err => { console.error(err); if (err.code === "permission-denied") toast("Firestore từ chối quyền — cập nhật Rules"); }));
 }
-
-async function googleLogin(){
-    try {
-        await window.fbSignInWithPopup(window.fbAuth, window.fbGoogleProvider);
-    } catch(err) {
-        toast("Đăng nhập Google thất bại");
-    }
+function stopListeners(){
+  unsubs.forEach(u => u()); unsubs = [];
+  if (msgUnsub) { msgUnsub(); msgUnsub = null; }
+  posts = []; incoming = []; outgoing = []; friendships = []; chats = []; notifs = []; msgDocs = [];
+  initialChatsLoaded = false;
 }
-
-async function logout(){
-    try {
-        await window.fbSignOut(window.fbAuth);
-        document.getElementById('app').style.display="none";
-        document.getElementById('auth').style.display="flex";
-        showLogin();
-    } catch(err) { toast("Lỗi đăng xuất"); }
-}
-
-function openApp(){
-    auth.style.display="none";
-    app.style.display="block";
-    renderFeed();
-    renderFriends();
+function startListeners(){
+  listen(query(collection(db,"posts"), orderBy("createdAt","desc"), limit(100)), s => {
+    posts = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderFeed(); updateProfileView();
+    if (currentPage === "search") searchEverything();
+  });
+  listen(query(collection(db,"friendRequests"), where("to","==",me.id)), s => {
+    incoming = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    $("friendDot").classList.toggle("show", incoming.length > 0);
     renderRequests();
-    renderFriendList();
-    renderGroups();
+  });
+  listen(query(collection(db,"friendRequests"), where("from","==",me.id)), s => {
+    outgoing = s.docs.map(d => ({ id: d.id, ...d.data() }));
+  });
+  listen(query(collection(db,"friendships"), where("members","array-contains",me.id)), s => {
+    friendships = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderFriendList(); renderGroupPicker(); updateProfileView();
+  });
+  listen(query(collection(db,"chats"), where("members","array-contains",me.id)), async s => {
+    chats = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    chats.sort((a,b) => sortKey(b.lastAt) - sortKey(a.lastAt));
+    if (currentChat && !chats.find(c => c.id === currentChat)) { currentChat = null; detachMessages(); }
+    await renderChatTabs(); renderGroups(); updateProfileView();
+    if (currentChat) { const c = chats.find(x => x.id === currentChat); if (c) { $("chatKey").textContent = c.key; renderMessages(); } }
+  });
+  listen(query(collection(db,"notifications"), where("to","==",me.id)), s => {
+    notifs = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    notifs.sort((a,b) => sortKey(b.createdAt) - sortKey(a.createdAt));
+    const unread = notifs.filter(n => !n.read).length;
+    const b = $("notifBadge"); b.textContent = unread > 9 ? "9+" : unread; b.classList.toggle("show", unread > 0);
     renderNotifications();
-    updateProfile();
+  });
 }
 
-function showPage(page,btn){
-    document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
-    document.getElementById(page).classList.add("active");
-    if(btn){
-        document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
-        btn.classList.add("active");
-    }
-    if(page==="home")renderFeed();
-    if(page==="friends"){ renderFriends(); renderRequests(); renderFriendList(); }
-    if(page==="chat")renderChatTabs();
-    if(page==="groups")renderGroups();
-    if(page==="notifications")renderNotifications();
-    if(page==="profile")updateProfile();
-}
+/* ===================== NAV ===================== */
+window.showPage = page => {
+  currentPage = page;
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  $(page).classList.add("active");
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page === page));
+  if (page === "home") renderFeed();
+  if (page === "friends") { renderRequests(); renderFriendList(); }
+  if (page === "chat") { renderChatTabs(); renderMessages(); }
+  if (page === "groups") { renderGroups(); renderGroupPicker(); }
+  if (page === "notifications") renderNotifications();
+  if (page === "profile") updateProfileView();
+  if (page === "settings") $("newName").value = me?.name || "";
+  if (page === "search") searchEverything();
+  window.scrollTo(0,0);
+};
 
-function generatePostId(){
-    const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let x="";
-    const arr=new Uint32Array(8);
-    crypto.getRandomValues(arr);
-    for(let i=0;i<8;i++) x+=chars[arr[i]%chars.length];
-    return "NOVA-"+x;
+/* ===================== POSTS ===================== */
+function genPostCode(){
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; const arr = new Uint32Array(8); crypto.getRandomValues(arr);
+  let x = ""; for (let i=0;i<8;i++) x += chars[arr[i] % chars.length]; return "NOVA-" + x;
 }
-
-function createPost(){
-    const text=postText.value.trim();
-    if(!text){ toast("Hãy viết gì đó"); return; }
-    posts.unshift({
-        id:crypto.randomUUID(),
-        postCode:generatePostId(),
-        userId:currentUser.id,
-        text,
-        likes:[],
-        comments:[],
-        createdAt:new Date().toISOString()
+window.createPost = async () => {
+  const text = $("postText").value.trim();
+  if (!text) { toast("Hãy viết gì đó"); return; }
+  try {
+    await addDoc(collection(db,"posts"), {
+      postCode: genPostCode(), userId: me.id, text, likes: [], comments: [], createdAt: serverTimestamp()
     });
-    save();
-    postText.value="";
-    renderFeed();
-    toast("Đã đăng bài 🚀");
+    $("postText").value = ""; toast("Đã đăng bài 🚀");
+  } catch (e) { console.error(e); toast("Đăng bài thất bại"); }
+};
+function postHTML(p, withActions = true){
+  const mine = p.userId === me.id;
+  const likes = p.likes || [], comments = p.comments || [];
+  const liked = likes.includes(me.id);
+  const ts = p.createdAt || new Date();
+  let html = `<div class="card">
+    <div class="post-head"><span class="user">◉ Anonymous${mine ? " (bạn)" : ""}</span><span class="time">${ago(ts)}</span></div>
+    <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
+    <div class="post-text">${escapeHTML(p.text)}</div>`;
+  if (withActions) {
+    html += `<div class="actions">
+      <button class="action ${liked ? "liked" : ""}" onclick="likePost('${p.id}')">♥ ${likes.length}</button>
+      <button class="action" onclick="toggleComments('${p.id}')">💬 ${comments.length}</button>
+      <button class="action" onclick="sharePost('${p.id}')">↗ Share</button>
+      ${mine ? `<button class="action" style="color:var(--danger)" onclick="deletePost('${p.id}')">🗑</button>` : ""}
+    </div>
+    <div id="comments-${p.id}" class="comments" style="display:${openComments.has(p.id) ? "block" : "none"}">
+      ${comments.map(c => `<div class="comment"><b>Anonymous${c.userId === me.id ? " (bạn)" : ""}:</b> ${escapeHTML(c.text)}</div>`).join("")}
+      <div class="comment-box">
+        <input id="comment-${p.id}" maxlength="300" placeholder="Viết bình luận..." onkeydown="if(event.key==='Enter')addComment('${p.id}')">
+        <button onclick="addComment('${p.id}')">Gửi</button>
+      </div>
+    </div>`;
+  }
+  return html + `</div>`;
 }
-
-function ago(date){
-    const s=Math.floor((Date.now()-new Date(date))/1000);
-    if(s<60)return"vừa xong";
-    const m=Math.floor(s/60);
-    if(m<60)return m+" phút trước";
-    const h=Math.floor(m/60);
-    if(h<24)return h+" giờ trước";
-    return Math.floor(h/24)+" ngày trước";
-}
-
-function escapeHTML(t){
-    return String(t).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
-}
-
 function renderFeed(){
-    if(!posts.length){
-        feed.innerHTML=`<div class="card" style="text-align:center;color:var(--muted)">Chưa có bài viết nào.</div>`;
-        return;
+  if (!me) return;
+  const focused = document.activeElement?.id || "";
+  const keep = focused.startsWith("comment-") ? { id: focused, val: document.activeElement.value } : null;
+  if (!posts.length) { $("feed").innerHTML = `<div class="card empty">Chưa có bài viết nào. Hãy là người đầu tiên!</div>`; return; }
+  $("feed").innerHTML = posts.map(p => postHTML(p)).join("");
+  if (keep) { const el = $(keep.id); if (el) { el.value = keep.val; el.focus(); } }
+}
+window.likePost = async id => {
+  const p = posts.find(x => x.id === id); if (!p) return;
+  const liked = (p.likes || []).includes(me.id);
+  try { await updateDoc(doc(db,"posts",id), { likes: liked ? arrayRemove(me.id) : arrayUnion(me.id) }); } catch { toast("Lỗi"); }
+};
+window.toggleComments = id => {
+  const el = $("comments-" + id); if (!el) return;
+  const show = el.style.display === "none"; el.style.display = show ? "block" : "none";
+  show ? openComments.add(id) : openComments.delete(id);
+};
+window.addComment = async id => {
+  const input = $("comment-" + id); const text = input.value.trim(); if (!text) return;
+  openComments.add(id);
+  try { await updateDoc(doc(db,"posts",id), { comments: arrayUnion({ id: crypto.randomUUID(), userId: me.id, text, createdAt: Date.now() }) }); input.value = ""; }
+  catch { toast("Bình luận thất bại"); }
+};
+window.deletePost = async id => {
+  if (!confirm("Xóa bài viết này?")) return;
+  try { await deleteDoc(doc(db,"posts",id)); toast("Đã xóa bài"); } catch { toast("Không xóa được"); }
+};
+window.sharePost = async id => {
+  const p = posts.find(x => x.id === id); if (!p) return;
+  const text = `NOVA\nPost ID: ${p.postCode}\n\n${p.text}`;
+  if (navigator.share) { try { await navigator.share({ title: "NOVA", text }); } catch {} }
+  else { await navigator.clipboard.writeText(text); toast("Đã copy bài viết"); }
+};
+
+/* ===================== SEARCH ===================== */
+let searchTimer = null;
+window.searchEverything = () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(doSearch, 250);
+};
+async function doSearch(){
+  const q = $("searchInput").value.toLowerCase().trim();
+  const box = $("searchResults");
+  if (!q) { box.innerHTML = ""; return; }
+  const foundPosts = posts.filter(p => p.text.toLowerCase().includes(q) || (p.postCode||"").toLowerCase().includes(q));
+  const found = new Map();
+  if (q.length >= 2) {
+    try {
+      const end = q + "\uf8ff";
+      const [a, b] = await Promise.all([
+        getDocs(query(collection(db,"users"), where("nameLower",">=",q), where("nameLower","<=",end), limit(10))),
+        getDocs(query(collection(db,"users"), where("emailLower",">=",q), where("emailLower","<=",end), limit(10)))
+      ]);
+      [...a.docs, ...b.docs].forEach(d => found.set(d.id, { id: d.id, ...d.data() }));
+    } catch (e) { console.error(e); }
+  }
+  if ($("searchInput").value.toLowerCase().trim() !== q) return;
+  let html = "";
+  if (found.size) {
+    html += `<h4 style="margin:14px 0 4px;color:var(--purple)">👤 Tài khoản phù hợp</h4>`;
+    html += [...found.values()].map(u => {
+      const self = u.id === me.id; const friend = isFriend(u.id);
+      return `<div class="item">
+        <div class="item-left"><div class="mini-avatar">${escapeHTML(initial(u.name))}</div>
+          <div><div class="item-name">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>
+        <div class="btn-row">${self ? `<span class="muted">Bạn</span>`
+          : friend ? `<button class="primary" onclick="openPrivateChat('${u.id}')">💬</button>`
+          : `<button class="primary" onclick="sendFriendRequest('${u.id}')">Kết bạn</button>`}</div></div>`;
+    }).join("");
+  }
+  if (foundPosts.length) {
+    html += `<h4 style="margin:16px 0 4px;color:var(--purple)">📝 Bài viết phù hợp</h4>`;
+    html += foundPosts.slice(0,20).map(p => postHTML(p, false).replace('<div class="card">','<div class="card" style="margin-top:10px">')).join("");
+  }
+  box.innerHTML = html || `<p class="muted" style="margin-top:15px">Không tìm thấy kết quả nào phù hợp.</p>`;
+}
+
+/* ===================== FRIENDS ===================== */
+const pairId = (a,b) => [a,b].sort().join("_");
+const isFriend = uid => friendships.some(f => f.members.includes(uid));
+
+window.findFriend = async () => {
+  const email = $("friendEmail").value.trim().toLowerCase();
+  const box = $("friendResult");
+  if (!email) { toast("Nhập Gmail"); return; }
+  try {
+    const s = await getDocs(query(collection(db,"users"), where("emailLower","==",email), limit(1)));
+    if (s.empty) {
+      box.innerHTML = `<div class="item"><div><div class="item-name">Không tìm thấy</div><div class="item-sub">Gmail này chưa đăng ký NOVA.</div></div></div>`;
+      return;
     }
-    feed.innerHTML=posts.map(p=>`
-        <div class="card">
-            <div class="post-head">
-                <span class="user">◉ Anonymous</span>
-                <span class="time">${ago(p.createdAt)}</span>
-            </div>
-            <div class="post-id">Post ID: ${p.postCode}</div>
-            <div class="post-text">${escapeHTML(p.text)}</div>
-            <div class="actions">
-                <button class="action" onclick="likePost('${p.id}')">♥ ${p.likes.length}</button>
-                <button class="action" onclick="toggleComments('${p.id}')">💬 ${p.comments.length}</button>
-                <button class="action" onclick="sharePost('${p.id}')">↗ Share</button>
-            </div>
-            <div id="comments-${p.id}" class="comments" style="display:none">
-                ${p.comments.map(c=>`<div class="comment"><b>Anonymous:</b> ${escapeHTML(c.text)}</div>`).join("")}
-                <div class="comment-box">
-                    <input id="comment-${p.id}" placeholder="Viết bình luận...">
-                    <button onclick="addComment('${p.id}')">Gửi</button>
-                </div>
-            </div>
-        </div>
-    `).join("");
-}
+    const d = s.docs[0]; const u = { id: d.id, ...d.data() }; userCache.set(u.id, u);
+    if (u.id === me.id) { toast("Đây là tài khoản của bạn"); return; }
+    let action;
+    if (isFriend(u.id)) action = `<span class="muted">✓ Đã là bạn bè</span>`;
+    else if (outgoing.some(r => r.to === u.id)) action = `<span class="muted">Đã gửi lời mời</span>`;
+    else if (incoming.some(r => r.from === u.id)) action = `<span class="muted">Họ đã mời bạn — xem bên dưới</span>`;
+    else action = `<button class="primary" onclick="sendFriendRequest('${u.id}')">Kết bạn</button>`;
+    box.innerHTML = `<div class="item"><div class="item-left"><div class="mini-avatar">${escapeHTML(initial(u.name))}</div>
+      <div><div class="item-name">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>${action}</div>`;
+  } catch (e) { console.error(e); toast("Tìm kiếm thất bại"); }
+};
 
-function likePost(id){
-    const p=posts.find(x=>x.id===id);
-    if(!p)return;
-    const i=p.likes.indexOf(currentUser.id);
-    if(i<0)p.likes.push(currentUser.id);
-    else p.likes.splice(i,1);
-    save();
-    renderFeed();
-}
-
-function toggleComments(id){
-    const el=document.getElementById("comments-"+id);
-    el.style.display=el.style.display==="none"?"block":"none";
-}
-
-function addComment(id){
-    const input=document.getElementById("comment-"+id);
-    if(!input.value.trim())return;
-    const p=posts.find(x=>x.id===id);
-    p.comments.push({ id:crypto.randomUUID(), userId:currentUser.id, text:input.value.trim() });
-    save();
-    renderFeed();
-}
-
-async function sharePost(id){
-    const p=posts.find(x=>x.id===id);
-    if(!p)return;
-    const text=`NOVA\nPost ID: ${p.postCode}\n\n${p.text}`;
-    if(navigator.share){
-        try{ await navigator.share({title:"NOVA",text}); }catch(e){}
-    }else{
-        await navigator.clipboard.writeText(text);
-        toast("Đã copy bài viết");
-    }
-}
-
-/* SEARCH THỰC TẾ */
-function searchEverything(){
-    const q=searchInput.value.toLowerCase().trim();
-    if(!q){ searchResults.innerHTML=""; return; }
-    
-    const foundPosts = posts.filter(p => p.text.toLowerCase().includes(q) || p.postCode.toLowerCase().includes(q));
-    const foundUsers = users.filter(u => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
-
-    let html = "";
-    if(foundUsers.length > 0) {
-        html += `<h4 style="margin:10px 0; color:var(--purple)">👤 Tài khoản phù hợp:</h4>`;
-        html += foundUsers.map(u => `
-            <div class="friend-result">
-                <div>
-                    <div class="friend-name">${escapeHTML(u.name)}</div>
-                    <div class="friend-email">${escapeHTML(u.email)}</div>
-                </div>
-                ${u.id !== currentUser.id ? `<button class="primary" onclick="openPrivateChat('${u.id}')">💬 Nhắn tin</button>` : `<span style="color:var(--muted)">Tài khoản của bạn</span>`}
-            </div>
-        `).join("");
-    }
-
-    if(foundPosts.length > 0) {
-        html += `<h4 style="margin:15px 0 10px 0; color:var(--purple)">📝 Bài viết phù hợp:</h4>`;
-        html += foundPosts.map(p => `
-            <div class="card" style="margin-top:10px">
-                <div class="post-id">Post ID: ${p.postCode}</div>
-                ${escapeHTML(p.text)}
-            </div>
-        `).join("");
-    }
-
-    searchResults.innerHTML = html || `<p style="color:var(--muted);margin-top:15px">Không tìm thấy kết quả nào phù hợp.</p>`;
-}
-
-/* FRIENDS & REQUESTS (Fixed) */
-function renderFriends(){
-    renderRequests();
-    renderFriendList();
-}
-
-function areFriends(a,b){
-    return friendships.some(f => (f.a===a && f.b===b) || (f.a===b && f.b===a));
-}
-
-function findFriend(){
-    const email=friendEmail.value.trim().toLowerCase();
-    if(!email){ toast("Nhập Gmail"); return; }
-    
-    if(!users.some(u => u.email === currentUser.email)) {
-        users.push(currentUser);
-        save();
-    }
-
-    let user = users.find(u => u.email === email);
-    
-    if(!user && email.includes("@gmail.com")) {
-        user = {
-            id: "user_" + email.replace(/[^a-zA-Z0-9]/g, "_"),
-            name: email.split('@')[0],
-            email: email
-        };
-        users.push(user);
-        save();
-    }
-
-    if(!user){
-        friendResult.innerHTML=`<div class="friend-result"><div><div class="friend-name">Không tìm thấy</div><div class="friend-email">Gmail này không hợp lệ.</div></div></div>`;
-        return;
-    }
-    if(user.id===currentUser.id){ toast("Đây là tài khoản của bạn"); return; }
-    if(areFriends(currentUser.id,user.id)){
-        friendResult.innerHTML=`<div class="friend-result"><div><div class="friend-name">${escapeHTML(user.name)}</div><div class="friend-email">${escapeHTML(user.email)}</div></div><span>✓ Đã là bạn bè</span></div>`;
-        return;
-    }
-    friendResult.innerHTML=`
-        <div class="friend-result">
-            <div>
-                <div class="friend-name">${escapeHTML(user.name)}</div>
-                <div class="friend-email">${escapeHTML(user.email)}</div>
-            </div>
-            <button class="primary" onclick="sendFriendRequest('${user.id}')">Kết bạn</button>
-        </div>`;
-}
-
-function sendFriendRequest(to){
-    if(requests.some(r=>r.from===currentUser.id && r.to===to)){ toast("Đã gửi lời mời rồi"); return; }
-    requests.push({ id:crypto.randomUUID(), from:currentUser.id, to, createdAt:new Date().toISOString() });
-    notifications.push({ id:crypto.randomUUID(), to, text:`${currentUser.name} đã gửi lời mời kết bạn.`, createdAt:new Date().toISOString() });
-    save();
+window.sendFriendRequest = async to => {
+  if (isFriend(to)) { toast("Đã là bạn bè"); return; }
+  if (outgoing.some(r => r.to === to)) { toast("Đã gửi lời mời rồi"); return; }
+  if (incoming.some(r => r.from === to)) { toast("Người này đã mời bạn, hãy chấp nhận"); return; }
+  try {
+    await setDoc(doc(db,"friendRequests", me.id + "_" + to), { from: me.id, to, fromName: me.name, fromEmail: me.email, createdAt: serverTimestamp() });
+    await addDoc(collection(db,"notifications"), { to, type: "friend_request", text: `${me.name} đã gửi lời mời kết bạn.`, read: false, createdAt: serverTimestamp() });
     toast("Đã gửi lời mời 🤝");
-}
+    const el = $("friendResult"); if (el) el.innerHTML = "";
+  } catch (e) { console.error(e); toast("Gửi lời mời thất bại"); }
+};
 
-function renderRequests(){
-    const mine=requests.filter(r=>r.to===currentUser.id);
-    if(!mine.length){ requests.innerHTML=`<p style="color:var(--muted);margin-top:10px">Không có lời mời mới.</p>`; return; }
-    document.getElementById("requests").innerHTML=mine.map(r=>{
-        const u=users.find(x=>x.id===r.from);
-        const displayName = u ? u.name : r.from.split('@')[0];
-        const displayEmail = u ? u.email : r.from;
-        return`
-        <div class="friend-result">
-            <div>
-                <div class="friend-name">${escapeHTML(displayName)}</div>
-                <div class="friend-email">${escapeHTML(displayEmail)}</div>
-            </div>
-            <div style="display:flex;gap:5px">
-                <button class="primary" onclick="acceptFriend('${r.id}')">✓</button>
-                <button class="secondary" onclick="rejectFriend('${r.id}')">×</button>
-            </div>
-        </div>`;
-    }).join("");
+async function renderRequests(){
+  if (!me) return;
+  const box = $("requests");
+  if (!incoming.length) { box.innerHTML = `<p class="muted" style="margin-top:10px">Không có lời mời mới.</p>`; return; }
+  box.innerHTML = incoming.map(r => `<div class="item">
+    <div class="item-left"><div class="mini-avatar">${escapeHTML(initial(r.fromName))}</div>
+      <div><div class="item-name">${escapeHTML(r.fromName || "Người dùng")}</div><div class="item-sub">${escapeHTML(r.fromEmail || "")}</div></div></div>
+    <div class="btn-row"><button class="primary" onclick="acceptFriend('${r.id}')">✓</button>
+    <button class="secondary" onclick="rejectFriend('${r.id}')">×</button></div></div>`).join("");
 }
-
-function acceptFriend(id){
-    const r=requests.find(x=>x.id===id);
-    if(!r)return;
-    friendships.push({ id:crypto.randomUUID(), a:r.from, b:r.to });
-    requests=requests.filter(x=>x.id!==id);
-    save();
-    renderRequests();
-    renderFriendList();
+window.acceptFriend = async id => {
+  const r = incoming.find(x => x.id === id); if (!r) return;
+  try {
+    await setDoc(doc(db,"friendships","f_" + pairId(r.from, r.to)), { members: [r.from, r.to].sort(), createdAt: serverTimestamp() });
+    await deleteDoc(doc(db,"friendRequests",id));
+    await addDoc(collection(db,"notifications"), { to: r.from, type: "friend_accept", text: `${me.name} đã chấp nhận lời mời kết bạn.`, read: false, createdAt: serverTimestamp() });
     toast("Đã trở thành bạn bè 🤝");
+  } catch (e) { console.error(e); toast("Lỗi"); }
+};
+window.rejectFriend = async id => { try { await deleteDoc(doc(db,"friendRequests",id)); } catch { toast("Lỗi"); } };
+window.unfriend = async uid => {
+  if (!confirm("Hủy kết bạn?")) return;
+  try { await deleteDoc(doc(db,"friendships","f_" + pairId(me.id, uid))); toast("Đã hủy kết bạn"); } catch { toast("Lỗi"); }
+};
+
+async function renderFriendList(){
+  if (!me) return;
+  const box = $("friendList");
+  if (!friendships.length) { box.innerHTML = `<p class="muted" style="margin-top:10px">Bạn chưa có bạn bè.</p>`; return; }
+  const users = await Promise.all(friendships.map(f => getUser(f.members.find(m => m !== me.id))));
+  box.innerHTML = users.map(u => `<div class="item">
+    <div class="item-left"><div class="mini-avatar">${escapeHTML(initial(u.name))}</div>
+      <div><div class="item-name">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>
+    <div class="btn-row"><button class="primary" onclick="openPrivateChat('${u.id}')">💬 Chat</button>
+    <button class="secondary" onclick="unfriend('${u.id}')">✕</button></div></div>`).join("");
 }
 
-function rejectFriend(id){
-    requests=requests.filter(x=>x.id!==id);
-    save();
-    renderRequests();
-}
-
-function renderFriendList(){
-    const mine=friendships.filter(f=>f.a===currentUser.id || f.b===currentUser.id);
-    if(!mine.length){ friendList.innerHTML=`<p style="color:var(--muted)">Bạn chưa có bạn bè.</p>`; return; }
-    friendList.innerHTML=mine.map(f=>{
-        const id=f.a===currentUser.id?f.b:f.a;
-        const u=users.find(x=>x.id===id);
-        if(!u) return "";
-        return`
-        <div class="friend-result">
-            <div>
-                <div class="friend-name">${escapeHTML(u.name)}</div>
-                <div class="friend-email">${escapeHTML(u.email)}</div>
-            </div>
-            <button class="primary" onclick="openPrivateChat('${u.id}')">💬 Chat</button>
-        </div>`;
-    }).join("");
-}
-
-function openPrivateChat(friendId){
-    const ids=[currentUser.id, friendId].sort();
-    const chatId="private_"+ids.join("_");
-    if(!chats[chatId]){
-        chats[chatId]={ id:chatId, type:"private", members:ids, key:generateChatKey(), messages:[] };
-        save();
-    }
-    currentChat=chatId;
-    showPage("chat");
-    renderChatTabs();
-    renderMessages();
-}
-
-/* GROUPS & LOGO CÁCH ĐIỆU + KICK / THÊM THÀNH VIÊN */
-function createGroup(){
-    const name=groupName.value.trim();
-    if(!name){ toast("Nhập tên group"); return; }
-    const myFriends=friendships.filter(f=>f.a===currentUser.id || f.b===currentUser.id);
-    const members=[currentUser.id, ...myFriends.map(f=>f.a===currentUser.id?f.b:f.a)];
-    const groupId="group_"+crypto.randomUUID();
-    
-    const group={ id:groupId, name, owner:currentUser.id, members, key:generateChatKey(), messages:[] };
-    groups.push(group);
-    chats[groupId]={ id:groupId, type:"group", members, key:group.key, messages:[] };
-    save();
-    groupName.value="";
-    renderGroups();
-    toast("Đã tạo group 👥");
-}
-
-function renderGroups(){
-    const mine=groups.filter(g=>g.members.includes(currentUser.id));
-    if(!mine.length){ groupList.innerHTML=`<div class="card" style="color:var(--muted)">Chưa có group.</div>`; return; }
-    
-    groupList.innerHTML=mine.map(g=>{
-        const isOwner = g.owner === currentUser.id;
-        const firstLetter = g.name.charAt(0).toUpperCase();
-        return `
-        <div class="card">
-            <div class="row">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div class="group-logo-badge">${firstLetter}</div>
-                    <div>
-                        <strong>👥 ${escapeHTML(g.name)}</strong>
-                        <div class="muted">${g.members.length} thành viên</div>
-                    </div>
-                </div>
-                <button class="primary" onclick="openGroup('${g.id}')">Mở chat</button>
-            </div>
-            <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:10px;">
-                <div style="font-size:12px; color:var(--muted); margin-bottom:5px;">Thành viên trong nhóm:</div>
-                ${g.members.map(mId => {
-                    const u = users.find(x => x.id === mId);
-                    return `<div style="display:flex; justify-content:space-between; align-items:center; font-size:13px; margin-top:5px;">
-                        <span>${escapeHTML(u ? u.name : 'Thành viên')} (${u ? u.email : ''})</span>
-                        ${isOwner && mId !== currentUser.id ? `<button style="background:#ff5875; color:#fff; border:0; border-radius:6px; padding:3px 8px; font-size:11px;" onclick="kickMember('${g.id}', '${mId}')">Kick</button>` : ''}
-                    </div>`;
-                }).join("")}
-                ${isOwner ? `
-                <div style="display:flex; gap:5px; margin-top:10px;">
-                    <input id="add-member-${g.id}" class="input" style="margin-bottom:0; font-size:12px; padding:8px;" placeholder="Email bạn bè thêm vào...">
-                    <button class="secondary" style="padding:0 10px; font-size:12px;" onclick="addMemberToGroup('${g.id}')">Thêm</button>
-                </div>` : ''}
-            </div>
-        </div>`;
-    }).join("");
-}
-
-function kickMember(groupId, memberId){
-    let g = groups.find(x => x.id === groupId);
-    if(!g) return;
-    g.members = g.members.filter(m => m !== memberId);
-    if(chats[groupId]) chats[groupId].members = g.members;
-    save();
-    renderGroups();
-    toast("Đã loại thành viên khỏi nhóm");
-}
-
-function addMemberToGroup(groupId){
-    const emailInput = document.getElementById(`add-member-${groupId}`);
-    const email = emailInput.value.trim().toLowerCase();
-    let userToAdd = users.find(u => u.email === email);
-    if(!userToAdd && email.includes("@gmail.com")) {
-        userToAdd = { id: "user_" + email.replace(/[^a-zA-Z0-9]/g, "_"), name: email.split('@')[0], email: email };
-        users.push(userToAdd);
-        save();
-    }
-    if(!userToAdd) { toast("Không tìm thấy user với email này"); return; }
-    
-    let g = groups.find(x => x.id === groupId);
-    if(g.members.includes(userToAdd.id)) { toast("Thành viên đã có trong nhóm"); return; }
-    
-    g.members.push(userToAdd.id);
-    if(chats[groupId]) chats[groupId].members = g.members;
-    save();
-    renderGroups();
-    toast("Đã thêm thành viên vào nhóm");
-}
-
-function openGroup(id){
-    currentChat=id;
-    showPage("chat");
-    renderChatTabs();
-    renderMessages();
-}
-
-/* CHAT KEY & AES-GCM */
-const KEY_CHARS="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+/* ===================== ENCRYPTION ===================== */
+const KEY_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 function generateChatKey(){
-    let out="";
-    const arr=new Uint32Array(24);
-    crypto.getRandomValues(arr);
-    for(let i=0;i<24;i++) out+=KEY_CHARS[arr[i]%KEY_CHARS.length];
-    return out;
+  const arr = new Uint32Array(24); crypto.getRandomValues(arr);
+  let out = ""; for (let i=0;i<24;i++) out += KEY_CHARS[arr[i] % KEY_CHARS.length]; return out;
 }
-
+const aesCache = new Map();
 async function deriveKey(chatKey){
-    const hash=await crypto.subtle.digest("SHA-256", new TextEncoder().encode(chatKey));
-    return crypto.subtle.importKey("raw", hash, {name:"AES-GCM"}, false, ["encrypt","decrypt"]);
+  if (aesCache.has(chatKey)) return aesCache.get(chatKey);
+  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(chatKey));
+  const k = await crypto.subtle.importKey("raw", hash, { name: "AES-GCM" }, false, ["encrypt","decrypt"]);
+  aesCache.set(chatKey, k); return k;
+}
+const b64 = buf => { let s = ""; new Uint8Array(buf).forEach(b => s += String.fromCharCode(b)); return btoa(s); };
+const unb64 = str => { const s = atob(str); const a = new Uint8Array(s.length); for (let i=0;i<s.length;i++) a[i] = s.charCodeAt(i); return a.buffer; };
+async function encrypt(text, key){
+  const aes = await deriveKey(key); const iv = crypto.getRandomValues(new Uint8Array(12));
+  const enc = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, aes, new TextEncoder().encode(text));
+  return { cipher: b64(enc), iv: b64(iv) };
+}
+async function decrypt(msg, key){
+  const ck = msg.id + "|" + key + "|" + msg.cipher;
+  if (decCache.has(ck)) return decCache.get(ck);
+  let out;
+  try {
+    const aes = await deriveKey(key);
+    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(msg.iv)) }, aes, unb64(msg.cipher));
+    out = new TextDecoder().decode(plain);
+  } catch { out = "🔒 Không thể giải mã"; }
+  decCache.set(ck, out); return out;
 }
 
-function b64(buffer){
-    const bytes=new Uint8Array(buffer);
-    let s="";
-    bytes.forEach(b=>s+=String.fromCharCode(b));
-    return btoa(s);
+/* ===================== CHAT ===================== */
+const curChat = () => chats.find(c => c.id === currentChat);
+
+async function chatName(c){
+  if (c.type === "group") return "👥 " + (c.name || "Group");
+  const other = await getUser(c.members.find(x => x !== me.id));
+  return "💬 " + (other.name || "Chat");
+}
+async function renderChatTabs(){
+  if (!me) return;
+  const names = await Promise.all(chats.map(chatName));
+  $("chatTabs").innerHTML = chats.length
+    ? chats.map((c,i) => `<button class="chat-tab ${currentChat === c.id ? "active" : ""}" onclick="openExistingChat('${c.id}')">${escapeHTML(names[i])}</button>`).join("")
+    : `<span class="muted">Chưa có cuộc trò chuyện. Vào Bạn bè và bấm Chat.</span>`;
+  const c = curChat(); $("chatTitle").textContent = c ? names[chats.indexOf(c)] : "Chưa chọn cuộc trò chuyện";
 }
 
-function unb64(str){
-    const s=atob(str);
-    const bytes=new Uint8Array(s.length);
-    for(let i=0;i<s.length;i++) bytes[i]=s.charCodeAt(i);
-    return bytes.buffer;
-}
-
-async function encrypt(text,key){
-    const aes=await deriveKey(key);
-    const iv=crypto.getRandomValues(new Uint8Array(12));
-    const encrypted=await crypto.subtle.encrypt({name:"AES-GCM",iv}, aes, new TextEncoder().encode(text));
-    return { cipher:b64(encrypted), iv:b64(iv) };
-}
-
-async function decrypt(msg,key){
-    try{
-        const aes=await deriveKey(key);
-        const plain=await crypto.subtle.decrypt({ name:"AES-GCM", iv:new Uint8Array(unb64(msg.iv)) }, aes, unb64(msg.cipher));
-        return new TextDecoder().decode(plain);
-    }catch{
-        return "🔒 Không thể giải mã";
+window.openPrivateChat = async friendId => {
+  const id = "private_" + pairId(me.id, friendId);
+  try {
+    const ref = doc(db,"chats",id);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      await setDoc(ref, { type: "private", members: [me.id, friendId].sort(), owner: "", key: generateChatKey(), createdAt: serverTimestamp(), lastAt: serverTimestamp() });
     }
+    currentChat = id; attachMessages(); showPage("chat");
+  } catch (e) { console.error(e); toast("Không mở được chat"); }
+};
+window.openGroup = id => { currentChat = id; attachMessages(); showPage("chat"); };
+window.openExistingChat = id => { currentChat = id; attachMessages(); renderChatTabs(); };
+
+function detachMessages(){
+  if (msgUnsub) { msgUnsub(); msgUnsub = null; }
+  msgDocs = []; renderMessages();
+}
+function attachMessages(){
+  if (msgUnsub) { msgUnsub(); msgUnsub = null; }
+  msgDocs = [];
+  if (!currentChat) return renderMessages();
+  msgUnsub = onSnapshot(query(collection(db,"chats",currentChat,"messages"), orderBy("createdAt","asc"), limit(300)), s => {
+    msgDocs = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderMessages(true);
+  }, err => { console.error(err); toast("Không tải được tin nhắn"); });
+  renderMessages();
 }
 
-function getCurrentChat(){ return chats[currentChat]; }
+async function renderMessages(stick){
+  const box = $("messages"); const win = $("chatWindow");
+  const c = curChat();
+  if (!currentChat || !c) {
+    $("chatKey").textContent = "--"; $("chatTitle").textContent = "Chưa chọn cuộc trò chuyện";
+    box.innerHTML = `<div class="empty">Hãy chọn một cuộc trò chuyện.</div>`; return;
+  }
+  $("chatKey").textContent = c.key;
+  const token = ++renderToken;
+  const nearBottom = win.scrollHeight - win.scrollTop - win.clientHeight < 120;
+  const open = new Set([...box.querySelectorAll(".message-wrapper.open")].map(e => e.dataset.id));
+  const senders = await Promise.all([...new Set(msgDocs.map(m => m.sender))].map(getUser));
+  const nameOf = Object.fromEntries(senders.map(u => [u.id, u.name]));
+  const texts = await Promise.all(msgDocs.map(m => decrypt(m, c.key)));
+  if (token !== renderToken) return;
+  if (!msgDocs.length) { box.innerHTML = `<div class="empty">Chưa có tin nhắn. Hãy nói xin chào 👋</div>`; return; }
 
-function renderChatTabs(){
-    const tabs=document.getElementById("chatTabs");
-    const arr=[];
-    Object.values(chats).forEach(c=>{
-        if(!c.members?.includes(currentUser.id)) return;
-        let name="Chat";
-        if(c.type==="group"){
-            const g=groups.find(x=>x.id===c.id);
-            name="👥 "+(g?.name||"Group");
-        }else{
-            const other=c.members.find(x=>x!==currentUser.id);
-            const u=users.find(x=>x.id===other);
-            name="💬 "+(u?.name||"Chat");
-        }
-        arr.push(`<button class="chat-tab ${currentChat===c.id?"active":""}" onclick="openExistingChat('${c.id}')">${escapeHTML(name)}</button>`);
-    });
-    tabs.innerHTML=arr.join("");
-}
-
-function openExistingChat(id){
-    currentChat=id;
-    renderChatTabs();
-    renderMessages();
-}
-
-async function renderMessages(){
-    if(!currentChat){
-        document.getElementById("chatKey").textContent="--";
-        messages.innerHTML=`<div style="color:var(--muted);text-align:center;margin-top:40px">Hãy chọn một cuộc trò chuyện.</div>`;
-        return;
-    }
-    const chat=getCurrentChat();
-    if(!chat)return;
-    chatKey.textContent=chat.key;
-    messages.innerHTML="";
-    
-    for(let idx = 0; idx < chat.messages.length; idx++){
-        const m = chat.messages[idx];
-        const text=await decrypt(m,chat.key);
-        
-        const wrapper=document.createElement("div");
-        wrapper.className="message-wrapper "+(m.sender===currentUser.id?"me":"other");
-        
-        const msgDiv=document.createElement("div");
-        msgDiv.className="message "+(m.sender===currentUser.id?"me":"other");
-        msgDiv.textContent=text;
-        
-        wrapper.appendChild(msgDiv);
-        
-        if(m.reactions && Object.keys(m.reactions).length > 0) {
-            const rxDiv = document.createElement("div");
-            rxDiv.className = "message-reactions";
-            rxDiv.textContent = Object.values(m.reactions).join(" ");
-            wrapper.appendChild(rxDiv);
-        }
-        
-        const picker=document.createElement("div");
-        picker.className="reaction-picker";
-        picker.innerHTML=`
-            <span style="cursor:pointer" onclick="reactMessage(${idx}, '❤️')">❤️</span>
-            <span style="cursor:pointer" onclick="reactMessage(${idx}, '👍')">👍</span>
-            <span style="cursor:pointer" onclick="reactMessage(${idx}, '😂')">😂</span>
-            <span style="cursor:pointer" onclick="reactMessage(${idx}, '😢')">😢</span>
-            <span style="cursor:pointer" onclick="reactMessage(${idx}, '🔥')">🔥</span>
-            <span style="cursor:pointer" onclick="reactMessage(${idx}, '🎉')">🎉</span>
-        `;
-        wrapper.appendChild(picker);
-        
-        messages.appendChild(wrapper);
-    }
-    messages.scrollTop=messages.scrollHeight;
-}
-
-function reactMessage(msgIndex, emoji) {
-    const chat = getCurrentChat();
-    if(!chat || !chat.messages[msgIndex]) return;
-    if(!chat.messages[msgIndex].reactions) {
-        chat.messages[msgIndex].reactions = {};
-    }
-    chat.messages[msgIndex].reactions[currentUser.id] = emoji;
-    save();
-    renderMessages();
-}
-
-async function sendMessage(){
-    if(!currentChat){ toast("Hãy mở một cuộc trò chuyện"); return; }
-    const input=document.getElementById("messageInput");
-    const text=input.value.trim();
-    if(!text)return;
-    const chat=getCurrentChat();
-    const encrypted=await encrypt(text, chat.key);
-    chat.messages.push({ sender:currentUser.id, cipher:encrypted.cipher, iv:encrypted.iv, reactions:{}, createdAt:new Date().toISOString() });
-    save();
-    input.value="";
-    renderMessages();
-}
-
-function copyChatKey(){
-    if(!currentChat)return;
-    navigator.clipboard.writeText(getCurrentChat().key);
-    toast("Đã copy Chat Key 📋");
-}
-
-function newChatKey(){
-    if(!currentChat)return;
-    getCurrentChat().key=generateChatKey();
-    save();
-    renderMessages();
-    toast("Đã tạo Chat Key mới 🔐");
-}
-
-function renderNotifications(){
-    const mine=notifications.filter(n=>n.to===currentUser.id);
-    if(!mine.length){ notificationList.innerHTML=`<div class="card" style="color:var(--muted)">Chưa có thông báo.</div>`; return; }
-    notificationList.innerHTML=mine.reverse().map(n=>`
-        <div class="card">
-            🔔 ${escapeHTML(n.text)}
-            <div class="muted" style="margin-top:6px">${ago(n.createdAt)}</div>
+  let html = "", lastDay = "";
+  msgDocs.forEach((m, i) => {
+    const mine = m.sender === me.id; const side = mine ? "me" : "other";
+    const day = dayLabel(m.createdAt);
+    if (day !== lastDay) { html += `<div class="day-sep">${escapeHTML(day)}</div>`; lastDay = day; }
+    const rx = m.reactions || {}; const counts = {};
+    Object.values(rx).forEach(e => counts[e] = (counts[e] || 0) + 1);
+    const chips = Object.entries(counts).map(([e,n]) =>
+      `<span class="chip ${rx[me.id] === e ? "mine" : ""}" onclick="reactMessage('${m.id}','${e}')">${e}${n > 1 ? " " + n : ""}</span>`).join("");
+    html += `<div class="message-wrapper ${side} ${open.has(m.id) ? "open" : ""}" data-id="${m.id}">
+      ${!mine && c.type === "group" ? `<div class="sender-name">${escapeHTML(nameOf[m.sender] || "Thành viên")}</div>` : ""}
+      <div class="msg-line">
+        <div class="bubble-wrap"><div class="message ${side}" onclick="togglePicker('${m.id}')">${escapeHTML(texts[i])}</div></div>
+        <div class="msg-tools">
+          <button class="tool-btn" onclick="togglePicker('${m.id}')">☺</button>
+          ${mine ? `<button class="tool-btn" onclick="deleteMessage('${m.id}')">🗑</button>` : ""}
         </div>
-    `).join("");
+      </div>
+      <div class="reaction-picker">${EMOJIS.map(e => `<span onclick="reactMessage('${m.id}','${e}')">${e}</span>`).join("")}</div>
+      ${chips ? `<div class="reactions">${chips}</div>` : ""}
+      <div class="msg-time">${hhmm(m.createdAt)}</div>
+    </div>`;
+  });
+  box.innerHTML = html;
+  if (stick || nearBottom) win.scrollTop = win.scrollHeight;
 }
+window.togglePicker = id => {
+  const el = document.querySelector(`.message-wrapper[data-id="${id}"]`); if (el) el.classList.toggle("open");
+};
+window.reactMessage = async (msgId, emoji) => {
+  const m = msgDocs.find(x => x.id === msgId); if (!m) return;
+  const same = m.reactions?.[me.id] === emoji;
+  try { await updateDoc(doc(db,"chats",currentChat,"messages",msgId), { [`reactions.${me.id}`]: same ? deleteField() : emoji }); }
+  catch (e) { console.error(e); toast("Lỗi reaction"); }
+};
+window.deleteMessage = async id => {
+  if (!confirm("Xóa tin nhắn này?")) return;
+  try { await deleteDoc(doc(db,"chats",currentChat,"messages",id)); } catch { toast("Không xóa được"); }
+};
+window.sendMessage = async () => {
+  if (!currentChat) { toast("Hãy mở một cuộc trò chuyện"); return; }
+  const input = $("messageInput"); const text = input.value.trim(); if (!text) return;
+  const c = curChat(); if (!c) return;
+  input.value = "";
+  try {
+    const enc = await encrypt(text, c.key);
+    await addDoc(collection(db,"chats",currentChat,"messages"), { sender: me.id, cipher: enc.cipher, iv: enc.iv, reactions: {}, createdAt: serverTimestamp() });
+    await updateDoc(doc(db,"chats",currentChat), { lastAt: serverTimestamp() });
+  } catch (e) { console.error(e); input.value = text; toast("Gửi thất bại"); }
+};
+window.toggleKeyPanel = () => $("keyPanel").classList.toggle("open");
+window.copyChatKey = async () => {
+  const c = curChat(); if (!c) return;
+  try { await navigator.clipboard.writeText(c.key); toast("Đã copy mã 📋"); } catch { toast("Không copy được"); }
+};
+window.newChatKey = async () => {
+  const c = curChat(); if (!c) return;
+  if (c.type === "group" && c.owner !== me.id) { toast("Chỉ chủ group được đổi mã"); return; }
+  if (!confirm("Đổi mã sẽ mã hóa lại toàn bộ tin nhắn cũ bằng mã mới. Tiếp tục?")) return;
+  try {
+    const newKey = generateChatKey();
+    const snap = await getDocs(query(collection(db,"chats",c.id,"messages"), orderBy("createdAt","asc"), limit(450)));
+    const batch = writeBatch(db);
+    for (const d of snap.docs) {
+      const data = { id: d.id, ...d.data() };
+      const plain = await decrypt(data, c.key);
+      if (plain.startsWith("🔒")) continue;
+      const enc = await encrypt(plain, newKey);
+      batch.update(d.ref, { cipher: enc.cipher, iv: enc.iv });
+    }
+    batch.update(doc(db,"chats",c.id), { key: newKey });
+    await batch.commit();
+    toast("Đã tạo mã mới 🔐");
+  } catch (e) { console.error(e); toast("Đổi mã thất bại"); }
+};
 
-function updateProfile(){
-    profileName.textContent=currentUser.name;
-    profileEmail.textContent=currentUser.email;
-    avatar.textContent=currentUser.name.charAt(0).toUpperCase();
-    postCount.textContent=posts.filter(p=>p.userId===currentUser.id).length;
-    friendCount.textContent=friendships.filter(f=>f.a===currentUser.id || f.b===currentUser.id).length;
+/* ===================== GROUPS ===================== */
+async function renderGroupPicker(){
+  if (!me) return;
+  const box = $("groupPicker");
+  if (!friendships.length) { box.innerHTML = `<p class="muted">Hãy kết bạn trước để thêm vào group.</p>`; return; }
+  const checked = new Set([...box.querySelectorAll("input:checked")].map(i => i.value));
+  const users = await Promise.all(friendships.map(f => getUser(f.members.find(m => m !== me.id))));
+  box.innerHTML = users.map(u => `<label class="pick"><input type="checkbox" value="${u.id}" ${checked.has(u.id) ? "checked" : ""}> ${escapeHTML(u.name)} <span class="muted">${escapeHTML(u.email)}</span></label>`).join("");
 }
+window.createGroup = async () => {
+  const name = $("groupName").value.trim();
+  if (!name) { toast("Nhập tên group"); return; }
+  const picked = [...document.querySelectorAll("#groupPicker input:checked")].map(i => i.value);
+  const members = [...new Set([me.id, ...picked])];
+  try {
+    await addDoc(collection(db,"chats"), { type: "group", name, owner: me.id, members, key: generateChatKey(), createdAt: serverTimestamp(), lastAt: serverTimestamp() });
+    $("groupName").value = ""; document.querySelectorAll("#groupPicker input").forEach(i => i.checked = false);
+    toast("Đã tạo group 👥");
+  } catch (e) { console.error(e); toast("Tạo group thất bại"); }
+};
+async function renderGroups(){
+  if (!me) return;
+  const mine = chats.filter(c => c.type === "group");
+  if (!mine.length) { $("groupList").innerHTML = `<div class="card empty">Chưa có group.</div>`; return; }
+  const friendUsers = await Promise.all(friendships.map(f => getUser(f.members.find(m => m !== me.id))));
+  const html = await Promise.all(mine.map(async g => {
+    const isOwner = g.owner === me.id;
+    const members = await Promise.all(g.members.map(getUser));
+    const addable = friendUsers.filter(u => !g.members.includes(u.id));
+    return `<div class="card">
+      <div class="row">
+        <div class="item-left"><div class="group-logo-badge">${escapeHTML(initial(g.name))}</div>
+          <div><strong>👥 ${escapeHTML(g.name)}</strong><div class="muted">${g.members.length} thành viên${isOwner ? " · bạn là chủ" : ""}</div></div></div>
+        <button class="primary" onclick="openGroup('${g.id}')">Mở chat</button>
+      </div>
+      <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
+        ${members.map(u => `<div class="row" style="font-size:13px;margin-top:6px">
+          <span>${escapeHTML(u.name)} ${u.id === g.owner ? "👑" : ""} <span class="muted">${escapeHTML(u.email)}</span></span>
+          ${isOwner && u.id !== me.id ? `<button class="danger-btn" onclick="kickMember('${g.id}','${u.id}')">Kick</button>` : ""}
+        </div>`).join("")}
+        ${isOwner && addable.length ? `<div class="row" style="margin-top:12px;gap:6px">
+          <select id="add-member-${g.id}" class="input" style="margin-bottom:0;padding:9px;font-size:13px">
+            ${addable.map(u => `<option value="${u.id}">${escapeHTML(u.name)}</option>`).join("")}
+          </select>
+          <button class="secondary" style="font-size:13px" onclick="addMemberToGroup('${g.id}')">Thêm</button></div>` : ""}
+        <div class="row" style="margin-top:12px;justify-content:flex-end;gap:6px">
+          ${isOwner ? `<button class="danger-btn" onclick="deleteGroup('${g.id}')">Xóa group</button>`
+                    : `<button class="danger-btn" onclick="leaveGroup('${g.id}')">Rời group</button>`}
+        </div>
+      </div></div>`;
+  }));
+  $("groupList").innerHTML = html.join("");
+}
+window.kickMember = async (gid, uid) => {
+  if (!confirm("Loại thành viên này khỏi group?")) return;
+  try { await updateDoc(doc(db,"chats",gid), { members: arrayRemove(uid) }); toast("Đã loại thành viên"); } catch { toast("Lỗi"); }
+};
+window.addMemberToGroup = async gid => {
+  const sel = $("add-member-" + gid); if (!sel || !sel.value) return;
+  try { await updateDoc(doc(db,"chats",gid), { members: arrayUnion(sel.value) }); toast("Đã thêm thành viên"); } catch { toast("Lỗi"); }
+};
+window.leaveGroup = async gid => {
+  if (!confirm("Rời group này?")) return;
+  try { await updateDoc(doc(db,"chats",gid), { members: arrayRemove(me.id) }); toast("Đã rời group"); } catch { toast("Lỗi"); }
+};
+window.deleteGroup = async gid => {
+  if (!confirm("Xóa group? Toàn bộ tin nhắn sẽ mất.")) return;
+  try {
+    const snap = await getDocs(collection(db,"chats",gid,"messages"));
+    for (let i = 0; i < snap.docs.length; i += 400) {
+      const b = writeBatch(db); snap.docs.slice(i, i+400).forEach(d => b.delete(d.ref)); await b.commit();
+    }
+    await deleteDoc(doc(db,"chats",gid)); toast("Đã xóa group");
+  } catch (e) { console.error(e); toast("Lỗi"); }
+};
+
+/* ===================== NOTIFICATIONS ===================== */
+function renderNotifications(){
+  if (!me) return;
+  const box = $("notificationList");
+  if (!notifs.length) { box.innerHTML = `<div class="card empty">Chưa có thông báo.</div>`; return; }
+  box.innerHTML = notifs.map(n => `<div class="card" style="${n.read ? "opacity:.7" : "border-color:#713bc0"}">
+    🔔 ${escapeHTML(n.text)}<div class="muted" style="margin-top:6px">${ago(n.createdAt)}</div></div>`).join("");
+}
+window.markAllRead = async () => {
+  const unread = notifs.filter(n => !n.read); if (!unread.length) return;
+  try { const b = writeBatch(db); unread.forEach(n => b.update(doc(db,"notifications",n.id), { read: true })); await b.commit(); } catch { toast("Lỗi"); }
+};
+
+/* ===================== PROFILE ===================== */
+function updateProfileView(){
+  if (!me) return;
+  $("profileName").textContent = me.name; $("profileEmail").textContent = me.email;
+  $("avatar").textContent = initial(me.name);
+  $("postCount").textContent = posts.filter(p => p.userId === me.id).length;
+  $("friendCount").textContent = friendships.length;
+  $("groupCount").textContent = chats.filter(c => c.type === "group").length;
+}
+window.changeName = async () => {
+  const name = $("newName").value.trim();
+  if (!name) { toast("Nhập tên mới"); return; }
+  try {
+    await updateProfile(auth.currentUser, { displayName: name });
+    await updateDoc(doc(db,"users",me.id), { name, nameLower: name.toLowerCase() });
+    me.name = name; userCache.delete(me.id); updateProfileView(); toast("Đã đổi tên ✓");
+  } catch (e) { console.error(e); toast("Đổi tên thất bại"); }
+};
 </script>
 </body>
 </html>
