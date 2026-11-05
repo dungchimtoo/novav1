@@ -135,7 +135,7 @@ h2{font-size:20px}
 .message-wrapper.me .msg-line{flex-direction:row-reverse}
 .message{max-width:100%;padding:9px 13px;border-radius:16px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
 .message.me{background:var(--bubble-me);color:#fff;border-bottom-right-radius:5px}
-.message.other{background:var(--card-bg);border:1px solid var(--text);border-border:1px solid var(--border);border-bottom-left-radius:5px}
+.message.other{background:var(--card-bg);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:5px}
 .message.locked{opacity:.55;font-style:italic}
 .msg-line .bubble-wrap{max-width:78%}
 .msg-tools{display:none;gap:4px}
@@ -155,6 +155,28 @@ h2{font-size:20px}
 .chat-input input:focus{border-color:var(--purple)}
 .chat-input input:disabled{opacity:.5}
 .chat-input button{background:#7b2cff;color:#fff;border:0;border-radius:12px;padding:0 18px}
+
+/* Khung nhập mã mở khóa động */
+.unlock-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  padding: 12px;
+  border-radius: 12px;
+  margin: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.unlock-panel input {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px;
+  border-radius: 8px;
+  outline: none;
+  letter-spacing: 2px;
+}
 
 /* PROFILE / SETTINGS */
 .profile{text-align:center}
@@ -248,7 +270,6 @@ h2{font-size:20px}
  <div class="card create">
   <textarea id="postText" maxlength="1000" placeholder="Bạn đang nghĩ gì?"></textarea>
   
-  <!-- Khu vực hiển thị ảnh xem trước khi đăng -->
   <div id="postImagePreviewContainer" style="display:none;position:relative;margin-top:10px;">
     <img id="postImagePreview" src="" alt="Xem trước" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;">
     <button onclick="removePostImage()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:0;border-radius:50%;width:28px;height:28px;cursor:pointer;">✕</button>
@@ -257,7 +278,6 @@ h2{font-size:20px}
   <div class="row" style="margin-top:9px">
    <div style="display:flex;align-items:center;gap:10px;">
      <span class="anonymous">◉ Anonymous</span>
-     <!-- Nút chọn ảnh đăng bài -->
      <button class="secondary" style="padding:5px 10px;font-size:14px" onclick="document.getElementById('postImageFile').click()" title="Đính kèm ảnh">📷 Ảnh</button>
    </div>
    <button class="primary" onclick="createPost()">Đăng</button>
@@ -308,18 +328,10 @@ h2{font-size:20px}
     <button onclick="lockChat()">🔒 Khóa lại</button>
    </div>
   </div>
-  <div id="lockBox" class="lock-box" style="display:none">
-   <div style="font-size:30px">🔒</div>
-   <div style="font-weight:bold;margin:6px 0">Cuộc trò chuyện đã bị khóa</div>
-   <div class="muted" style="margin-bottom:10px">Nhập mã 24 ký tự do người tạo gửi cho bạn để mở khóa tin nhắn.</div>
-   <div class="search-friend">
-    <input id="unlockInput" class="input" maxlength="24" placeholder="MÃ 24 KÝ TỰ" style="letter-spacing:2px" onkeydown="if(event.key==='Enter')unlockChat()">
-    <button class="primary" onclick="unlockChat()">Mở khóa</button>
-   </div>
-  </div>
+  
   <div class="chat-window" id="chatWindow"><div id="messages"></div></div>
+  
   <div class="chat-input">
-   <!-- Nút chọn ảnh trong chat -->
    <button class="secondary" style="padding:0 10px;font-size:16px" onclick="document.getElementById('chatImageFile').click()" title="Gửi ảnh">📷</button>
    <input id="messageInput" placeholder="Nhập tin nhắn..." autocomplete="off" onkeydown="if(event.key==='Enter')sendMessage()">
    <button onclick="sendMessage()">Gửi</button>
@@ -421,7 +433,7 @@ h2{font-size:20px}
  </div>
 </div>
 
-<!-- CÁC THẺ INPUT FILE ẨN -->
+<!-- FILE INPUTS -->
 <input id="avatarFile" type="file" accept="image/*" style="display:none" onchange="changeAvatar(this)">
 <input id="chatImageFile" type="file" accept="image/*" style="display:none" onchange="sendChatImage(this)">
 <input id="postImageFile" type="file" accept="image/*" style="display:none" onchange="previewPostImage(this)">
@@ -454,14 +466,14 @@ const googleProvider = new GoogleAuthProvider();
 
 /* ===================== STATE ===================== */
 const $ = id => document.getElementById(id);
-let me = null;                 // {id,name,email,avatar}
+let me = null;
 let unsubs = [];
 let posts = [], incoming = [], outgoing = [], friendships = [], chats = [], notifs = [], myShares = [];
 let currentChat = null, msgDocs = [], msgUnsub = null, renderToken = 0;
 let currentTheme = localStorage.getItem("nova_theme") || "dark";
 let currentPage = "home";
 let viewingUid = null, prevPage = "home", shareTarget = null;
-let currentPostImageBase64 = null; // Biến lưu tạm ảnh bài viết chuẩn bị đăng
+let currentPostImageBase64 = null;
 
 const userCache = new Map();
 const decCache = new Map();
@@ -699,7 +711,6 @@ function genPostCode(){
   let x = ""; for (let i=0;i<8;i++) x += chars[arr[i] % chars.length]; return "NOVA-" + x;
 }
 
-// Xử lý chọn và nén ảnh xem trước cho bài viết
 window.previewPostImage = async input => {
   const file = input.files?.[0];
   input.value = "";
@@ -708,7 +719,6 @@ window.previewPostImage = async input => {
   
   try {
     toast("Đang xử lý ảnh...");
-    // Nén ảnh bài viết ở kích thước tối đa 800px cho sắc nét nhưng nhẹ dung lượng
     const base64 = await resizeImage(file, 800);
     currentPostImageBase64 = base64;
     $("postImagePreview").src = base64;
@@ -746,7 +756,6 @@ window.createPost = async () => {
 
     await addDoc(collection(db,"posts"), postData);
 
-    // Reset form đăng bài
     $("postText").value = "";
     removePostImage();
     toast("Đã đăng bài thành công 🚀");
@@ -767,7 +776,6 @@ function postHTML(p, withActions = true){
     <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
     ${p.text ? `<div class="post-text">${escapeHTML(p.text)}</div>` : ""}`;
   
-  // Hiển thị ảnh bài viết nếu có
   if (p.image) {
     html += `<img src="${p.image}" alt="Ảnh bài viết" class="post-image" onclick="window.open('${p.image}')">`;
   }
@@ -1019,20 +1027,54 @@ function attachMessages(){
   renderMessages();
 }
 
+// CẬP NHẬT HÀM HIỆN Ô NHẬP MÃ ĐỘNG KHI CHAT BỊ KHÓA
 function updateKeyPanel(c, key){
-  $("lockBox").style.display = (c && !key) ? "block" : "none";
+  let unlockPanel = document.getElementById('dynamicUnlockPanel');
+
+  if (c && !key) {
+    if (!unlockPanel) {
+      unlockPanel = document.createElement('div');
+      unlockPanel.id = 'dynamicUnlockPanel';
+      unlockPanel.className = 'unlock-panel';
+      unlockPanel.innerHTML = `
+        <input id="dynamicUnlockInput" maxlength="24" placeholder="NHẬP MÃ 24 KÝ TỰ ĐỂ MỞ KHÓA" onkeydown="if(event.key==='Enter')window.customUnlockChat()">
+        <button class="primary" onclick="window.customUnlockChat()">Mở khóa</button>
+      `;
+      const chatInputArea = document.querySelector('.chat-input');
+      chatInputArea.parentNode.insertBefore(unlockPanel, chatInputArea);
+    }
+    unlockPanel.style.display = 'flex';
+  } else {
+    if (unlockPanel) unlockPanel.style.display = 'none';
+  }
+
   $("chatKey").textContent = key || "🔒 Chưa mở khóa";
   $("keyActions").style.display = key ? "flex" : "none";
   $("messageInput").disabled = !key;
-  $("messageInput").placeholder = key ? "Nhập tin nhắn..." : "Nhập mã để mở khóa trước";
+  $("messageInput").placeholder = key ? "Nhập tin nhắn..." : "Nhập mã phía trên để mở khóa chat";
 }
+
+window.customUnlockChat = async () => {
+  const c = curChat(); if (!c) return;
+  const inputEl = document.getElementById('dynamicUnlockInput');
+  if (!inputEl) return;
+  const key = inputEl.value.trim().toUpperCase();
+  if (key.length !== 24) { toast("Mã gồm đúng 24 ký tự"); return; }
+  if (!(await verifyKey(c, key))) { toast("Sai mã, thử lại ❌"); return; }
+  saveKey(c.id, key);
+  toast("Đã mở khóa thành công 🔓"); 
+  renderChatTabs(); 
+  renderMessages(true);
+};
 
 async function renderMessages(stick){
   const box = $("messages"); const win = $("chatWindow");
   const c = curChat();
   if (!currentChat || !c) {
     $("chatKey").textContent = "--"; $("chatTitle").textContent = "Chưa chọn cuộc trò chuyện";
-    $("lockBox").style.display = "none"; $("keyActions").style.display = "none";
+    const unlockPanel = document.getElementById('dynamicUnlockPanel');
+    if (unlockPanel) unlockPanel.style.display = 'none';
+    $("keyActions").style.display = "none";
     $("messageInput").disabled = true;
     box.innerHTML = `<div class="empty">Hãy chọn một cuộc trò chuyện.</div>`; return;
   }
@@ -1099,20 +1141,6 @@ window.reactMessage = async (msgId, emoji) => {
 window.deleteMessage = async id => {
   if (!confirm("Xóa tin nhắn này?")) return;
   try { await deleteDoc(doc(db,"chats",currentChat,"messages",id)); } catch { toast("Không xóa được"); }
-};
-
-window.unlockChat = async () => {
-  const c = curChat(); if (!c) return;
-  const key = $("unlockInput").value.trim().toUpperCase();
-  if (key.length !== 24) { toast("Mã gồm đúng 24 ký tự"); return; }
-  if (!(await verifyKey(c, key))) { toast("Sai mã, thử lại ❌"); return; }
-  saveKey(c.id, key); $("unlockInput").value = "";
-  toast("Đã mở khóa 🔓"); renderChatTabs(); renderMessages(true);
-};
-window.lockChat = () => {
-  const c = curChat(); if (!c) return;
-  forgetKey(c.id); $("keyPanel").classList.remove("open");
-  toast("Đã khóa lại cuộc trò chuyện 🔒"); renderChatTabs(); renderMessages();
 };
 
 window.sendMessage = async () => {
@@ -1484,10 +1512,5 @@ function renderUPActions(uid){
   }
 }
 </script>
-
-<!-- CÁC THẺ INPUT FILE ẨN ĐỂ CHỌN ẢNH -->
-<input id="avatarFile" type="file" accept="image/*" style="display:none" onchange="changeAvatar(this)">
-<input id="chatImageFile" type="file" accept="image/*" style="display:none" onchange="sendChatImage(this)">
-<input id="postImageFile" type="file" accept="image/*" style="display:none" onchange="previewPostImage(this)">
 </body>
 </html>
