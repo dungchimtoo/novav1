@@ -155,30 +155,33 @@ h2{font-size:20px}
 .chat-input input:disabled{opacity:.5}
 .chat-input button{background:#7b2cff;color:#fff;border:0;border-radius:12px;padding:0 18px}
 
-/* Khung nhập mã mở khóa động */
-.unlock-panel {
-  padding: 20px;
+/* Khung nhập mã mở khóa trực tiếp trong khung chat */
+.unlock-box-direct {
+  padding: 30px 20px;
   text-align: center;
-  background: var(--card-bg);
-  border-top: 1px solid var(--border);
+  background: var(--input-bg);
+  border-radius: 14px;
+  margin: 15px;
+  border: 1px dashed var(--purple);
   display: flex;
   flex-direction: column;
-  gap: 10px;
   align-items: center;
+  gap: 12px;
 }
-.unlock-panel input {
+.unlock-box-direct input {
   width: 100%;
-  max-width: 320px;
-  background: var(--input-bg);
+  max-width: 300px;
+  background: var(--card-bg);
   border: 1px solid var(--border);
   color: var(--text);
   padding: 12px;
-  border-radius: 12px;
+  border-radius: 10px;
   text-align: center;
   letter-spacing: 2px;
   outline: none;
+  font-weight: bold;
 }
-.unlock-panel input:focus { border-color: var(--purple); }
+.unlock-box-direct input:focus { border-color: var(--purple); }
 
 /* PROFILE / SETTINGS */
 .profile{text-align:center}
@@ -1029,78 +1032,51 @@ function attachMessages(){
   renderMessages();
 }
 
-// CẬP NHẬT HÀM HIỆN Ô NHẬP MÃ MỞ KHÓA RÕ RÀNG
-function updateKeyPanel(c, key){
-  const chatWindow = $("chatWindow");
-  let unlockPanel = document.getElementById('dynamicUnlockPanel');
-
-  if (c && !key) {
-    if (!unlockPanel) {
-      unlockPanel = document.createElement('div');
-      unlockPanel.id = 'dynamicUnlockPanel';
-      unlockPanel.className = 'unlock-panel';
-      unlockPanel.innerHTML = `
-        <div style="font-size: 26px;">🔒</div>
-        <div style="font-weight: bold; font-size: 14px;">Cuộc trò chuyện này đang bị khóa</div>
-        <div class="muted" style="font-size: 12px;">Nhập mã bảo mật 24 ký tự để mở khóa và xem lại toàn bộ tin nhắn/ảnh cũ.</div>
-        <input id="dynamicUnlockInput" maxlength="24" placeholder="NHẬP MÃ 24 KÝ TỰ" onkeydown="if(event.key==='Enter')window.customUnlockChat()">
-        <button class="primary" style="width:100%; max-width:320px;" onclick="window.customUnlockChat()">Mở khóa ngay</button>
-      `;
-      chatWindow.parentNode.insertBefore(unlockPanel, chatWindow.nextSibling);
-    }
-    unlockPanel.style.display = 'flex';
-    chatWindow.style.display = 'none';
-  } else {
-    if (unlockPanel) unlockPanel.style.display = 'none';
-    chatWindow.style.display = 'block';
-  }
-
-  $("chatKey").textContent = key || "🔒 Chưa mở khóa";
-  $("keyActions").style.display = key ? "flex" : "none";
-  $("messageInput").disabled = !key;
-  $("messageInput").placeholder = key ? "Nhập tin nhắn..." : "Cần mở khóa để chat";
-}
-
-window.customUnlockChat = async () => {
-  const c = curChat(); if (!c) return;
-  const inputEl = document.getElementById('dynamicUnlockInput');
-  if (!inputEl) return;
-  const key = inputEl.value.trim().toUpperCase();
-  if (key.length !== 24) { toast("Mã bảo mật phải gồm đúng 24 ký tự"); return; }
-  if (!(await verifyKey(c, key))) { toast("Mã không chính xác, thử lại ❌"); return; }
-  
-  saveKey(c.id, key);
-  toast("Đã mở khóa thành công 🔓"); 
-  renderChatTabs(); 
-  renderMessages(true);
-};
-
+// CẬP NHẬT GIAO DIỆN MỞ KHÓA TRỰC TIẾP TRONG KHUNG CHAT
 async function renderMessages(stick){
   const box = $("messages"); const win = $("chatWindow");
   const c = curChat();
+  
   if (!currentChat || !c) {
-    $("chatKey").textContent = "--"; $("chatTitle").textContent = "Chưa chọn cuộc trò chuyện";
-    const unlockPanel = document.getElementById('dynamicUnlockPanel');
-    if (unlockPanel) unlockPanel.style.display = 'none';
+    $("chatTitle").textContent = "Chưa chọn cuộc trò chuyện";
+    $("chatKey").textContent = "--";
     $("keyActions").style.display = "none";
-    $("messageInput").disabled = true;
-    box.innerHTML = `<div class="empty">Hãy chọn một cuộc trò chuyện.</div>`; return;
+    box.innerHTML = `<div class="empty">Hãy chọn một cuộc trò chuyện.</div>`;
+    return;
   }
+
   const key = getKey(c);
-  updateKeyPanel(c, key);
+  $("chatKey").textContent = key || "🔒 Chưa mở khóa";
+  $("keyActions").style.display = key ? "flex" : "none";
+
+  // NẾU CHƯA CÓ KEY => HIỂN THỊ KHUNG NHẬP MÃ TRỰC TIẾP TRONG KHUNG CHAT
+  if (!key) {
+    box.innerHTML = `
+      <div class="unlock-box-direct">
+        <div style="font-size:32px">🔒</div>
+        <div style="font-weight:bold;font-size:16px">Cuộc trò chuyện này đang bị khóa</div>
+        <div class="muted" style="font-size:13px;max-width:300px;line-height:1.4">Nhập mã bảo mật 24 ký tự để mở khóa và xem lại toàn bộ tin nhắn & ảnh cũ.</div>
+        <input id="directUnlockInput" maxlength="24" placeholder="NHẬP MÃ 24 KÝ TỰ" onkeydown="if(event.key==='Enter')window.submitDirectUnlock()">
+        <button class="primary" style="width:100%;max-width:300px;" onclick="window.submitDirectUnlock()">Mở khóa ngay</button>
+      </div>
+    `;
+    return;
+  }
+
   const token = ++renderToken;
   const nearBottom = win.scrollHeight - win.scrollTop - win.clientHeight < 120;
   const open = new Set([...box.querySelectorAll(".message-wrapper.open")].map(e => e.dataset.id));
   const senders = await Promise.all([...new Set(msgDocs.map(m => m.sender))].map(getUser));
   const nameOf = Object.fromEntries(senders.map(u => [u.id, u.name]));
-  const texts = await Promise.all(msgDocs.map(m => key ? decrypt(m, key) : Promise.resolve(null)));
+  const texts = await Promise.all(msgDocs.map(m => decrypt(m, key)));
   if (token !== renderToken) return;
+
   if (!msgDocs.length) { box.innerHTML = `<div class="empty">Chưa có tin nhắn. Hãy nói xin chào 👋</div>`; return; }
 
   let html = "", lastDay = "";
   msgDocs.forEach((m, i) => {
     const mine = m.sender === me.id; const side = mine ? "me" : "other";
-    const locked = texts[i] === null;
+    const locked = texts[i] === "🔒 Không thể giải mã";
     const day = dayLabel(m.createdAt);
     if (day !== lastDay) { html += `<div class="day-sep">${escapeHTML(day)}</div>`; lastDay = day; }
     const rx = m.reactions || {}; const counts = {};
@@ -1110,7 +1086,7 @@ async function renderMessages(stick){
     
     let contentHtml = "";
     if (locked) {
-      contentHtml = "🔒 Tin nhắn đã bị khóa";
+      contentHtml = "🔒 Không thể giải mã";
     } else {
       const plainText = texts[i];
       if (plainText && plainText.startsWith("data:image/")) {
@@ -1137,6 +1113,21 @@ async function renderMessages(stick){
   box.innerHTML = html;
   if (stick || nearBottom) win.scrollTop = win.scrollHeight;
 }
+
+window.submitDirectUnlock = async () => {
+  const c = curChat(); if (!c) return;
+  const inputEl = document.getElementById('directUnlockInput');
+  if (!inputEl) return;
+  const key = inputEl.value.trim().toUpperCase();
+  if (key.length !== 24) { toast("Mã bảo mật phải gồm đúng 24 ký tự"); return; }
+  if (!(await verifyKey(c, key))) { toast("Mã không chính xác, thử lại ❌"); return; }
+  
+  saveKey(c.id, key);
+  toast("Đã mở khóa thành công 🔓"); 
+  renderChatTabs(); 
+  renderMessages(true);
+};
+
 window.togglePicker = id => {
   const el = document.querySelector(`.message-wrapper[data-id="${id}"]`); if (el) el.classList.toggle("open");
 };
