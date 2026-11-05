@@ -80,6 +80,7 @@ h2{font-size:20px}
 .time{color:var(--muted);font-size:12px}
 .post-id{font-size:11px;color:var(--muted);margin:2px 0 10px}
 .post-text{line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.post-image{width:100%;max-height:400px;object-fit:cover;border-radius:12px;margin-top:10px;cursor:pointer}
 .actions{display:flex;gap:7px;margin-top:14px}
 .action{flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);padding:9px;border-radius:10px}
 .action:hover{border-color:#8b45ed;color:var(--text)}
@@ -134,7 +135,7 @@ h2{font-size:20px}
 .message-wrapper.me .msg-line{flex-direction:row-reverse}
 .message{max-width:100%;padding:9px 13px;border-radius:16px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
 .message.me{background:var(--bubble-me);color:#fff;border-bottom-right-radius:5px}
-.message.other{background:var(--card-bg);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:5px}
+.message.other{background:var(--card-bg);border:1px solid var(--text);border-border:1px solid var(--border);border-bottom-left-radius:5px}
 .message.locked{opacity:.55;font-style:italic}
 .msg-line .bubble-wrap{max-width:78%}
 .msg-tools{display:none;gap:4px}
@@ -246,8 +247,19 @@ h2{font-size:20px}
 <section id="home" class="page active">
  <div class="card create">
   <textarea id="postText" maxlength="1000" placeholder="Bạn đang nghĩ gì?"></textarea>
+  
+  <!-- Khu vực hiển thị ảnh xem trước khi đăng -->
+  <div id="postImagePreviewContainer" style="display:none;position:relative;margin-top:10px;">
+    <img id="postImagePreview" src="" alt="Xem trước" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;">
+    <button onclick="removePostImage()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:0;border-radius:50%;width:28px;height:28px;cursor:pointer;">✕</button>
+  </div>
+
   <div class="row" style="margin-top:9px">
-   <span class="anonymous">◉ Anonymous</span>
+   <div style="display:flex;align-items:center;gap:10px;">
+     <span class="anonymous">◉ Anonymous</span>
+     <!-- Nút chọn ảnh đăng bài -->
+     <button class="secondary" style="padding:5px 10px;font-size:14px" onclick="document.getElementById('postImageFile').click()" title="Đính kèm ảnh">📷 Ảnh</button>
+   </div>
    <button class="primary" onclick="createPost()">Đăng</button>
   </div>
  </div>
@@ -307,10 +319,8 @@ h2{font-size:20px}
   </div>
   <div class="chat-window" id="chatWindow"><div id="messages"></div></div>
   <div class="chat-input">
-   <!-- THÊM NÚT CHỌN ẢNH VÀO KHUNG CHAT -->
+   <!-- Nút chọn ảnh trong chat -->
    <button class="secondary" style="padding:0 10px;font-size:16px" onclick="document.getElementById('chatImageFile').click()" title="Gửi ảnh">📷</button>
-   <input type="file" id="chatImageFile" accept="image/*" style="display:none" onchange="sendChatImage(this)">
-   
    <input id="messageInput" placeholder="Nhập tin nhắn..." autocomplete="off" onkeydown="if(event.key==='Enter')sendMessage()">
    <button onclick="sendMessage()">Gửi</button>
   </div>
@@ -411,7 +421,11 @@ h2{font-size:20px}
  </div>
 </div>
 
+<!-- CÁC THẺ INPUT FILE ẨN -->
 <input id="avatarFile" type="file" accept="image/*" style="display:none" onchange="changeAvatar(this)">
+<input id="chatImageFile" type="file" accept="image/*" style="display:none" onchange="sendChatImage(this)">
+<input id="postImageFile" type="file" accept="image/*" style="display:none" onchange="previewPostImage(this)">
+
 <div id="toast"></div>
 
 <script type="module">
@@ -447,12 +461,14 @@ let currentChat = null, msgDocs = [], msgUnsub = null, renderToken = 0;
 let currentTheme = localStorage.getItem("nova_theme") || "dark";
 let currentPage = "home";
 let viewingUid = null, prevPage = "home", shareTarget = null;
+let currentPostImageBase64 = null; // Biến lưu tạm ảnh bài viết chuẩn bị đăng
+
 const userCache = new Map();
 const decCache = new Map();
 const openComments = new Set();
 const EMOJIS = ["❤️","👍","😂","😢","🔥","🎉"];
 
-/* ===== KEY STORE (mã chat chỉ nằm trên máy, không đưa lên Firestore) ===== */
+/* ===== KEY STORE ===== */
 let localKeys = {};
 const KEY_CHECK_TEXT = "NOVA-OK";
 function loadKeys(){ try { localKeys = JSON.parse(localStorage.getItem("nova_keys_" + me.id) || "{}"); } catch { localKeys = {}; } }
@@ -461,7 +477,7 @@ function saveKey(chatId, key){ localKeys[chatId] = key; persistKeys(); }
 function forgetKey(chatId){ delete localKeys[chatId]; persistKeys(); }
 async function makeKeyCheck(key){ return await encrypt(KEY_CHECK_TEXT, key); }
 async function verifyKey(c, key){
-  if (!c.keyCheck) return key === c.key;            // chat cũ tạo bằng bản trước
+  if (!c.keyCheck) return key === c.key;
   try {
     const aes = await deriveKey(key);
     const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(c.keyCheck.iv)) }, aes, unb64(c.keyCheck.cipher));
@@ -639,7 +655,7 @@ function startListeners(){
   listen(query(collection(db,"chats"), where("members","array-contains",me.id)), async s => {
     chats = s.docs.map(d => ({ id: d.id, ...d.data() }));
     chats.sort((a,b) => sortKey(b.lastAt) - sortKey(a.lastAt));
-    for (const c of chats) {   // mã đã bị đổi -> khóa lại trên máy này
+    for (const c of chats) {
       if (c.keyCheck && localKeys[c.id] && !(await verifyKey(c, localKeys[c.id]))) forgetKey(c.id);
     }
     if (currentChat && !chats.find(c => c.id === currentChat)) { currentChat = null; detachMessages(); }
@@ -677,30 +693,85 @@ window.showPage = page => {
   window.scrollTo(0,0);
 };
 
-/* ===================== POSTS ===================== */
+/* ===================== POSTS & ẢNH BÀI VIẾT ===================== */
 function genPostCode(){
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; const arr = new Uint32Array(8); crypto.getRandomValues(arr);
   let x = ""; for (let i=0;i<8;i++) x += chars[arr[i] % chars.length]; return "NOVA-" + x;
 }
+
+// Xử lý chọn và nén ảnh xem trước cho bài viết
+window.previewPostImage = async input => {
+  const file = input.files?.[0];
+  input.value = "";
+  if (!file) return;
+  if (!file.type.startsWith("image/")) { toast("Vui lòng chọn file ảnh hợp lệ"); return; }
+  
+  try {
+    toast("Đang xử lý ảnh...");
+    // Nén ảnh bài viết ở kích thước tối đa 800px cho sắc nét nhưng nhẹ dung lượng
+    const base64 = await resizeImage(file, 800);
+    currentPostImageBase64 = base64;
+    $("postImagePreview").src = base64;
+    $("postImagePreviewContainer").style.display = "block";
+    toast("Đã đính kèm ảnh ✓");
+  } catch (e) {
+    console.error(e);
+    toast("Không tải được ảnh");
+  }
+};
+
+window.removePostImage = () => {
+  currentPostImageBase64 = null;
+  $("postImagePreview").src = "";
+  $("postImagePreviewContainer").style.display = "none";
+};
+
 window.createPost = async () => {
   const text = $("postText").value.trim();
-  if (!text) { toast("Hãy viết gì đó"); return; }
+  if (!text && !currentPostImageBase64) { toast("Hãy viết gì đó hoặc đính kèm ảnh"); return; }
+  
   try {
-    await addDoc(collection(db,"posts"), {
-      postCode: genPostCode(), userId: me.id, text, likes: [], comments: [], createdAt: serverTimestamp()
-    });
-    $("postText").value = ""; toast("Đã đăng bài 🚀");
-  } catch (e) { console.error(e); toast("Đăng bài thất bại"); }
+    const postData = {
+      postCode: genPostCode(),
+      userId: me.id,
+      text: text,
+      likes: [],
+      comments: [],
+      createdAt: serverTimestamp()
+    };
+
+    if (currentPostImageBase64) {
+      postData.image = currentPostImageBase64;
+    }
+
+    await addDoc(collection(db,"posts"), postData);
+
+    // Reset form đăng bài
+    $("postText").value = "";
+    removePostImage();
+    toast("Đã đăng bài thành công 🚀");
+  } catch (e) {
+    console.error(e);
+    toast("Đăng bài thất bại");
+  }
 };
+
 function postHTML(p, withActions = true){
   const mine = p.userId === me.id;
   const likes = p.likes || [], comments = p.comments || [];
   const liked = likes.includes(me.id);
   const ts = p.createdAt || new Date();
+  
   let html = `<div class="card">
     <div class="post-head"><span class="user">◉ Anonymous${mine ? " (bạn)" : ""}</span><span class="time">${ago(ts)}</span></div>
     <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
-    <div class="post-text">${escapeHTML(p.text)}</div>`;
+    ${p.text ? `<div class="post-text">${escapeHTML(p.text)}</div>` : ""}`;
+  
+  // Hiển thị ảnh bài viết nếu có
+  if (p.image) {
+    html += `<img src="${p.image}" alt="Ảnh bài viết" class="post-image" onclick="window.open('${p.image}')">`;
+  }
+
   if (withActions) {
     html += `<div class="actions">
       <button class="action ${liked ? "liked" : ""}" onclick="likePost('${p.id}')">♥ ${likes.length}</button>
@@ -718,6 +789,7 @@ function postHTML(p, withActions = true){
   }
   return html + `</div>`;
 }
+
 function renderFeed(){
   if (!me) return;
   const focused = document.activeElement?.id || "";
@@ -757,7 +829,7 @@ async function doSearch(){
   const q = $("searchInput").value.toLowerCase().trim();
   const box = $("searchResults");
   if (!q) { box.innerHTML = ""; return; }
-  const foundPosts = posts.filter(p => p.text.toLowerCase().includes(q) || (p.postCode||"").toLowerCase().includes(q));
+  const foundPosts = posts.filter(p => (p.text || "").toLowerCase().includes(q) || (p.postCode||"").toLowerCase().includes(q));
   const found = new Map();
   if (q.length >= 2) {
     try {
@@ -986,7 +1058,6 @@ async function renderMessages(stick){
     const chips = Object.entries(counts).map(([e,n]) =>
       `<span class="chip ${rx[me.id] === e ? "mine" : ""}" onclick="reactMessage('${m.id}','${e}')">${e}${n > 1 ? " " + n : ""}</span>`).join("");
     
-    // XỬ LÝ HIỂN THỊ NỘI DUNG (HỖ TRỢ ẢNH HOẶC TEXT)
     let contentHtml = "";
     if (locked) {
       contentHtml = "🔒 Tin nhắn đã bị khóa";
@@ -1058,7 +1129,6 @@ window.sendMessage = async () => {
   } catch (e) { console.error(e); input.value = text; toast("Gửi thất bại"); }
 };
 
-// HÀM XỬ LÝ GỬI ẢNH TRONG CHAT
 window.sendChatImage = async input => {
   const file = input.files?.[0];
   input.value = "";
@@ -1073,7 +1143,7 @@ window.sendChatImage = async input => {
   toast("Đang xử lý ảnh...");
 
   try {
-    const base64Image = await resizeImage(file, 600); // Nén ảnh gọn nhẹ chuẩn Firestore
+    const base64Image = await resizeImage(file, 600);
     const enc = await encrypt(base64Image, key);
     
     await addDoc(collection(db, "chats", currentChat, "messages"), { 
@@ -1276,7 +1346,7 @@ window.changeName = async () => {
   } catch (e) { console.error(e); toast("Đổi tên thất bại"); }
 };
 
-/* ===================== AVATAR ===================== */
+/* ===================== AVATAR & RESIZE ===================== */
 function resizeImage(file, size = 160){
   return new Promise((resolve, reject) => {
     const img = new Image(); const url = URL.createObjectURL(file);
@@ -1348,7 +1418,7 @@ window.unshare = async sid => {
 window.copyPost = async () => {
   const p = posts.find(x => x.id === shareTarget); if (!p) return;
   closeModal();
-  const text = `NOVA\nPost ID: ${p.postCode}\n\n${p.text}`;
+  const text = `NOVA\nPost ID: ${p.postCode}\n\n${p.text || ""}`;
   if (navigator.share) { try { await navigator.share({ title: "NOVA", text }); } catch {} }
   else { try { await navigator.clipboard.writeText(text); toast("Đã copy bài viết 📋"); } catch { toast("Không copy được"); } }
 };
@@ -1363,7 +1433,8 @@ async function renderShareList(box, shares, mine){
       <div class="row"><span class="muted">↗ Đã chia sẻ · ${ago(s.createdAt)}</span>
         ${mine ? `<button class="danger-btn" onclick="unshare('${s.id}')">Gỡ</button>` : ""}</div>
       ${p ? `<div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
-             <div class="post-text">${escapeHTML(p.text)}</div>
+             ${p.text ? `<div class="post-text">${escapeHTML(p.text)}</div>` : ""}
+             ${p.image ? `<img src="${p.image}" alt="Ảnh" style="width:100%;max-height:250px;object-fit:cover;border-radius:10px;margin-top:8px;">` : ""}
              <div class="muted" style="margin-top:8px">♥ ${(p.likes || []).length} · 💬 ${(p.comments || []).length}</div>`
           : `<div class="muted" style="margin-top:8px">Bài viết gốc đã bị xóa.</div>`}
     </div>`;
@@ -1413,7 +1484,10 @@ function renderUPActions(uid){
   }
 }
 </script>
-<!-- THÊM INPUT ẨN ĐỂ LƯU FILE ẢNH -->
-<input type="file" id="chatImageFile" accept="image/*" style="display:none" onchange="sendChatImage(this)">
+
+<!-- CÁC THẺ INPUT FILE ẨN ĐỂ CHỌN ẢNH -->
+<input id="avatarFile" type="file" accept="image/*" style="display:none" onchange="changeAvatar(this)">
+<input id="chatImageFile" type="file" accept="image/*" style="display:none" onchange="sendChatImage(this)">
+<input id="postImageFile" type="file" accept="image/*" style="display:none" onchange="previewPostImage(this)">
 </body>
 </html>
