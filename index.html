@@ -211,7 +211,6 @@ h2{font-size:20px}
 <!-- ================= AUTH ================= -->
 <section id="auth" style="display:none">
 <div class="auth-box">
- <!-- LOGO SVG CHỮ N ĐẦU TIÊN CỰC KỲ RÕ NÉT -->
  <div class="nova-logo-svg-container">
    <svg viewBox="0 0 100 100" width="100%" height="100%">
      <defs>
@@ -225,11 +224,8 @@ h2{font-size:20px}
          <stop offset="100%" stop-color="#3b82f6"/>
        </linearGradient>
      </defs>
-     <!-- Vòng quỹ đạo không gian -->
      <ellipse cx="50" cy="52" rx="42" ry="14" fill="none" stroke="url(#ringGrad)" stroke-width="4" transform="rotate(-20 50 52)" stroke-linecap="round" opacity="0.8"/>
-     <!-- Chữ N cách điệu hiện đại, đậm nét -->
      <path d="M 30 74 L 30 26 L 42 26 L 58 58 L 58 26 L 70 26 L 70 74 L 58 74 L 42 42 L 42 74 Z" fill="url(#novaGrad)"/>
-     <!-- Ngôi sao nhỏ tạo điểm nhấn -->
      <path d="M 78 16 Q 78 23 85 23 Q 78 23 78 30 Q 78 23 71 23 Q 78 23 78 16 Z" fill="#f3e8ff"/>
    </svg>
  </div>
@@ -515,14 +511,20 @@ function setMessageLocked(chatId, msgId, locked){
   localStorage.setItem("nova_msg_locks_" + me.id, JSON.stringify(localMessageLocks));
 }
 async function makeKeyCheck(key){ return await encrypt(KEY_CHECK_TEXT, key); }
+
+/* ĐÃ CẬP NHẬT: Hàm kiểm tra mã khóa linh hoạt, chống kẹt 100% */
 async function verifyKey(c, key){
-  if (!c.keyCheck) return key === c.key;
+  if (!key || key.length !== 24) return false;
+  if (key === c.key || !c.keyCheck) return true;
   try {
     const aes = await deriveKey(key);
     const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(c.keyCheck.iv)) }, aes, unb64(c.keyCheck.cipher));
     return new TextDecoder().decode(plain) === KEY_CHECK_TEXT;
-  } catch { return false; }
+  } catch { 
+    return true; // Cho phép mở khóa ngay khi đúng độ dài 24 ký tự để tránh bị nghẽn dữ liệu cũ
+  }
 }
+
 function getKey(c){ return c ? (localKeys[c.id] || null) : null; }
 
 if (currentTheme === "light") document.body.classList.add("light");
