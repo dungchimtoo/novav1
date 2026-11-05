@@ -307,6 +307,10 @@ h2{font-size:20px}
   </div>
   <div class="chat-window" id="chatWindow"><div id="messages"></div></div>
   <div class="chat-input">
+   <!-- THÊM NÚT CHỌN ẢNH VÀO KHUNG CHAT -->
+   <button class="secondary" style="padding:0 10px;font-size:16px" onclick="document.getElementById('chatImageFile').click()" title="Gửi ảnh">📷</button>
+   <input type="file" id="chatImageFile" accept="image/*" style="display:none" onchange="sendChatImage(this)">
+   
    <input id="messageInput" placeholder="Nhập tin nhắn..." autocomplete="off" onkeydown="if(event.key==='Enter')sendMessage()">
    <button onclick="sendMessage()">Gửi</button>
   </div>
@@ -981,10 +985,24 @@ async function renderMessages(stick){
     Object.values(rx).forEach(e => counts[e] = (counts[e] || 0) + 1);
     const chips = Object.entries(counts).map(([e,n]) =>
       `<span class="chip ${rx[me.id] === e ? "mine" : ""}" onclick="reactMessage('${m.id}','${e}')">${e}${n > 1 ? " " + n : ""}</span>`).join("");
+    
+    // XỬ LÝ HIỂN THỊ NỘI DUNG (HỖ TRỢ ẢNH HOẶC TEXT)
+    let contentHtml = "";
+    if (locked) {
+      contentHtml = "🔒 Tin nhắn đã bị khóa";
+    } else {
+      const plainText = texts[i];
+      if (plainText && plainText.startsWith("data:image/")) {
+        contentHtml = `<img src="${plainText}" alt="Ảnh chat" style="max-width:100%;max-height:250px;border-radius:10px;display:block;cursor:pointer;" onclick="window.open('${plainText}')">`;
+      } else {
+        contentHtml = escapeHTML(plainText);
+      }
+    }
+
     html += `<div class="message-wrapper ${side} ${open.has(m.id) ? "open" : ""}" data-id="${m.id}">
       ${!mine && c.type === "group" ? `<div class="sender-name">${escapeHTML(nameOf[m.sender] || "Thành viên")}</div>` : ""}
       <div class="msg-line">
-        <div class="bubble-wrap"><div class="message ${side} ${locked ? "locked" : ""}" onclick="togglePicker('${m.id}')">${locked ? "🔒 Tin nhắn đã bị khóa" : escapeHTML(texts[i])}</div></div>
+        <div class="bubble-wrap"><div class="message ${side} ${locked ? "locked" : ""}" onclick="togglePicker('${m.id}')">${contentHtml}</div></div>
         <div class="msg-tools">
           <button class="tool-btn" onclick="togglePicker('${m.id}')">☺</button>
           ${mine ? `<button class="tool-btn" onclick="deleteMessage('${m.id}')">🗑</button>` : ""}
@@ -1038,6 +1056,40 @@ window.sendMessage = async () => {
     await addDoc(collection(db,"chats",currentChat,"messages"), { sender: me.id, cipher: enc.cipher, iv: enc.iv, reactions: {}, createdAt: serverTimestamp() });
     await updateDoc(doc(db,"chats",currentChat), { lastAt: serverTimestamp() });
   } catch (e) { console.error(e); input.value = text; toast("Gửi thất bại"); }
+};
+
+// HÀM XỬ LÝ GỬI ẢNH TRONG CHAT
+window.sendChatImage = async input => {
+  const file = input.files?.[0];
+  input.value = "";
+  if (!file) return;
+  if (!file.type.startsWith("image/")) { toast("Vui lòng chọn file ảnh hợp lệ"); return; }
+  
+  if (!currentChat) { toast("Hãy mở một cuộc trò chuyện"); return; }
+  const c = curChat(); if (!c) return;
+  const key = getKey(c);
+  if (!key) { toast("Hãy nhập mã để mở khóa trước khi gửi ảnh"); return; }
+
+  toast("Đang xử lý ảnh...");
+
+  try {
+    const base64Image = await resizeImage(file, 600); // Nén ảnh gọn nhẹ chuẩn Firestore
+    const enc = await encrypt(base64Image, key);
+    
+    await addDoc(collection(db, "chats", currentChat, "messages"), { 
+      sender: me.id, 
+      cipher: enc.cipher, 
+      iv: enc.iv, 
+      reactions: {}, 
+      createdAt: serverTimestamp() 
+    });
+    
+    await updateDoc(doc(db, "chats", currentChat), { lastAt: serverTimestamp() });
+    toast("Đã gửi ảnh thành công 📷");
+  } catch (e) {
+    console.error(e);
+    toast("Gửi ảnh thất bại");
+  }
 };
 
 window.toggleKeyPanel = () => $("keyPanel").classList.toggle("open");
@@ -1361,5 +1413,7 @@ function renderUPActions(uid){
   }
 }
 </script>
+<!-- THÊM INPUT ẨN ĐỂ LƯU FILE ẢNH -->
+<input type="file" id="chatImageFile" accept="image/*" style="display:none" onchange="sendChatImage(this)">
 </body>
 </html>
