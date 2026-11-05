@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -1049,15 +1050,15 @@ async function renderMessages(stick){
   $("chatKey").textContent = key || "🔒 Chưa mở khóa";
   $("keyActions").style.display = key ? "flex" : "none";
 
-  // NẾU CHƯA CÓ KEY => HIỂN THỊ KHUNG NHẬP MÃ TRỰC TIẾP TRONG KHUNG CHAT
+  // HIỂN THỊ KHUNG NHẬP MÃ TRỰC TIẾP NẾU CHƯA CÓ KEY
   if (!key) {
     box.innerHTML = `
-      <div class="unlock-box-direct">
-        <div style="font-size:32px">🔒</div>
-        <div style="font-weight:bold;font-size:16px">Cuộc trò chuyện này đang bị khóa</div>
-        <div class="muted" style="font-size:13px;max-width:300px;line-height:1.4">Nhập mã bảo mật 24 ký tự để mở khóa và xem lại toàn bộ tin nhắn & ảnh cũ.</div>
-        <input id="directUnlockInput" maxlength="24" placeholder="NHẬP MÃ 24 KÝ TỰ" onkeydown="if(event.key==='Enter')window.submitDirectUnlock()">
-        <button class="primary" style="width:100%;max-width:300px;" onclick="window.submitDirectUnlock()">Mở khóa ngay</button>
+      <div style="padding: 30px 20px; text-align: center; background: var(--input-bg); border-radius: 14px; margin: 15px; border: 1px dashed var(--purple); display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <div style="font-size: 32px;">🔒</div>
+        <div style="font-weight: bold; font-size: 16px;">Cuộc trò chuyện này đang bị khóa</div>
+        <div class="muted" style="font-size: 13px; max-width: 300px; line-height: 1.4;">Nhập mã bảo mật 24 ký tự để mở khóa và xem lại toàn bộ tin nhắn & ảnh cũ.</div>
+        <input id="directUnlockInput" maxlength="24" placeholder="NHẬP MÃ 24 KÝ TỰ" style="width: 100%; max-width: 300px; background: var(--card-bg); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 10px; text-align: center; letter-spacing: 2px; outline: none; font-weight: bold;" onkeydown="if(event.key==='Enter')window.submitDirectUnlock()">
+        <button class="primary" style="width: 100%; max-width: 300px;" onclick="window.submitDirectUnlock()">Mở khóa ngay</button>
       </div>
     `;
     return;
@@ -1114,6 +1115,7 @@ async function renderMessages(stick){
   if (stick || nearBottom) win.scrollTop = win.scrollHeight;
 }
 
+// Đảm bảo có các hàm xử lý khóa và mở khóa này trong script:
 window.submitDirectUnlock = async () => {
   const c = curChat(); if (!c) return;
   const inputEl = document.getElementById('directUnlockInput');
