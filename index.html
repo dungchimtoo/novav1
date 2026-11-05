@@ -98,6 +98,7 @@ h2{font-size:20px}
 .item-sub{font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis}
 .mini-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#6725cc,#c275ff);
  display:flex;align-items:center;justify-content:center;font-weight:bold;color:#fff;flex-shrink:0}
+.mini-avatar.sm{width:28px;height:28px;font-size:12px}
 .group-logo-badge{width:45px;height:45px;border-radius:14px;background:linear-gradient(135deg,#7628e8,#b866ff);
  display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:20px;color:#fff;
  box-shadow:0 0 12px #7c3aed55;flex-shrink:0}
@@ -163,6 +164,24 @@ h2{font-size:20px}
 .setting:last-child{border-bottom:0}
 .danger{color:var(--danger)}
 
+/* AVATAR */
+.avatar,.mini-avatar{overflow:hidden}
+.avatar img,.mini-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.avatar.editable{cursor:pointer}
+.avatar-hint{font-size:12px;color:#b875ff;margin-top:6px;cursor:pointer}
+
+/* CLICK VÀO NGƯỜI DÙNG */
+[data-uid]{cursor:pointer}
+.item-name[data-uid]:hover{text-decoration:underline}
+
+/* SHARE + MODAL */
+.shared-card{background:var(--input-bg);border:1px solid var(--border);border-radius:14px;padding:12px;margin-top:10px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:150;padding:20px}
+.modal.show{display:flex}
+.modal-box{width:100%;max-width:380px;background:var(--card-bg);border:1px solid var(--border);border-radius:20px;padding:20px}
+.modal-box button{margin-top:10px}
+.warn{display:none;font-size:12px;color:#ffb347;margin-top:10px;line-height:1.5}
+
 /* BOTTOM NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:66px;padding-bottom:env(safe-area-inset-bottom);
  display:flex;justify-content:space-around;align-items:center;background:var(--card-bg);border-top:1px solid var(--border);z-index:30}
@@ -173,9 +192,9 @@ h2{font-size:20px}
 .dot.show{display:block}
 
 #toast{position:fixed;left:50%;bottom:82px;transform:translate(-50%,20px);background:var(--card-bg);border:1px solid #703bb2;
- color:var(--text);padding:10px 15px;border-radius:11px;opacity:0;pointer-events:none;transition:.25s;z-index:100;max-width:90%;text-align:center}
+ color:var(--text);padding:10px 15px;border-radius:11px;opacity:0;pointer-events:none;transition:.25s;z-index:200;max-width:90%;text-align:center}
 #toast.show{opacity:1;transform:translate(-50%,0)}
-#loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200;
+#loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:300;
  color:#c994ff;letter-spacing:6px;font-weight:bold}
 </style>
 </head>
@@ -312,24 +331,33 @@ h2{font-size:20px}
  <div id="notificationList" style="margin-top:15px"></div>
 </section>
 
-<!-- PROFILE -->
+<!-- PROFILE (của mình) -->
 <section id="profile" class="page">
  <div class="card profile">
-  <div id="avatar" class="avatar">N</div>
-  <div id="profileName" class="profile-name">Nova</div>
+  <div id="avatar" class="avatar editable" onclick="document.getElementById('avatarFile').click()">N</div>
+  <div class="avatar-hint" onclick="document.getElementById('avatarFile').click()">Đổi ảnh đại diện</div>
+  <div id="profileName" class="profile-name" style="margin-top:8px">Nova</div>
   <div id="profileEmail" class="muted">--</div>
  </div>
  <div class="card">
   <div class="setting"><span>📝 Bài viết</span><strong id="postCount">0</strong></div>
   <div class="setting"><span>🤝 Bạn bè</span><strong id="friendCount">0</strong></div>
   <div class="setting"><span>👥 Group</span><strong id="groupCount">0</strong></div>
+  <div class="setting"><span>↗ Đã chia sẻ</span><strong id="shareCount">0</strong></div>
  </div>
+ <div class="card"><h3>↗ Bài viết đã chia sẻ</h3><div id="myShares"></div></div>
 </section>
 
 <!-- SETTINGS -->
 <section id="settings" class="page">
  <h2>⚙️ Cài đặt</h2>
  <div class="card" style="margin-top:15px">
+  <div class="setting"><span>🖼️ Ảnh đại diện</span>
+   <div class="btn-row">
+    <button class="secondary" onclick="document.getElementById('avatarFile').click()">Chọn ảnh</button>
+    <button class="secondary" onclick="removeAvatar()">Xóa</button>
+   </div>
+  </div>
   <div class="setting" style="flex-direction:column;align-items:stretch">
    <span>✏️ Tên hiển thị</span>
    <div class="search-friend" style="margin-top:8px">
@@ -341,6 +369,18 @@ h2{font-size:20px}
   <div class="setting"><span>🔐 Tin nhắn mã hóa</span><span style="color:#bd7fff">AES-GCM</span></div>
   <div class="setting"><span class="danger">Đăng xuất</span><button class="secondary" onclick="logout()">Thoát</button></div>
  </div>
+</section>
+
+<!-- USER PROFILE (của người khác) -->
+<section id="userProfile" class="page">
+ <button class="secondary" style="margin-bottom:12px" onclick="goBack()">← Quay lại</button>
+ <div class="card profile">
+  <div id="upAvatar" class="avatar">N</div>
+  <div id="upName" class="profile-name">--</div>
+  <div id="upEmail" class="muted">--</div>
+  <div id="upActions" class="btn-row" style="justify-content:center;margin-top:14px"></div>
+ </div>
+ <div class="card"><h3>↗ Bài viết đã chia sẻ</h3><div id="upShares"></div></div>
 </section>
 
 </main>
@@ -355,6 +395,19 @@ h2{font-size:20px}
 </nav>
 </section>
 
+<!-- MODAL CHIA SẺ -->
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
+ <div class="modal-box">
+  <h3>Chia sẻ bài viết</h3>
+  <div id="modalPostCode" class="muted" style="margin-top:6px"></div>
+  <div id="modalWarn" class="warn">⚠️ Đây là bài ẩn danh của chính bạn. Chia sẻ lên trang cá nhân sẽ cho mọi người biết bạn là tác giả.</div>
+  <button id="shareProfileBtn" class="primary full">↗ Chia sẻ lên trang cá nhân</button>
+  <button class="secondary full" onclick="copyPost()">📋 Copy nội dung</button>
+  <button class="secondary full" onclick="closeModal()">Đóng</button>
+ </div>
+</div>
+
+<input id="avatarFile" type="file" accept="image/*" style="display:none" onchange="changeAvatar(this)">
 <div id="toast"></div>
 
 <script type="module">
@@ -383,12 +436,13 @@ const googleProvider = new GoogleAuthProvider();
 
 /* ===================== STATE ===================== */
 const $ = id => document.getElementById(id);
-let me = null;                 // {id,name,email}
+let me = null;                 // {id,name,email,avatar}
 let unsubs = [];
-let posts = [], incoming = [], outgoing = [], friendships = [], chats = [], notifs = [];
+let posts = [], incoming = [], outgoing = [], friendships = [], chats = [], notifs = [], myShares = [];
 let currentChat = null, msgDocs = [], msgUnsub = null, renderToken = 0;
 let currentTheme = localStorage.getItem("nova_theme") || "dark";
 let currentPage = "home";
+let viewingUid = null, prevPage = "home", shareTarget = null;
 const userCache = new Map();
 const decCache = new Map();
 const openComments = new Set();
@@ -432,6 +486,10 @@ function ago(ts){
 function hhmm(ts){ return toDate(ts).toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"}); }
 function dayLabel(ts){ return toDate(ts).toLocaleDateString("vi-VN",{weekday:"long",day:"2-digit",month:"2-digit",year:"numeric"}); }
 function initial(name){ return (name || "?").trim().charAt(0).toUpperCase() || "?"; }
+function avatarHTML(u, cls = "mini-avatar"){
+  const inner = u?.avatar ? `<img src="${escapeHTML(u.avatar)}" alt="">` : escapeHTML(initial(u?.name));
+  return `<div class="${cls}" ${u?.id ? `data-uid="${escapeHTML(u.id)}"` : ""}>${inner}</div>`;
+}
 function authErr(code){
   const map = {
     "auth/invalid-credential":"Gmail hoặc mật khẩu sai",
@@ -525,7 +583,7 @@ onAuthStateChanged(auth, async user => {
   if (user) {
     try {
       const data = await ensureUserDoc(user);
-      me = { id: user.uid, name: data.name, email: (user.email || data.email || "").toLowerCase() };
+      me = { id: user.uid, name: data.name, email: (user.email || data.email || "").toLowerCase(), avatar: data.avatar || "" };
       userCache.set(me.id, { id: me.id, ...data });
       loadKeys();
       $("auth").style.display = "none";
@@ -546,12 +604,15 @@ onAuthStateChanged(auth, async user => {
 
 /* ===================== LISTENERS ===================== */
 function listen(q, cb){
-  unsubs.push(onSnapshot(q, cb, err => { console.error(err); if (err.code === "permission-denied") toast("Firestore từ chối quyền — cập nhật Rules"); }));
+  unsubs.push(onSnapshot(q, s => {
+    cb(s);
+    if (currentPage === "userProfile" && viewingUid) renderUPActions(viewingUid);
+  }, err => { console.error(err); if (err.code === "permission-denied") toast("Firestore từ chối quyền — cập nhật Rules"); }));
 }
 function stopListeners(){
   unsubs.forEach(u => u()); unsubs = [];
   if (msgUnsub) { msgUnsub(); msgUnsub = null; }
-  posts = []; incoming = []; outgoing = []; friendships = []; chats = []; notifs = []; msgDocs = [];
+  posts = []; incoming = []; outgoing = []; friendships = []; chats = []; notifs = []; myShares = []; msgDocs = [];
 }
 function startListeners(){
   listen(query(collection(db,"posts"), orderBy("createdAt","desc"), limit(100)), s => {
@@ -581,6 +642,11 @@ function startListeners(){
     await renderChatTabs(); renderGroups(); updateProfileView();
     if (currentChat) renderMessages();
   });
+  listen(query(collection(db,"shares"), where("userId","==",me.id)), s => {
+    myShares = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    myShares.sort((a,b) => sortKey(b.createdAt) - sortKey(a.createdAt));
+    renderMyShares(); updateProfileView();
+  });
   listen(query(collection(db,"notifications"), where("to","==",me.id)), s => {
     notifs = s.docs.map(d => ({ id: d.id, ...d.data() }));
     notifs.sort((a,b) => sortKey(b.createdAt) - sortKey(a.createdAt));
@@ -601,7 +667,7 @@ window.showPage = page => {
   if (page === "chat") { renderChatTabs(); renderMessages(); }
   if (page === "groups") { renderGroups(); renderGroupPicker(); }
   if (page === "notifications") renderNotifications();
-  if (page === "profile") updateProfileView();
+  if (page === "profile") { updateProfileView(); renderMyShares(); }
   if (page === "settings") $("newName").value = me?.name || "";
   if (page === "search") searchEverything();
   window.scrollTo(0,0);
@@ -635,7 +701,7 @@ function postHTML(p, withActions = true){
     html += `<div class="actions">
       <button class="action ${liked ? "liked" : ""}" onclick="likePost('${p.id}')">♥ ${likes.length}</button>
       <button class="action" onclick="toggleComments('${p.id}')">💬 ${comments.length}</button>
-      <button class="action" onclick="sharePost('${p.id}')">↗ Share</button>
+      <button class="action" onclick="openShare('${p.id}')">↗ Share</button>
       ${mine ? `<button class="action" style="color:var(--danger)" onclick="deletePost('${p.id}')">🗑</button>` : ""}
     </div>
     <div id="comments-${p.id}" class="comments" style="display:${openComments.has(p.id) ? "block" : "none"}">
@@ -676,12 +742,6 @@ window.deletePost = async id => {
   if (!confirm("Xóa bài viết này?")) return;
   try { await deleteDoc(doc(db,"posts",id)); toast("Đã xóa bài"); } catch { toast("Không xóa được"); }
 };
-window.sharePost = async id => {
-  const p = posts.find(x => x.id === id); if (!p) return;
-  const text = `NOVA\nPost ID: ${p.postCode}\n\n${p.text}`;
-  if (navigator.share) { try { await navigator.share({ title: "NOVA", text }); } catch {} }
-  else { await navigator.clipboard.writeText(text); toast("Đã copy bài viết"); }
-};
 
 /* ===================== SEARCH ===================== */
 let searchTimer = null;
@@ -712,8 +772,8 @@ async function doSearch(){
     html += [...found.values()].map(u => {
       const self = u.id === me.id; const friend = isFriend(u.id);
       return `<div class="item">
-        <div class="item-left"><div class="mini-avatar">${escapeHTML(initial(u.name))}</div>
-          <div><div class="item-name">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>
+        <div class="item-left">${avatarHTML(u)}
+          <div><div class="item-name" data-uid="${u.id}">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>
         <div class="btn-row">${self ? `<span class="muted">Bạn</span>`
           : friend ? `<button class="primary" onclick="openPrivateChat('${u.id}')">💬</button>`
           : `<button class="primary" onclick="sendFriendRequest('${u.id}')">Kết bạn</button>`}</div></div>`;
@@ -747,8 +807,8 @@ window.findFriend = async () => {
     else if (outgoing.some(r => r.to === u.id)) action = `<span class="muted">Đã gửi lời mời</span>`;
     else if (incoming.some(r => r.from === u.id)) action = `<span class="muted">Họ đã mời bạn — xem bên dưới</span>`;
     else action = `<button class="primary" onclick="sendFriendRequest('${u.id}')">Kết bạn</button>`;
-    box.innerHTML = `<div class="item"><div class="item-left"><div class="mini-avatar">${escapeHTML(initial(u.name))}</div>
-      <div><div class="item-name">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>${action}</div>`;
+    box.innerHTML = `<div class="item"><div class="item-left">${avatarHTML(u)}
+      <div><div class="item-name" data-uid="${u.id}">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>${action}</div>`;
   } catch (e) { console.error(e); toast("Tìm kiếm thất bại"); }
 };
 
@@ -768,9 +828,10 @@ async function renderRequests(){
   if (!me) return;
   const box = $("requests");
   if (!incoming.length) { box.innerHTML = `<p class="muted" style="margin-top:10px">Không có lời mời mới.</p>`; return; }
+  await Promise.all(incoming.map(r => getUser(r.from)));
   box.innerHTML = incoming.map(r => `<div class="item">
-    <div class="item-left"><div class="mini-avatar">${escapeHTML(initial(r.fromName))}</div>
-      <div><div class="item-name">${escapeHTML(r.fromName || "Người dùng")}</div><div class="item-sub">${escapeHTML(r.fromEmail || "")}</div></div></div>
+    <div class="item-left">${avatarHTML({ id: r.from, name: r.fromName, avatar: userCache.get(r.from)?.avatar })}
+      <div><div class="item-name" data-uid="${r.from}">${escapeHTML(r.fromName || "Người dùng")}</div><div class="item-sub">${escapeHTML(r.fromEmail || "")}</div></div></div>
     <div class="btn-row"><button class="primary" onclick="acceptFriend('${r.id}')">✓</button>
     <button class="secondary" onclick="rejectFriend('${r.id}')">×</button></div></div>`).join("");
 }
@@ -795,8 +856,8 @@ async function renderFriendList(){
   if (!friendships.length) { box.innerHTML = `<p class="muted" style="margin-top:10px">Bạn chưa có bạn bè.</p>`; return; }
   const users = await Promise.all(friendships.map(f => getUser(f.members.find(m => m !== me.id))));
   box.innerHTML = users.map(u => `<div class="item">
-    <div class="item-left"><div class="mini-avatar">${escapeHTML(initial(u.name))}</div>
-      <div><div class="item-name">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>
+    <div class="item-left">${avatarHTML(u)}
+      <div><div class="item-name" data-uid="${u.id}">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>
     <div class="btn-row"><button class="primary" onclick="openPrivateChat('${u.id}')">💬 Chat</button>
     <button class="secondary" onclick="unfriend('${u.id}')">✕</button></div></div>`).join("");
 }
@@ -1054,8 +1115,9 @@ async function renderGroups(){
       </div>
       <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
         ${members.map(u => `<div class="row" style="font-size:13px;margin-top:8px">
-          <span>${escapeHTML(u.name)} ${u.id === g.owner ? "👑" : ""}
-            <span class="muted">${escapeHTML(u.email)}</span></span>
+          <span style="display:flex;align-items:center;gap:8px;min-width:0">${avatarHTML(u,"mini-avatar sm")}
+            <span data-uid="${u.id}">${escapeHTML(u.name)} ${u.id === g.owner ? "👑" : ""}
+            <span class="muted">${escapeHTML(u.email)}</span></span></span>
           ${isOwner && u.id !== me.id
             ? `<button class="danger-btn" onclick="kickMember('${g.id}','${u.id}')">Kick</button>` : ""}
         </div>`).join("")}
@@ -1146,10 +1208,11 @@ window.markAllRead = async () => {
 function updateProfileView(){
   if (!me) return;
   $("profileName").textContent = me.name; $("profileEmail").textContent = me.email;
-  $("avatar").textContent = initial(me.name);
+  $("avatar").innerHTML = me.avatar ? `<img src="${escapeHTML(me.avatar)}" alt="">` : escapeHTML(initial(me.name));
   $("postCount").textContent = posts.filter(p => p.userId === me.id).length;
   $("friendCount").textContent = friendships.length;
   $("groupCount").textContent = chats.filter(c => c.type === "group").length;
+  $("shareCount").textContent = myShares.length;
 }
 window.changeName = async () => {
   const name = $("newName").value.trim();
@@ -1160,6 +1223,143 @@ window.changeName = async () => {
     me.name = name; userCache.delete(me.id); updateProfileView(); toast("Đã đổi tên ✓");
   } catch (e) { console.error(e); toast("Đổi tên thất bại"); }
 };
+
+/* ===================== AVATAR ===================== */
+function resizeImage(file, size = 160){
+  return new Promise((resolve, reject) => {
+    const img = new Image(); const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const s = Math.min(img.width, img.height);
+      const sx = (img.width - s) / 2, sy = (img.height - s) / 2;
+      const canvas = document.createElement("canvas"); canvas.width = canvas.height = size;
+      canvas.getContext("2d").drawImage(img, sx, sy, s, s, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/jpeg", 0.8));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Ảnh không hợp lệ")); };
+    img.src = url;
+  });
+}
+window.changeAvatar = async input => {
+  const file = input.files?.[0]; input.value = "";
+  if (!file) return;
+  if (!file.type.startsWith("image/")) { toast("Hãy chọn file ảnh"); return; }
+  if (file.size > 10 * 1024 * 1024) { toast("Ảnh quá lớn (tối đa 10MB)"); return; }
+  try {
+    const data = await resizeImage(file);
+    await updateDoc(doc(db,"users",me.id), { avatar: data });
+    me.avatar = data;
+    userCache.set(me.id, { ...(userCache.get(me.id) || {}), id: me.id, avatar: data });
+    updateProfileView(); renderFriendList(); renderGroups();
+    toast("Đã đổi ảnh đại diện ✓");
+  } catch (e) { console.error(e); toast("Đổi ảnh thất bại (thử ảnh JPG/PNG)"); }
+};
+window.removeAvatar = async () => {
+  if (!me.avatar) { toast("Bạn chưa có ảnh đại diện"); return; }
+  try {
+    await updateDoc(doc(db,"users",me.id), { avatar: deleteField() });
+    me.avatar = "";
+    userCache.set(me.id, { ...(userCache.get(me.id) || {}), id: me.id, avatar: "" });
+    updateProfileView(); renderFriendList(); renderGroups();
+    toast("Đã xóa ảnh đại diện");
+  } catch (e) { console.error(e); toast("Lỗi"); }
+};
+
+/* ===================== SHARE ===================== */
+window.openShare = id => {
+  const p = posts.find(x => x.id === id); if (!p) return;
+  shareTarget = id;
+  const sid = me.id + "_" + id;
+  const shared = myShares.some(s => s.id === sid);
+  $("modalPostCode").textContent = "Post ID: " + p.postCode;
+  $("modalWarn").style.display = (p.userId === me.id && !shared) ? "block" : "none";
+  const b = $("shareProfileBtn");
+  b.textContent = shared ? "✓ Đã chia sẻ — bấm để gỡ" : "↗ Chia sẻ lên trang cá nhân";
+  b.onclick = shared ? () => { closeModal(); unshare(sid); } : () => shareToProfile(id);
+  $("modal").classList.add("show");
+};
+window.closeModal = () => $("modal").classList.remove("show");
+
+window.shareToProfile = async id => {
+  closeModal();
+  const sid = me.id + "_" + id;
+  if (myShares.some(s => s.id === sid)) { toast("Bạn đã chia sẻ bài này rồi"); return; }
+  try {
+    await setDoc(doc(db,"shares",sid), { userId: me.id, postId: id, createdAt: serverTimestamp() });
+    toast("Đã chia sẻ lên trang cá nhân ↗");
+  } catch (e) { console.error(e); toast("Chia sẻ thất bại"); }
+};
+window.unshare = async sid => {
+  try { await deleteDoc(doc(db,"shares",sid)); toast("Đã gỡ khỏi trang cá nhân"); }
+  catch (e) { console.error(e); toast("Lỗi"); }
+};
+window.copyPost = async () => {
+  const p = posts.find(x => x.id === shareTarget); if (!p) return;
+  closeModal();
+  const text = `NOVA\nPost ID: ${p.postCode}\n\n${p.text}`;
+  if (navigator.share) { try { await navigator.share({ title: "NOVA", text }); } catch {} }
+  else { try { await navigator.clipboard.writeText(text); toast("Đã copy bài viết 📋"); } catch { toast("Không copy được"); } }
+};
+
+async function renderShareList(box, shares, mine){
+  if (!box) return;
+  if (!shares.length) { box.innerHTML = `<p class="muted" style="margin-top:10px">Chưa chia sẻ bài viết nào.</p>`; return; }
+  const snaps = await Promise.all(shares.map(s => getDoc(doc(db,"posts",s.postId)).catch(() => null)));
+  box.innerHTML = shares.map((s,i) => {
+    const p = snaps[i]?.exists() ? snaps[i].data() : null;
+    return `<div class="shared-card">
+      <div class="row"><span class="muted">↗ Đã chia sẻ · ${ago(s.createdAt)}</span>
+        ${mine ? `<button class="danger-btn" onclick="unshare('${s.id}')">Gỡ</button>` : ""}</div>
+      ${p ? `<div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
+             <div class="post-text">${escapeHTML(p.text)}</div>
+             <div class="muted" style="margin-top:8px">♥ ${(p.likes || []).length} · 💬 ${(p.comments || []).length}</div>`
+          : `<div class="muted" style="margin-top:8px">Bài viết gốc đã bị xóa.</div>`}
+    </div>`;
+  }).join("");
+}
+function renderMyShares(){ renderShareList($("myShares"), myShares, true); }
+
+/* ===================== TRANG CÁ NHÂN NGƯỜI KHÁC ===================== */
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-uid]");
+  if (el && me) openUserProfile(el.dataset.uid);
+});
+window.goBack = () => showPage(prevPage && prevPage !== "userProfile" ? prevPage : "home");
+
+window.openUserProfile = async uid => {
+  if (uid === me.id) { showPage("profile"); return; }
+  if (currentPage !== "userProfile") prevPage = currentPage;
+  viewingUid = uid;
+  showPage("userProfile");
+  $("upName").textContent = "Đang tải..."; $("upEmail").textContent = ""; $("upActions").innerHTML = "";
+  $("upShares").innerHTML = "";
+  userCache.delete(uid);
+  const u = await getUser(uid);
+  if (viewingUid !== uid) return;
+  $("upName").textContent = u.name;
+  $("upEmail").textContent = u.email || "";
+  $("upAvatar").innerHTML = u.avatar ? `<img src="${escapeHTML(u.avatar)}" alt="">` : escapeHTML(initial(u.name));
+  renderUPActions(uid);
+  try {
+    const s = await getDocs(query(collection(db,"shares"), where("userId","==",uid)));
+    const shares = s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => sortKey(b.createdAt) - sortKey(a.createdAt));
+    if (viewingUid === uid) renderShareList($("upShares"), shares, false);
+  } catch (e) { console.error(e); $("upShares").innerHTML = `<p class="muted">Không tải được bài chia sẻ.</p>`; }
+};
+
+function renderUPActions(uid){
+  const box = $("upActions"); if (!box || !me) return;
+  const inReq = incoming.find(r => r.from === uid);
+  if (isFriend(uid)) {
+    box.innerHTML = `<button class="primary" onclick="openPrivateChat('${uid}')">💬 Nhắn tin</button><span class="muted" style="align-self:center">✓ Bạn bè</span>`;
+  } else if (inReq) {
+    box.innerHTML = `<button class="primary" onclick="acceptFriend('${inReq.id}')">✓ Chấp nhận lời mời</button>`;
+  } else if (outgoing.some(r => r.to === uid)) {
+    box.innerHTML = `<span class="muted">Đã gửi lời mời kết bạn</span>`;
+  } else {
+    box.innerHTML = `<button class="primary" onclick="sendFriendRequest('${uid}')">＋ Kết bạn</button>`;
+  }
+}
 </script>
 </body>
 </html>
