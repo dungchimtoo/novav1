@@ -26,20 +26,19 @@ h2{font-size:20px}
 .auth-box{width:100%;max-width:420px;background:var(--card-bg);border:1px solid var(--border);
  border-radius:25px;padding:30px;box-shadow:0 0 60px #8d3cff18}
 
-/* LOGO MỚI (CHUẨN ẢNH MẪU) */
-.nova-logo-img-container {
-  width: 130px;
-  height: 130px;
-  margin: 0 auto 12px;
+/* LOGO SVG CHUẨN XÁC MẪU */
+.nova-logo-svg-container {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 10px;
   display: flex;
   align-items: center;
   justify-content: center;
+  filter: drop-shadow(0 0 14px rgba(139, 92, 246, 0.45));
 }
-.nova-logo-img-container img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 0 16px rgba(139, 92, 246, 0.4));
+.mini-logo svg {
+  width: 36px;
+  height: 36px;
 }
 
 .wordmark{text-align:center;letter-spacing:8px;font-size:24px;font-weight:bold;color:#d5b5ff;
@@ -65,7 +64,6 @@ h2{font-size:20px}
 .topbar{height:64px;position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;
  padding:0 17px;background:var(--card-bg);border-bottom:1px solid var(--border)}
 .mini-logo{display:flex;align-items:center;gap:8px}
-.mini-logo img{width:36px;height:36px;object-fit:contain}
 .mini-word{font-size:18px;letter-spacing:4px;color:#d2b0ff;font-weight:bold}
 .top-actions{display:flex;gap:8px}
 .icon-btn{position:relative;width:40px;height:40px;border-radius:50%;border:1px solid var(--border);
@@ -214,9 +212,28 @@ h2{font-size:20px}
 <!-- ================= AUTH ================= -->
 <section id="auth" style="display:none">
 <div class="auth-box">
- <!-- ĐÃ THAY LOGO ẢNH CHUẨN MẪU -->
- <div class="nova-logo-img-container">
-   <img src="https://i.ibb.co/6c2m4p3V/image-3.png" alt="NOVA Logo">
+ <!-- LOGO SVG CHUẨN XÁC MẪU -->
+ <div class="nova-logo-svg-container">
+   <svg viewBox="0 0 100 100" width="100%" height="100%">
+     <defs>
+       <linearGradient id="novaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+         <stop offset="0%" stop-color="#b875ff"/>
+         <stop offset="50%" stop-color="#8b5cf6"/>
+         <stop offset="100%" stop-color="#3b82f6"/>
+       </linearGradient>
+       <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+         <stop offset="0%" stop-color="#a855f7"/>
+         <stop offset="100%" stop-color="#3b82f6"/>
+       </linearGradient>
+     </defs>
+     <!-- Chữ N cách điệu -->
+     <path d="M 32 75 L 32 35 C 32 25, 42 20, 52 30 L 68 46 C 72 50, 72 56, 68 60 L 63 65 C 58 70, 50 72, 45 70 Z" fill="url(#novaGrad)" />
+     <path d="M 38 68 L 62 43 C 65 40, 68 42, 65 46 L 45 68 Z" fill="#3b82f6" opacity="0.4"/>
+     <!-- Vòng quay quỹ đạo (Orbit) -->
+     <ellipse cx="50" cy="55" rx="38" ry="14" fill="none" stroke="url(#ringGrad)" stroke-width="5" transform="rotate(-25 50 55)" stroke-linecap="round"/>
+     <!-- Ngôi sao 4 cánh (Sparkle) -->
+     <path d="M 78 18 Q 78 26 86 26 Q 78 26 78 34 Q 78 26 70 26 Q 78 26 78 18 Z" fill="#e9d5ff"/>
+   </svg>
  </div>
  <div class="wordmark">NOVA</div>
  <div class="subtitle">Mạng xã hội ẩn danh</div>
@@ -246,7 +263,9 @@ h2{font-size:20px}
 <section id="app">
 <header class="topbar">
  <div class="mini-logo">
-   <img src="https://i.ibb.co/6c2m4p3V/image-3.png" alt="NOVA">
+   <svg viewBox="0 0 100 100" width="34" height="34">
+     <use href="#novaSvgLogo"/>
+   </svg>
    <span class="mini-word">NOVA</span>
  </div>
  <div class="top-actions">
@@ -254,6 +273,26 @@ h2{font-size:20px}
   <button class="icon-btn" onclick="showPage('settings')">⚙</button>
  </div>
 </header>
+
+<!-- (SVG chung ẩn để dùng lại cho topbar) -->
+<svg style="display:none">
+  <defs>
+    <linearGradient id="novaGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#b875ff"/>
+      <stop offset="50%" stop-color="#8b5cf6"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <linearGradient id="ringGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  <g id="novaSvgLogo">
+    <path d="M 32 75 L 32 35 C 32 25, 42 20, 52 30 L 68 46 C 72 50, 72 56, 68 60 L 63 65 C 58 70, 50 72, 45 70 Z" fill="url(#novaGrad2)" />
+    <ellipse cx="50" cy="55" rx="38" ry="14" fill="none" stroke="url(#ringGrad2)" stroke-width="5" transform="rotate(-25 50 55)" stroke-linecap="round"/>
+    <path d="M 78 18 Q 78 26 86 26 Q 78 26 78 34 Q 78 26 70 26 Q 78 26 78 18 Z" fill="#e9d5ff"/>
+  </g>
+</svg>
 
 <main class="main">
 
