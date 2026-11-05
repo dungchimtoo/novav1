@@ -1035,10 +1035,15 @@ function attachMessages(){
 
 // CẬP NHẬT RENDER TIN NHẮN KÈM GIAO DIỆN KHÓA / MỞ KHÓA
 async function renderMessages(stick){
+  // Tăng token NGAY khi bắt đầu render để mọi lần giải mã cũ bị hủy,
+  // kể cả khi cuộc trò chuyện vừa chuyển sang trạng thái khóa.
+  const token = ++renderToken;
   const box = $("messages"); const win = $("chatWindow");
+  const composer = document.querySelector("#chat .chat-input");
   const c = curChat();
   
   if (!currentChat || !c) {
+    if (composer) composer.style.display = "none";
     $("chatTitle").textContent = "Chưa chọn cuộc trò chuyện";
     $("chatKey").textContent = "--";
     $("keyActions").style.display = "none";
@@ -1049,6 +1054,9 @@ async function renderMessages(stick){
   const key = getKey(c);
   $("chatKey").textContent = key || "🔒 Chưa mở khóa";
   $("keyActions").style.display = key ? "flex" : "none";
+
+  // Khi khóa: ẩn toàn bộ nội dung tin nhắn và thanh gửi tin/ảnh.
+  if (composer) composer.style.display = key ? "flex" : "none";
 
   // HIỂN THỊ KHUNG NHẬP MÃ TRỰC TIẾP NẾU CHƯA CÓ KEY
   if (!key) {
@@ -1064,7 +1072,6 @@ async function renderMessages(stick){
     return;
   }
 
-  const token = ++renderToken;
   const nearBottom = win.scrollHeight - win.scrollTop - win.clientHeight < 120;
   const open = new Set([...box.querySelectorAll(".message-wrapper.open")].map(e => e.dataset.id));
   const senders = await Promise.all([...new Set(msgDocs.map(m => m.sender))].map(getUser));
@@ -1132,8 +1139,15 @@ window.submitDirectUnlock = async () => {
 
 window.lockChat = () => {
   const c = curChat(); if (!c) return;
-  renderToken++; // Hủy mọi lần render/giải mã đang chạy để tin nhắn không hiện lại sau khi khóa.
+  // Xóa quyền giải mã trên thiết bị này và vô hiệu hóa mọi lần render đang chạy.
+  renderToken++;
   forgetKey(c.id);
+  const box = $("messages");
+  const composer = document.querySelector("#chat .chat-input");
+  if (box) box.innerHTML = "";
+  if (composer) composer.style.display = "none";
+  $("chatKey").textContent = "🔒 Chưa mở khóa";
+  $("keyActions").style.display = "none";
   toast("Đã khóa cuộc trò chuyện 🔒");
   renderChatTabs();
   renderMessages();
