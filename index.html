@@ -155,7 +155,7 @@ h2{font-size:20px}
 .chat-input input:disabled{opacity:.5}
 .chat-input button{background:#7b2cff;color:#fff;border:0;border-radius:12px;padding:0 18px}
 
-/* Khung nhập mã mở khóa trực tiếp trong khung chat */
+/* Khung nhập mã mở khóa trực tiếp */
 .unlock-box-direct {
   padding: 30px 20px;
   text-align: center;
@@ -1032,7 +1032,7 @@ function attachMessages(){
   renderMessages();
 }
 
-// CẬP NHẬT GIAO DIỆN MỞ KHÓA TRỰC TIẾP TRONG KHUNG CHAT
+// CẬP NHẬT RENDER TIN NHẮN KÈM GIAO DIỆN KHÓA / MỞ KHÓA
 async function renderMessages(stick){
   const box = $("messages"); const win = $("chatWindow");
   const c = curChat();
@@ -1126,6 +1126,14 @@ window.submitDirectUnlock = async () => {
   toast("Đã mở khóa thành công 🔓"); 
   renderChatTabs(); 
   renderMessages(true);
+};
+
+window.lockChat = () => {
+  const c = curChat(); if (!c) return;
+  forgetKey(c.id);
+  toast("Đã khóa cuộc trò chuyện 🔒");
+  renderChatTabs();
+  renderMessages();
 };
 
 window.togglePicker = id => {
