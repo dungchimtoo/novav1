@@ -25,12 +25,23 @@ h2{font-size:20px}
  background:radial-gradient(circle at 50% 20%,#6d28d933,transparent 38%),var(--bg)}
 .auth-box{width:100%;max-width:420px;background:var(--card-bg);border:1px solid var(--border);
  border-radius:25px;padding:30px;box-shadow:0 0 60px #8d3cff18}
-.nova-logo{position:relative;width:115px;height:105px;margin:0 auto 5px}
-.nova-logo .n{position:absolute;left:30px;top:13px;font-size:70px;font-weight:900;font-style:italic;
- color:#b77aff;text-shadow:0 0 8px #a855f7,0 0 30px #7c3aed;z-index:2}
-.orbit{position:absolute;left:4px;top:31px;width:108px;height:42px;border:4px solid #a855f7;border-radius:50%;
- transform:rotate(-25deg);box-shadow:0 0 10px #9333ea,0 0 25px #7c3aed;z-index:3}
-.star{position:absolute;right:3px;top:3px;color:#dfc5ff;font-size:19px;text-shadow:0 0 12px #c084fc;z-index:4}
+
+/* LOGO MỚI (CHUẨN ẢNH MẪU) */
+.nova-logo-img-container {
+  width: 130px;
+  height: 130px;
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nova-logo-img-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 0 16px rgba(139, 92, 246, 0.4));
+}
+
 .wordmark{text-align:center;letter-spacing:8px;font-size:24px;font-weight:bold;color:#d5b5ff;
  text-shadow:0 0 15px #8b5cf6;margin-bottom:8px}
 .subtitle{text-align:center;color:var(--muted);margin-bottom:25px}
@@ -53,8 +64,8 @@ h2{font-size:20px}
 #app{display:none;min-height:100vh}
 .topbar{height:64px;position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;
  padding:0 17px;background:var(--card-bg);border-bottom:1px solid var(--border)}
-.mini-logo{display:flex;align-items:center;gap:2px}
-.mini-n{font-size:28px;font-weight:900;font-style:italic;color:#b77aff;text-shadow:0 0 8px #a855f7}
+.mini-logo{display:flex;align-items:center;gap:8px}
+.mini-logo img{width:36px;height:36px;object-fit:contain}
 .mini-word{font-size:18px;letter-spacing:4px;color:#d2b0ff;font-weight:bold}
 .top-actions{display:flex;gap:8px}
 .icon-btn{position:relative;width:40px;height:40px;border-radius:50%;border:1px solid var(--border);
@@ -155,34 +166,6 @@ h2{font-size:20px}
 .chat-input input:disabled{opacity:.5}
 .chat-input button{background:#7b2cff;color:#fff;border:0;border-radius:12px;padding:0 18px}
 
-/* Khung nhập mã mở khóa trực tiếp */
-.unlock-box-direct {
-  padding: 30px 20px;
-  text-align: center;
-  background: var(--input-bg);
-  border-radius: 14px;
-  margin: 15px;
-  border: 1px dashed var(--purple);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-.unlock-box-direct input {
-  width: 100%;
-  max-width: 300px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 12px;
-  border-radius: 10px;
-  text-align: center;
-  letter-spacing: 2px;
-  outline: none;
-  font-weight: bold;
-}
-.unlock-box-direct input:focus { border-color: var(--purple); }
-
 /* PROFILE / SETTINGS */
 .profile{text-align:center}
 .avatar{width:78px;height:78px;border-radius:50%;background:linear-gradient(135deg,#6725cc,#c275ff);
@@ -198,11 +181,9 @@ h2{font-size:20px}
 .avatar.editable{cursor:pointer}
 .avatar-hint{font-size:12px;color:#b875ff;margin-top:6px;cursor:pointer}
 
-/* CLICK VÀO NGƯỜI DÙNG */
 [data-uid]{cursor:pointer}
 .item-name[data-uid]:hover{text-decoration:underline}
 
-/* SHARE + MODAL */
 .shared-card{background:var(--input-bg);border:1px solid var(--border);border-radius:14px;padding:12px;margin-top:10px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:150;padding:20px}
 .modal.show{display:flex}
@@ -233,7 +214,10 @@ h2{font-size:20px}
 <!-- ================= AUTH ================= -->
 <section id="auth" style="display:none">
 <div class="auth-box">
- <div class="nova-logo"><div class="n">N</div><div class="orbit"></div><div class="star">✦</div></div>
+ <!-- ĐÃ THAY LOGO ẢNH CHUẨN MẪU -->
+ <div class="nova-logo-img-container">
+   <img src="https://i.ibb.co/6c2m4p3V/image-3.png" alt="NOVA Logo">
+ </div>
  <div class="wordmark">NOVA</div>
  <div class="subtitle">Mạng xã hội ẩn danh</div>
 
@@ -261,7 +245,10 @@ h2{font-size:20px}
 <!-- ================= APP ================= -->
 <section id="app">
 <header class="topbar">
- <div class="mini-logo"><span class="mini-n">N</span><span class="mini-word">NOVA</span></div>
+ <div class="mini-logo">
+   <img src="https://i.ibb.co/6c2m4p3V/image-3.png" alt="NOVA">
+   <span class="mini-word">NOVA</span>
+ </div>
  <div class="top-actions">
   <button class="icon-btn" onclick="showPage('notifications')">🔔<span id="notifBadge" class="badge">0</span></button>
   <button class="icon-btn" onclick="showPage('settings')">⚙</button>
@@ -364,7 +351,7 @@ h2{font-size:20px}
  <div id="notificationList" style="margin-top:15px"></div>
 </section>
 
-<!-- PROFILE (của mình) -->
+<!-- PROFILE -->
 <section id="profile" class="page">
  <div class="card profile">
   <div id="avatar" class="avatar editable" onclick="document.getElementById('avatarFile').click()">N</div>
@@ -404,7 +391,7 @@ h2{font-size:20px}
  </div>
 </section>
 
-<!-- USER PROFILE (của người khác) -->
+<!-- USER PROFILE -->
 <section id="userProfile" class="page">
  <button class="secondary" style="margin-bottom:12px" onclick="goBack()">← Quay lại</button>
  <div class="card profile">
