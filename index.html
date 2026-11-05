@@ -125,7 +125,6 @@ h2{font-size:20px}
 .key-value{color:#c994ff;font-weight:bold;letter-spacing:2px;word-break:break-all;margin-top:5px;font-size:13px}
 .key-actions{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}
 .key-actions button{background:var(--input-bg);border:1px solid var(--border);color:#c994ff;border-radius:8px;padding:7px 9px}
-.lock-box{padding:16px;text-align:center;background:var(--card-bg);border-bottom:1px solid #713bc0}
 .day-sep{text-align:center;color:var(--muted);font-size:11px;margin:14px 0 6px}
 .message-wrapper{margin:8px 0;display:flex;flex-direction:column;position:relative}
 .message-wrapper.me{align-items:flex-end}
@@ -158,25 +157,28 @@ h2{font-size:20px}
 
 /* Khung nhập mã mở khóa động */
 .unlock-panel {
+  padding: 20px;
+  text-align: center;
   background: var(--card-bg);
-  border: 1px solid var(--border);
-  padding: 12px;
-  border-radius: 12px;
-  margin: 10px;
+  border-top: 1px solid var(--border);
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 10px;
   align-items: center;
 }
 .unlock-panel input {
-  flex: 1;
+  width: 100%;
+  max-width: 320px;
   background: var(--input-bg);
   border: 1px solid var(--border);
   color: var(--text);
-  padding: 10px;
-  border-radius: 8px;
-  outline: none;
+  padding: 12px;
+  border-radius: 12px;
+  text-align: center;
   letter-spacing: 2px;
+  outline: none;
 }
+.unlock-panel input:focus { border-color: var(--purple); }
 
 /* PROFILE / SETTINGS */
 .profile{text-align:center}
@@ -1027,8 +1029,9 @@ function attachMessages(){
   renderMessages();
 }
 
-// CẬP NHẬT HÀM HIỆN Ô NHẬP MÃ ĐỘNG KHI CHAT BỊ KHÓA
+// CẬP NHẬT HÀM HIỆN Ô NHẬP MÃ MỞ KHÓA RÕ RÀNG
 function updateKeyPanel(c, key){
+  const chatWindow = $("chatWindow");
   let unlockPanel = document.getElementById('dynamicUnlockPanel');
 
   if (c && !key) {
@@ -1037,21 +1040,25 @@ function updateKeyPanel(c, key){
       unlockPanel.id = 'dynamicUnlockPanel';
       unlockPanel.className = 'unlock-panel';
       unlockPanel.innerHTML = `
-        <input id="dynamicUnlockInput" maxlength="24" placeholder="NHẬP MÃ 24 KÝ TỰ ĐỂ MỞ KHÓA" onkeydown="if(event.key==='Enter')window.customUnlockChat()">
-        <button class="primary" onclick="window.customUnlockChat()">Mở khóa</button>
+        <div style="font-size: 26px;">🔒</div>
+        <div style="font-weight: bold; font-size: 14px;">Cuộc trò chuyện này đang bị khóa</div>
+        <div class="muted" style="font-size: 12px;">Nhập mã bảo mật 24 ký tự để mở khóa và xem lại toàn bộ tin nhắn/ảnh cũ.</div>
+        <input id="dynamicUnlockInput" maxlength="24" placeholder="NHẬP MÃ 24 KÝ TỰ" onkeydown="if(event.key==='Enter')window.customUnlockChat()">
+        <button class="primary" style="width:100%; max-width:320px;" onclick="window.customUnlockChat()">Mở khóa ngay</button>
       `;
-      const chatInputArea = document.querySelector('.chat-input');
-      chatInputArea.parentNode.insertBefore(unlockPanel, chatInputArea);
+      chatWindow.parentNode.insertBefore(unlockPanel, chatWindow.nextSibling);
     }
     unlockPanel.style.display = 'flex';
+    chatWindow.style.display = 'none';
   } else {
     if (unlockPanel) unlockPanel.style.display = 'none';
+    chatWindow.style.display = 'block';
   }
 
   $("chatKey").textContent = key || "🔒 Chưa mở khóa";
   $("keyActions").style.display = key ? "flex" : "none";
   $("messageInput").disabled = !key;
-  $("messageInput").placeholder = key ? "Nhập tin nhắn..." : "Nhập mã phía trên để mở khóa chat";
+  $("messageInput").placeholder = key ? "Nhập tin nhắn..." : "Cần mở khóa để chat";
 }
 
 window.customUnlockChat = async () => {
@@ -1059,8 +1066,9 @@ window.customUnlockChat = async () => {
   const inputEl = document.getElementById('dynamicUnlockInput');
   if (!inputEl) return;
   const key = inputEl.value.trim().toUpperCase();
-  if (key.length !== 24) { toast("Mã gồm đúng 24 ký tự"); return; }
-  if (!(await verifyKey(c, key))) { toast("Sai mã, thử lại ❌"); return; }
+  if (key.length !== 24) { toast("Mã bảo mật phải gồm đúng 24 ký tự"); return; }
+  if (!(await verifyKey(c, key))) { toast("Mã không chính xác, thử lại ❌"); return; }
+  
   saveKey(c.id, key);
   toast("Đã mở khóa thành công 🔓"); 
   renderChatTabs(); 
