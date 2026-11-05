@@ -26,7 +26,6 @@ h2{font-size:20px}
 .auth-box{width:100%;max-width:420px;background:var(--card-bg);border:1px solid var(--border);
  border-radius:25px;padding:30px;box-shadow:0 0 60px #8d3cff18}
 
-/* LOGO SVG CHUẨN XÁC MẪU */
 .nova-logo-svg-container {
   width: 120px;
   height: 120px;
@@ -212,7 +211,6 @@ h2{font-size:20px}
 <!-- ================= AUTH ================= -->
 <section id="auth" style="display:none">
 <div class="auth-box">
- <!-- LOGO SVG CHUẨN XÁC MẪU -->
  <div class="nova-logo-svg-container">
    <svg viewBox="0 0 100 100" width="100%" height="100%">
      <defs>
@@ -226,12 +224,9 @@ h2{font-size:20px}
          <stop offset="100%" stop-color="#3b82f6"/>
        </linearGradient>
      </defs>
-     <!-- Chữ N cách điệu -->
      <path d="M 32 75 L 32 35 C 32 25, 42 20, 52 30 L 68 46 C 72 50, 72 56, 68 60 L 63 65 C 58 70, 50 72, 45 70 Z" fill="url(#novaGrad)" />
      <path d="M 38 68 L 62 43 C 65 40, 68 42, 65 46 L 45 68 Z" fill="#3b82f6" opacity="0.4"/>
-     <!-- Vòng quay quỹ đạo (Orbit) -->
      <ellipse cx="50" cy="55" rx="38" ry="14" fill="none" stroke="url(#ringGrad)" stroke-width="5" transform="rotate(-25 50 55)" stroke-linecap="round"/>
-     <!-- Ngôi sao 4 cánh (Sparkle) -->
      <path d="M 78 18 Q 78 26 86 26 Q 78 26 78 34 Q 78 26 70 26 Q 78 26 78 18 Z" fill="#e9d5ff"/>
    </svg>
  </div>
@@ -274,7 +269,6 @@ h2{font-size:20px}
  </div>
 </header>
 
-<!-- (SVG chung ẩn để dùng lại cho topbar) -->
 <svg style="display:none">
   <defs>
     <linearGradient id="novaGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -296,7 +290,6 @@ h2{font-size:20px}
 
 <main class="main">
 
-<!-- FEED -->
 <section id="home" class="page active">
  <div class="card create">
   <textarea id="postText" maxlength="1000" placeholder="Bạn đang nghĩ gì?"></textarea>
@@ -317,7 +310,6 @@ h2{font-size:20px}
  <div id="feed"></div>
 </section>
 
-<!-- SEARCH -->
 <section id="search" class="page">
  <div class="card">
   <h2>🔎 Tìm kiếm tài khoản & bài viết</h2>
@@ -326,7 +318,6 @@ h2{font-size:20px}
  </div>
 </section>
 
-<!-- FRIENDS -->
 <section id="friends" class="page">
  <h2>👥 Bạn bè</h2>
  <div class="card" style="margin-top:15px">
@@ -341,7 +332,6 @@ h2{font-size:20px}
  <div class="card"><h3>🤝 Bạn bè của bạn</h3><div id="friendList"></div></div>
 </section>
 
-<!-- CHAT -->
 <section id="chat" class="page">
  <h2>💬 Chat</h2>
  <div id="chatTabs" class="chat-tabs"></div>
@@ -372,7 +362,6 @@ h2{font-size:20px}
  </div>
 </section>
 
-<!-- GROUPS -->
 <section id="groups" class="page">
  <h2>👥 Group & Thành viên</h2>
  <div class="card" style="margin-top:15px">
@@ -384,13 +373,11 @@ h2{font-size:20px}
  <div id="groupList"></div>
 </section>
 
-<!-- NOTIFICATIONS -->
 <section id="notifications" class="page">
  <div class="row"><h2>🔔 Thông báo</h2><button class="secondary" style="padding:7px 12px;font-size:13px" onclick="markAllRead()">Đã đọc hết</button></div>
  <div id="notificationList" style="margin-top:15px"></div>
 </section>
 
-<!-- PROFILE -->
 <section id="profile" class="page">
  <div class="card profile">
   <div id="avatar" class="avatar editable" onclick="document.getElementById('avatarFile').click()">N</div>
@@ -407,7 +394,6 @@ h2{font-size:20px}
  <div class="card"><h3>↗ Bài viết đã chia sẻ</h3><div id="myShares"></div></div>
 </section>
 
-<!-- SETTINGS -->
 <section id="settings" class="page">
  <h2>⚙️ Cài đặt</h2>
  <div class="card" style="margin-top:15px">
@@ -430,7 +416,6 @@ h2{font-size:20px}
  </div>
 </section>
 
-<!-- USER PROFILE -->
 <section id="userProfile" class="page">
  <button class="secondary" style="margin-bottom:12px" onclick="goBack()">← Quay lại</button>
  <div class="card profile">
@@ -454,7 +439,6 @@ h2{font-size:20px}
 </nav>
 </section>
 
-<!-- MODAL CHIA SẺ -->
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
  <div class="modal-box">
   <h3>Chia sẻ bài viết</h3>
@@ -466,7 +450,6 @@ h2{font-size:20px}
  </div>
 </div>
 
-<!-- FILE INPUTS -->
 <input id="avatarFile" type="file" accept="image/*" style="display:none" onchange="changeAvatar(this)">
 <input id="chatImageFile" type="file" accept="image/*" style="display:none" onchange="sendChatImage(this)">
 <input id="postImageFile" type="file" accept="image/*" style="display:none" onchange="previewPostImage(this)">
@@ -497,7 +480,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
-/* ===================== STATE ===================== */
 const $ = id => document.getElementById(id);
 let me = null;
 let unsubs = [];
@@ -513,7 +495,6 @@ const decCache = new Map();
 const openComments = new Set();
 const EMOJIS = ["❤️","👍","😂","😢","🔥","🎉"];
 
-/* ===== KEY STORE ===== */
 let localKeys = {};
 let localMessageLocks = {};
 const KEY_CHECK_TEXT = "NOVA-OK";
@@ -544,7 +525,6 @@ function getKey(c){ return c ? (localKeys[c.id] || null) : null; }
 if (currentTheme === "light") document.body.classList.add("light");
 $("themeBtn").textContent = currentTheme === "light" ? "Chuyển Tối" : "Chuyển Sáng";
 
-/* ===================== HELPERS ===================== */
 const escapeHTML = t => String(t ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 function toast(text){
   const t = $("toast"); t.textContent = text; t.classList.add("show");
@@ -588,14 +568,12 @@ async function getUser(uid){
 }
 const sortKey = x => (x?.toMillis ? x.toMillis() : (x ? new Date(x).getTime() : Date.now()));
 
-/* ===================== THEME ===================== */
 window.toggleTheme = () => {
   const light = document.body.classList.toggle("light");
   localStorage.setItem("nova_theme", light ? "light" : "dark");
   $("themeBtn").textContent = light ? "Chuyển Tối" : "Chuyển Sáng";
 };
 
-/* ===================== AUTH ===================== */
 window.showRegister = () => { $("loginForm").style.display="none"; $("registerForm").style.display="block"; };
 window.showLogin = () => { $("loginForm").style.display="block"; $("registerForm").style.display="none"; };
 
@@ -683,7 +661,6 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
-/* ===================== LISTENERS ===================== */
 function listen(q, cb){
   unsubs.push(onSnapshot(q, s => {
     cb(s);
@@ -737,7 +714,6 @@ function startListeners(){
   });
 }
 
-/* ===================== NAV ===================== */
 window.showPage = page => {
   currentPage = page;
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
@@ -754,7 +730,6 @@ window.showPage = page => {
   window.scrollTo(0,0);
 };
 
-/* ===================== POSTS & ẢNH BÀI VIẾT ===================== */
 function genPostCode(){
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; const arr = new Uint32Array(8); crypto.getRandomValues(arr);
   let x = ""; for (let i=0;i<8;i++) x += chars[arr[i] % chars.length]; return "NOVA-" + x;
@@ -876,7 +851,6 @@ window.deletePost = async id => {
   try { await deleteDoc(doc(db,"posts",id)); toast("Đã xóa bài"); } catch { toast("Không xóa được"); }
 };
 
-/* ===================== SEARCH ===================== */
 let searchTimer = null;
 window.searchEverything = () => {
   clearTimeout(searchTimer);
@@ -919,7 +893,6 @@ async function doSearch(){
   box.innerHTML = html || `<p class="muted" style="margin-top:15px">Không tìm thấy kết quả nào phù hợp.</p>`;
 }
 
-/* ===================== FRIENDS ===================== */
 const pairId = (a,b) => [a,b].sort().join("_");
 const isFriend = uid => friendships.some(f => f.members.includes(uid));
 
@@ -995,7 +968,6 @@ async function renderFriendList(){
     <button class="secondary" onclick="unfriend('${u.id}')">✕</button></div></div>`).join("");
 }
 
-/* ===================== ENCRYPTION ===================== */
 const KEY_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 function generateChatKey(){
   const arr = new Uint32Array(24); crypto.getRandomValues(arr);
@@ -1027,7 +999,6 @@ async function decrypt(msg, key){
   decCache.set(ck, out); return out;
 }
 
-/* ===================== CHAT ===================== */
 const curChat = () => chats.find(c => c.id === currentChat);
 
 async function chatName(c){
@@ -1303,7 +1274,6 @@ window.newChatKey = async () => {
   } catch (e) { console.error(e); saveKey(c.id, oldKey); toast("Đổi mã thất bại"); }
 };
 
-/* ===================== GROUPS ===================== */
 async function renderGroupPicker(){
   if (!me) return;
   const box = $("groupPicker");
@@ -1460,7 +1430,6 @@ window.deleteGroup = async gid => {
   } catch (e) { console.error(e); toast("Lỗi"); }
 };
 
-/* ===================== NOTIFICATIONS ===================== */
 function renderNotifications(){
   if (!me) return;
   const box = $("notificationList");
@@ -1473,7 +1442,6 @@ window.markAllRead = async () => {
   try { const b = writeBatch(db); unread.forEach(n => b.update(doc(db,"notifications",n.id), { read: true })); await b.commit(); } catch { toast("Lỗi"); }
 };
 
-/* ===================== PROFILE ===================== */
 function updateProfileView(){
   if (!me) return;
   $("profileName").textContent = me.name; $("profileEmail").textContent = me.email;
@@ -1493,7 +1461,6 @@ window.changeName = async () => {
   } catch (e) { console.error(e); toast("Đổi tên thất bại"); }
 };
 
-/* ===================== AVATAR & RESIZE ===================== */
 function resizeImage(file, size = 160){
   return new Promise((resolve, reject) => {
     const img = new Image(); const url = URL.createObjectURL(file);
@@ -1534,7 +1501,6 @@ window.removeAvatar = async () => {
   } catch (e) { console.error(e); toast("Lỗi"); }
 };
 
-/* ===================== SHARE ===================== */
 window.openShare = id => {
   const p = posts.find(x => x.id === id); if (!p) return;
   shareTarget = id;
@@ -1589,7 +1555,6 @@ async function renderShareList(box, shares, mine){
 }
 function renderMyShares(){ renderShareList($("myShares"), myShares, true); }
 
-/* ===================== TRANG CÁ NHÂN NGƯỜI KHÁC ===================== */
 document.addEventListener("click", e => {
   const el = e.target.closest("[data-uid]");
   if (el && me) openUserProfile(el.dataset.uid);
