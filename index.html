@@ -615,13 +615,20 @@ window.logout = async () => { try { await signOut(auth); } catch { toast("Lỗi 
 async function ensureUserDoc(user){
   const ref = doc(db,"users",user.uid);
   const snap = await getDoc(ref);
-  const email = (user.email || "").toLowerCase();
+  const email = (user.email || "").trim().toLowerCase();
   if (!snap.exists()) {
     const name = user.displayName || email.split("@")[0] || "Nova";
     await setDoc(ref, { name, nameLower: name.toLowerCase(), email, emailLower: email, createdAt: serverTimestamp() });
-    return { name, email };
+    return { name, email, emailLower: email };
   }
-  return snap.data();
+  const data = snap.data();
+  // Chuẩn hóa các hồ sơ cũ để có thể tìm bằng Gmail khi thêm bạn vào group.
+  const patch = {};
+  if (email && data.email !== email) patch.email = email;
+  if (email && data.emailLower !== email) patch.emailLower = email;
+  if (data.name && !data.nameLower) patch.nameLower = String(data.name).toLowerCase();
+  if (Object.keys(patch).length) await setDoc(ref, patch, { merge: true });
+  return { ...data, ...patch };
 }
 
 onAuthStateChanged(auth, async user => {
@@ -1373,15 +1380,35 @@ window.addMemberToGroup = async gid => {
   const g = chats.find(c => c.id === gid); if (!g) return;
   if (g.owner !== me.id) { toast("Chỉ chủ group được thêm thành viên"); return; }
   try {
-    const s = await getDocs(query(collection(db,"users"), where("emailLower","==",email), limit(1)));
-    if (s.empty) { toast("Gmail này chưa đăng ký NOVA"); return; }
-    const uid = s.docs[0].id;
+    let uid = null;
+
+    // Ưu tiên đối chiếu danh sách bạn bè theo UID; cách này vẫn nhận ra
+    // tài khoản cũ dù hồ sơ Firestore chưa có trường emailLower.
+    for (const friendship of friendships) {
+      const friendUid = friendship.members.find(id => id !== me.id);
+      if (!friendUid) continue;
+      const friend = await getUser(friendUid);
+      if ((friend.email || "").trim().toLowerCase() === email) {
+        uid = friendUid;
+        break;
+      }
+    }
+
+    // Tìm theo emailLower (tài khoản mới), sau đó email (hồ sơ cũ).
+    if (!uid) {
+      let s = await getDocs(query(collection(db,"users"), where("emailLower","==",email), limit(1)));
+      if (s.empty) s = await getDocs(query(collection(db,"users"), where("email","==",email), limit(1)));
+      if (!s.empty) uid = s.docs[0].id;
+    }
+
+    if (!uid) { toast("Không tìm thấy tài khoản NOVA bằng Gmail này. Hãy kiểm tra Gmail hoặc chọn đúng bạn bè."); return; }
+    if (uid === me.id) { toast("Bạn không thể tự thêm chính mình"); return; }
     if (g.members.includes(uid)) { toast("Người này đã có trong group"); return; }
     await updateDoc(doc(db,"chats",gid), { members: arrayUnion(uid) });
     await addDoc(collection(db,"notifications"), { to: uid, type: "group_add", text: `${me.name} đã thêm bạn vào group "${g.name}". Hãy xin mã từ chủ group để mở khóa tin nhắn.`, read: false, createdAt: serverTimestamp() });
     input.value = "";
     toast("Đã thêm thành viên ✓ Gửi mã group cho họ");
-  } catch (e) { console.error(e); toast("Thêm thất bại"); }
+  } catch (e) { console.error("addMemberToGroup error:", e); toast("Thêm thất bại — kiểm tra quyền Firestore và kết nối mạng"); }
 };
 
 window.leaveGroup = async gid => {
