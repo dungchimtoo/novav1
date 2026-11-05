@@ -121,8 +121,9 @@ h2{font-size:20px}
 .chat-key.open{display:block}
 .key-title{font-size:11px;color:var(--muted)}
 .key-value{color:#c994ff;font-weight:bold;letter-spacing:2px;word-break:break-all;margin-top:5px;font-size:13px}
-.key-actions{display:flex;gap:7px;margin-top:8px}
+.key-actions{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}
 .key-actions button{background:var(--input-bg);border:1px solid var(--border);color:#c994ff;border-radius:8px;padding:7px 9px}
+.lock-box{padding:16px;text-align:center;background:var(--card-bg);border-bottom:1px solid #713bc0}
 .day-sep{text-align:center;color:var(--muted);font-size:11px;margin:14px 0 6px}
 .message-wrapper{margin:8px 0;display:flex;flex-direction:column;position:relative}
 .message-wrapper.me{align-items:flex-end}
@@ -133,6 +134,7 @@ h2{font-size:20px}
 .message{max-width:100%;padding:9px 13px;border-radius:16px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
 .message.me{background:var(--bubble-me);color:#fff;border-bottom-right-radius:5px}
 .message.other{background:var(--card-bg);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:5px}
+.message.locked{opacity:.55;font-style:italic}
 .msg-line .bubble-wrap{max-width:78%}
 .msg-tools{display:none;gap:4px}
 .message-wrapper:hover .msg-tools,.message-wrapper.open .msg-tools{display:flex}
@@ -149,6 +151,7 @@ h2{font-size:20px}
 .chat-input input{flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--text);
  border-radius:12px;padding:12px;outline:none}
 .chat-input input:focus{border-color:var(--purple)}
+.chat-input input:disabled{opacity:.5}
 .chat-input button{background:#7b2cff;color:#fff;border:0;border-radius:12px;padding:0 18px}
 
 /* PROFILE / SETTINGS */
@@ -266,11 +269,21 @@ h2{font-size:20px}
    <button class="secondary" style="padding:6px 10px;font-size:13px" onclick="toggleKeyPanel()">🔐 Mã</button>
   </div>
   <div id="keyPanel" class="chat-key">
-   <div class="key-title">MÃ CUỘC TRÒ CHUYỆN — 24 KÝ TỰ</div>
+   <div class="key-title">MÃ CUỘC TRÒ CHUYỆN — 24 KÝ TỰ (chỉ lưu trên máy bạn)</div>
    <div id="chatKey" class="key-value">--</div>
-   <div class="key-actions">
+   <div class="key-actions" id="keyActions">
     <button onclick="copyChatKey()">📋 Copy</button>
     <button onclick="newChatKey()">🔄 Đổi mã</button>
+    <button onclick="lockChat()">🔒 Khóa lại</button>
+   </div>
+  </div>
+  <div id="lockBox" class="lock-box" style="display:none">
+   <div style="font-size:30px">🔒</div>
+   <div style="font-weight:bold;margin:6px 0">Cuộc trò chuyện đã bị khóa</div>
+   <div class="muted" style="margin-bottom:10px">Nhập mã 24 ký tự do người tạo gửi cho bạn để mở khóa tin nhắn.</div>
+   <div class="search-friend">
+    <input id="unlockInput" class="input" maxlength="24" placeholder="MÃ 24 KÝ TỰ" style="letter-spacing:2px" onkeydown="if(event.key==='Enter')unlockChat()">
+    <button class="primary" onclick="unlockChat()">Mở khóa</button>
    </div>
   </div>
   <div class="chat-window" id="chatWindow"><div id="messages"></div></div>
@@ -376,11 +389,28 @@ let posts = [], incoming = [], outgoing = [], friendships = [], chats = [], noti
 let currentChat = null, msgDocs = [], msgUnsub = null, renderToken = 0;
 let currentTheme = localStorage.getItem("nova_theme") || "dark";
 let currentPage = "home";
-let initialChatsLoaded = false;
 const userCache = new Map();
 const decCache = new Map();
 const openComments = new Set();
 const EMOJIS = ["❤️","👍","😂","😢","🔥","🎉"];
+
+/* ===== KEY STORE (mã chat chỉ nằm trên máy, không đưa lên Firestore) ===== */
+let localKeys = {};
+const KEY_CHECK_TEXT = "NOVA-OK";
+function loadKeys(){ try { localKeys = JSON.parse(localStorage.getItem("nova_keys_" + me.id) || "{}"); } catch { localKeys = {}; } }
+function persistKeys(){ localStorage.setItem("nova_keys_" + me.id, JSON.stringify(localKeys)); }
+function saveKey(chatId, key){ localKeys[chatId] = key; persistKeys(); }
+function forgetKey(chatId){ delete localKeys[chatId]; persistKeys(); }
+async function makeKeyCheck(key){ return await encrypt(KEY_CHECK_TEXT, key); }
+async function verifyKey(c, key){
+  if (!c.keyCheck) return key === c.key;            // chat cũ tạo bằng bản trước
+  try {
+    const aes = await deriveKey(key);
+    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(c.keyCheck.iv)) }, aes, unb64(c.keyCheck.cipher));
+    return new TextDecoder().decode(plain) === KEY_CHECK_TEXT;
+  } catch { return false; }
+}
+function getKey(c){ if (!c) return null; if (c.key && !c.keyCheck) return c.key; return localKeys[c.id] || null; }
 
 if (currentTheme === "light") document.body.classList.add("light");
 $("themeBtn").textContent = currentTheme === "light" ? "Chuyển Tối" : "Chuyển Sáng";
@@ -389,7 +419,7 @@ $("themeBtn").textContent = currentTheme === "light" ? "Chuyển Tối" : "Chuy�
 const escapeHTML = t => String(t ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 function toast(text){
   const t = $("toast"); t.textContent = text; t.classList.add("show");
-  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2400);
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2600);
 }
 function toDate(ts){ if(!ts) return new Date(); if(ts.toDate) return ts.toDate(); return new Date(ts); }
 function ago(ts){
@@ -497,6 +527,7 @@ onAuthStateChanged(auth, async user => {
       const data = await ensureUserDoc(user);
       me = { id: user.uid, name: data.name, email: (user.email || data.email || "").toLowerCase() };
       userCache.set(me.id, { id: me.id, ...data });
+      loadKeys();
       $("auth").style.display = "none";
       $("app").style.display = "block";
       startListeners();
@@ -506,7 +537,7 @@ onAuthStateChanged(auth, async user => {
       toast("Không truy cập được Firestore — kiểm tra Rules");
     }
   } else {
-    me = null; currentChat = null;
+    me = null; currentChat = null; localKeys = {};
     $("app").style.display = "none";
     $("auth").style.display = "flex";
     showLogin();
@@ -521,7 +552,6 @@ function stopListeners(){
   unsubs.forEach(u => u()); unsubs = [];
   if (msgUnsub) { msgUnsub(); msgUnsub = null; }
   posts = []; incoming = []; outgoing = []; friendships = []; chats = []; notifs = []; msgDocs = [];
-  initialChatsLoaded = false;
 }
 function startListeners(){
   listen(query(collection(db,"posts"), orderBy("createdAt","desc"), limit(100)), s => {
@@ -539,14 +569,17 @@ function startListeners(){
   });
   listen(query(collection(db,"friendships"), where("members","array-contains",me.id)), s => {
     friendships = s.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderFriendList(); renderGroupPicker(); updateProfileView();
+    renderFriendList(); renderGroupPicker(); renderGroups(); updateProfileView();
   });
   listen(query(collection(db,"chats"), where("members","array-contains",me.id)), async s => {
     chats = s.docs.map(d => ({ id: d.id, ...d.data() }));
     chats.sort((a,b) => sortKey(b.lastAt) - sortKey(a.lastAt));
+    for (const c of chats) {   // mã đã bị đổi -> khóa lại trên máy này
+      if (c.keyCheck && localKeys[c.id] && !(await verifyKey(c, localKeys[c.id]))) forgetKey(c.id);
+    }
     if (currentChat && !chats.find(c => c.id === currentChat)) { currentChat = null; detachMessages(); }
     await renderChatTabs(); renderGroups(); updateProfileView();
-    if (currentChat) { const c = chats.find(x => x.id === currentChat); if (c) { $("chatKey").textContent = c.key; renderMessages(); } }
+    if (currentChat) renderMessages();
   });
   listen(query(collection(db,"notifications"), where("to","==",me.id)), s => {
     notifs = s.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -810,7 +843,7 @@ async function chatName(c){
 }
 async function renderChatTabs(){
   if (!me) return;
-  const names = await Promise.all(chats.map(chatName));
+  const names = await Promise.all(chats.map(async c => (await chatName(c)) + (getKey(c) ? "" : " 🔒")));
   $("chatTabs").innerHTML = chats.length
     ? chats.map((c,i) => `<button class="chat-tab ${currentChat === c.id ? "active" : ""}" onclick="openExistingChat('${c.id}')">${escapeHTML(names[i])}</button>`).join("")
     : `<span class="muted">Chưa có cuộc trò chuyện. Vào Bạn bè và bấm Chat.</span>`;
@@ -823,7 +856,10 @@ window.openPrivateChat = async friendId => {
     const ref = doc(db,"chats",id);
     const snap = await getDoc(ref);
     if (!snap.exists()) {
-      await setDoc(ref, { type: "private", members: [me.id, friendId].sort(), owner: "", key: generateChatKey(), createdAt: serverTimestamp(), lastAt: serverTimestamp() });
+      const key = generateChatKey();
+      await setDoc(ref, { type: "private", members: [me.id, friendId].sort(), owner: "", keyCheck: await makeKeyCheck(key), createdAt: serverTimestamp(), lastAt: serverTimestamp() });
+      saveKey(id, key);
+      toast("Đã tạo chat. Mở 🔐 Mã để copy và gửi mã cho bạn bè");
     }
     currentChat = id; attachMessages(); showPage("chat");
   } catch (e) { console.error(e); toast("Không mở được chat"); }
@@ -846,26 +882,38 @@ function attachMessages(){
   renderMessages();
 }
 
+function updateKeyPanel(c, key){
+  $("lockBox").style.display = (c && !key) ? "block" : "none";
+  $("chatKey").textContent = key || "🔒 Chưa mở khóa";
+  $("keyActions").style.display = key ? "flex" : "none";
+  $("messageInput").disabled = !key;
+  $("messageInput").placeholder = key ? "Nhập tin nhắn..." : "Nhập mã để mở khóa trước";
+}
+
 async function renderMessages(stick){
   const box = $("messages"); const win = $("chatWindow");
   const c = curChat();
   if (!currentChat || !c) {
     $("chatKey").textContent = "--"; $("chatTitle").textContent = "Chưa chọn cuộc trò chuyện";
+    $("lockBox").style.display = "none"; $("keyActions").style.display = "none";
+    $("messageInput").disabled = true;
     box.innerHTML = `<div class="empty">Hãy chọn một cuộc trò chuyện.</div>`; return;
   }
-  $("chatKey").textContent = c.key;
+  const key = getKey(c);
+  updateKeyPanel(c, key);
   const token = ++renderToken;
   const nearBottom = win.scrollHeight - win.scrollTop - win.clientHeight < 120;
   const open = new Set([...box.querySelectorAll(".message-wrapper.open")].map(e => e.dataset.id));
   const senders = await Promise.all([...new Set(msgDocs.map(m => m.sender))].map(getUser));
   const nameOf = Object.fromEntries(senders.map(u => [u.id, u.name]));
-  const texts = await Promise.all(msgDocs.map(m => decrypt(m, c.key)));
+  const texts = await Promise.all(msgDocs.map(m => key ? decrypt(m, key) : Promise.resolve(null)));
   if (token !== renderToken) return;
   if (!msgDocs.length) { box.innerHTML = `<div class="empty">Chưa có tin nhắn. Hãy nói xin chào 👋</div>`; return; }
 
   let html = "", lastDay = "";
   msgDocs.forEach((m, i) => {
     const mine = m.sender === me.id; const side = mine ? "me" : "other";
+    const locked = texts[i] === null;
     const day = dayLabel(m.createdAt);
     if (day !== lastDay) { html += `<div class="day-sep">${escapeHTML(day)}</div>`; lastDay = day; }
     const rx = m.reactions || {}; const counts = {};
@@ -875,7 +923,7 @@ async function renderMessages(stick){
     html += `<div class="message-wrapper ${side} ${open.has(m.id) ? "open" : ""}" data-id="${m.id}">
       ${!mine && c.type === "group" ? `<div class="sender-name">${escapeHTML(nameOf[m.sender] || "Thành viên")}</div>` : ""}
       <div class="msg-line">
-        <div class="bubble-wrap"><div class="message ${side}" onclick="togglePicker('${m.id}')">${escapeHTML(texts[i])}</div></div>
+        <div class="bubble-wrap"><div class="message ${side} ${locked ? "locked" : ""}" onclick="togglePicker('${m.id}')">${locked ? "🔒 Tin nhắn đã bị khóa" : escapeHTML(texts[i])}</div></div>
         <div class="msg-tools">
           <button class="tool-btn" onclick="togglePicker('${m.id}')">☺</button>
           ${mine ? `<button class="tool-btn" onclick="deleteMessage('${m.id}')">🗑</button>` : ""}
@@ -902,41 +950,61 @@ window.deleteMessage = async id => {
   if (!confirm("Xóa tin nhắn này?")) return;
   try { await deleteDoc(doc(db,"chats",currentChat,"messages",id)); } catch { toast("Không xóa được"); }
 };
+
+window.unlockChat = async () => {
+  const c = curChat(); if (!c) return;
+  const key = $("unlockInput").value.trim().toUpperCase();
+  if (key.length !== 24) { toast("Mã gồm đúng 24 ký tự"); return; }
+  if (!(await verifyKey(c, key))) { toast("Sai mã, thử lại ❌"); return; }
+  saveKey(c.id, key); $("unlockInput").value = "";
+  toast("Đã mở khóa 🔓"); renderChatTabs(); renderMessages(true);
+};
+window.lockChat = () => {
+  const c = curChat(); if (!c) return;
+  forgetKey(c.id); $("keyPanel").classList.remove("open");
+  toast("Đã khóa lại cuộc trò chuyện 🔒"); renderChatTabs(); renderMessages();
+};
+
 window.sendMessage = async () => {
   if (!currentChat) { toast("Hãy mở một cuộc trò chuyện"); return; }
-  const input = $("messageInput"); const text = input.value.trim(); if (!text) return;
   const c = curChat(); if (!c) return;
+  const key = getKey(c);
+  if (!key) { toast("Hãy nhập mã để mở khóa trước"); return; }
+  const input = $("messageInput"); const text = input.value.trim(); if (!text) return;
   input.value = "";
   try {
-    const enc = await encrypt(text, c.key);
+    const enc = await encrypt(text, key);
     await addDoc(collection(db,"chats",currentChat,"messages"), { sender: me.id, cipher: enc.cipher, iv: enc.iv, reactions: {}, createdAt: serverTimestamp() });
     await updateDoc(doc(db,"chats",currentChat), { lastAt: serverTimestamp() });
   } catch (e) { console.error(e); input.value = text; toast("Gửi thất bại"); }
 };
+
 window.toggleKeyPanel = () => $("keyPanel").classList.toggle("open");
 window.copyChatKey = async () => {
-  const c = curChat(); if (!c) return;
-  try { await navigator.clipboard.writeText(c.key); toast("Đã copy mã 📋"); } catch { toast("Không copy được"); }
+  const key = getKey(curChat()); if (!key) return;
+  try { await navigator.clipboard.writeText(key); toast("Đã copy mã 📋"); } catch { toast("Không copy được"); }
 };
+
 window.newChatKey = async () => {
   const c = curChat(); if (!c) return;
+  const oldKey = getKey(c); if (!oldKey) { toast("Hãy mở khóa trước"); return; }
   if (c.type === "group" && c.owner !== me.id) { toast("Chỉ chủ group được đổi mã"); return; }
-  if (!confirm("Đổi mã sẽ mã hóa lại toàn bộ tin nhắn cũ bằng mã mới. Tiếp tục?")) return;
+  if (!confirm("Đổi mã: tin cũ được mã hóa lại, người khác sẽ bị khóa cho đến khi nhập mã mới. Tiếp tục?")) return;
+  const newKey = generateChatKey();
   try {
-    const newKey = generateChatKey();
     const snap = await getDocs(query(collection(db,"chats",c.id,"messages"), orderBy("createdAt","asc"), limit(450)));
     const batch = writeBatch(db);
     for (const d of snap.docs) {
-      const data = { id: d.id, ...d.data() };
-      const plain = await decrypt(data, c.key);
+      const plain = await decrypt({ id: d.id, ...d.data() }, oldKey);
       if (plain.startsWith("🔒")) continue;
       const enc = await encrypt(plain, newKey);
       batch.update(d.ref, { cipher: enc.cipher, iv: enc.iv });
     }
-    batch.update(doc(db,"chats",c.id), { key: newKey });
+    batch.update(doc(db,"chats",c.id), { keyCheck: await makeKeyCheck(newKey), key: deleteField() });
+    saveKey(c.id, newKey);
     await batch.commit();
-    toast("Đã tạo mã mới 🔐");
-  } catch (e) { console.error(e); toast("Đổi mã thất bại"); }
+    toast("Đã đổi mã. Gửi mã mới cho mọi người 🔐");
+  } catch (e) { console.error(e); saveKey(c.id, oldKey); toast("Đổi mã thất bại"); }
 };
 
 /* ===================== GROUPS ===================== */
@@ -954,55 +1022,101 @@ window.createGroup = async () => {
   const picked = [...document.querySelectorAll("#groupPicker input:checked")].map(i => i.value);
   const members = [...new Set([me.id, ...picked])];
   try {
-    await addDoc(collection(db,"chats"), { type: "group", name, owner: me.id, members, key: generateChatKey(), createdAt: serverTimestamp(), lastAt: serverTimestamp() });
+    const key = generateChatKey();
+    const ref = await addDoc(collection(db,"chats"), { type: "group", name, owner: me.id, members, keyCheck: await makeKeyCheck(key), createdAt: serverTimestamp(), lastAt: serverTimestamp() });
+    saveKey(ref.id, key);
     $("groupName").value = ""; document.querySelectorAll("#groupPicker input").forEach(i => i.checked = false);
-    toast("Đã tạo group 👥");
+    toast("Đã tạo group 👥 Mở chat → 🔐 Mã để lấy mã gửi thành viên");
   } catch (e) { console.error(e); toast("Tạo group thất bại"); }
 };
+
 async function renderGroups(){
   if (!me) return;
+  const box = $("groupList");
   const mine = chats.filter(c => c.type === "group");
-  if (!mine.length) { $("groupList").innerHTML = `<div class="card empty">Chưa có group.</div>`; return; }
+  if (!mine.length) { box.innerHTML = `<div class="card empty">Chưa có group.</div>`; return; }
+
+  const saved = {};
+  box.querySelectorAll("input[id^='add-member-']").forEach(i => saved[i.id] = i.value);
+  const focusedId = document.activeElement?.id;
+
   const friendUsers = await Promise.all(friendships.map(f => getUser(f.members.find(m => m !== me.id))));
   const html = await Promise.all(mine.map(async g => {
     const isOwner = g.owner === me.id;
     const members = await Promise.all(g.members.map(getUser));
-    const addable = friendUsers.filter(u => !g.members.includes(u.id));
+    const suggest = friendUsers.filter(u => !g.members.includes(u.id));
     return `<div class="card">
       <div class="row">
         <div class="item-left"><div class="group-logo-badge">${escapeHTML(initial(g.name))}</div>
-          <div><strong>👥 ${escapeHTML(g.name)}</strong><div class="muted">${g.members.length} thành viên${isOwner ? " · bạn là chủ" : ""}</div></div></div>
+          <div><strong>👥 ${escapeHTML(g.name)}</strong>
+          <div class="muted">${g.members.length} thành viên${isOwner ? " · bạn là chủ" : ""}</div></div></div>
         <button class="primary" onclick="openGroup('${g.id}')">Mở chat</button>
       </div>
       <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
-        ${members.map(u => `<div class="row" style="font-size:13px;margin-top:6px">
-          <span>${escapeHTML(u.name)} ${u.id === g.owner ? "👑" : ""} <span class="muted">${escapeHTML(u.email)}</span></span>
-          ${isOwner && u.id !== me.id ? `<button class="danger-btn" onclick="kickMember('${g.id}','${u.id}')">Kick</button>` : ""}
+        ${members.map(u => `<div class="row" style="font-size:13px;margin-top:8px">
+          <span>${escapeHTML(u.name)} ${u.id === g.owner ? "👑" : ""}
+            <span class="muted">${escapeHTML(u.email)}</span></span>
+          ${isOwner && u.id !== me.id
+            ? `<button class="danger-btn" onclick="kickMember('${g.id}','${u.id}')">Kick</button>` : ""}
         </div>`).join("")}
-        ${isOwner && addable.length ? `<div class="row" style="margin-top:12px;gap:6px">
-          <select id="add-member-${g.id}" class="input" style="margin-bottom:0;padding:9px;font-size:13px">
-            ${addable.map(u => `<option value="${u.id}">${escapeHTML(u.name)}</option>`).join("")}
-          </select>
-          <button class="secondary" style="font-size:13px" onclick="addMemberToGroup('${g.id}')">Thêm</button></div>` : ""}
-        <div class="row" style="margin-top:12px;justify-content:flex-end;gap:6px">
+
+        ${isOwner ? `
+        <div class="muted" style="margin-top:14px">Thêm thành viên bằng Gmail:</div>
+        <div class="search-friend" style="margin-top:6px">
+          <input id="add-member-${g.id}" list="dl-${g.id}" class="input"
+            placeholder="Nhập Gmail hoặc chọn bạn bè..."
+            onkeydown="if(event.key==='Enter')addMemberToGroup('${g.id}')">
+          <datalist id="dl-${g.id}">
+            ${suggest.map(u => `<option value="${escapeHTML(u.email)}">${escapeHTML(u.name)}</option>`).join("")}
+          </datalist>
+          <button class="primary" onclick="addMemberToGroup('${g.id}')">Thêm</button>
+        </div>` : `<div class="muted" style="margin-top:12px">Chỉ chủ group mới thêm hoặc kick được thành viên.</div>`}
+
+        <div class="row" style="margin-top:12px;justify-content:flex-end">
           ${isOwner ? `<button class="danger-btn" onclick="deleteGroup('${g.id}')">Xóa group</button>`
                     : `<button class="danger-btn" onclick="leaveGroup('${g.id}')">Rời group</button>`}
         </div>
       </div></div>`;
   }));
-  $("groupList").innerHTML = html.join("");
+  box.innerHTML = html.join("");
+
+  Object.entries(saved).forEach(([id, v]) => { const el = $(id); if (el) el.value = v; });
+  if (focusedId && $(focusedId)) $(focusedId).focus();
 }
+
 window.kickMember = async (gid, uid) => {
-  if (!confirm("Loại thành viên này khỏi group?")) return;
-  try { await updateDoc(doc(db,"chats",gid), { members: arrayRemove(uid) }); toast("Đã loại thành viên"); } catch { toast("Lỗi"); }
+  const g = chats.find(c => c.id === gid); if (!g) return;
+  if (g.owner !== me.id) { toast("Chỉ chủ group được kick"); return; }
+  const u = await getUser(uid);
+  if (!confirm(`Kick ${u.name} khỏi group?`)) return;
+  try {
+    await updateDoc(doc(db,"chats",gid), { members: arrayRemove(uid) });
+    await addDoc(collection(db,"notifications"), { to: uid, type: "group_kick", text: `Bạn đã bị loại khỏi group "${g.name}".`, read: false, createdAt: serverTimestamp() });
+    toast(`Đã kick ${u.name}. Nên bấm 🔐 Mã → Đổi mã trong group`);
+  } catch (e) { console.error(e); toast("Kick thất bại"); }
 };
+
 window.addMemberToGroup = async gid => {
-  const sel = $("add-member-" + gid); if (!sel || !sel.value) return;
-  try { await updateDoc(doc(db,"chats",gid), { members: arrayUnion(sel.value) }); toast("Đã thêm thành viên"); } catch { toast("Lỗi"); }
+  const input = $("add-member-" + gid); if (!input) return;
+  const email = input.value.trim().toLowerCase();
+  if (!email) { toast("Nhập Gmail người cần thêm"); return; }
+  const g = chats.find(c => c.id === gid); if (!g) return;
+  if (g.owner !== me.id) { toast("Chỉ chủ group được thêm thành viên"); return; }
+  try {
+    const s = await getDocs(query(collection(db,"users"), where("emailLower","==",email), limit(1)));
+    if (s.empty) { toast("Gmail này chưa đăng ký NOVA"); return; }
+    const uid = s.docs[0].id;
+    if (g.members.includes(uid)) { toast("Người này đã có trong group"); return; }
+    await updateDoc(doc(db,"chats",gid), { members: arrayUnion(uid) });
+    await addDoc(collection(db,"notifications"), { to: uid, type: "group_add", text: `${me.name} đã thêm bạn vào group "${g.name}". Hãy xin mã từ chủ group để mở khóa tin nhắn.`, read: false, createdAt: serverTimestamp() });
+    input.value = "";
+    toast("Đã thêm thành viên ✓ Gửi mã group cho họ");
+  } catch (e) { console.error(e); toast("Thêm thất bại"); }
 };
+
 window.leaveGroup = async gid => {
   if (!confirm("Rời group này?")) return;
-  try { await updateDoc(doc(db,"chats",gid), { members: arrayRemove(me.id) }); toast("Đã rời group"); } catch { toast("Lỗi"); }
+  try { await updateDoc(doc(db,"chats",gid), { members: arrayRemove(me.id) }); forgetKey(gid); toast("Đã rời group"); } catch { toast("Lỗi"); }
 };
 window.deleteGroup = async gid => {
   if (!confirm("Xóa group? Toàn bộ tin nhắn sẽ mất.")) return;
@@ -1011,7 +1125,7 @@ window.deleteGroup = async gid => {
     for (let i = 0; i < snap.docs.length; i += 400) {
       const b = writeBatch(db); snap.docs.slice(i, i+400).forEach(d => b.delete(d.ref)); await b.commit();
     }
-    await deleteDoc(doc(db,"chats",gid)); toast("Đã xóa group");
+    await deleteDoc(doc(db,"chats",gid)); forgetKey(gid); toast("Đã xóa group");
   } catch (e) { console.error(e); toast("Lỗi"); }
 };
 
