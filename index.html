@@ -331,7 +331,6 @@ h2{font-size:20px}
    <div class="key-actions" id="keyActions">
     <button onclick="copyChatKey()">📋 Copy</button>
     <button onclick="newChatKey()">🔄 Đổi mã</button>
-    <button onclick="lockChat()">🔒 Khóa lại</button>
    </div>
   </div>
   
@@ -488,11 +487,21 @@ const EMOJIS = ["❤️","👍","😂","😢","🔥","🎉"];
 
 /* ===== KEY STORE ===== */
 let localKeys = {};
+let localMessageLocks = {};
 const KEY_CHECK_TEXT = "NOVA-OK";
-function loadKeys(){ try { localKeys = JSON.parse(localStorage.getItem("nova_keys_" + me.id) || "{}"); } catch { localKeys = {}; } }
+function loadKeys(){
+  try { localKeys = JSON.parse(localStorage.getItem("nova_keys_" + me.id) || "{}"); } catch { localKeys = {}; }
+  try { localMessageLocks = JSON.parse(localStorage.getItem("nova_msg_locks_" + me.id) || "{}"); } catch { localMessageLocks = {}; }
+}
 function persistKeys(){ localStorage.setItem("nova_keys_" + me.id, JSON.stringify(localKeys)); }
 function saveKey(chatId, key){ localKeys[chatId] = key; persistKeys(); }
 function forgetKey(chatId){ delete localKeys[chatId]; persistKeys(); }
+function isMessageLocked(chatId, msgId){ return !!localMessageLocks[chatId + ":" + msgId]; }
+function setMessageLocked(chatId, msgId, locked){
+  const id = chatId + ":" + msgId;
+  if (locked) localMessageLocks[id] = true; else delete localMessageLocks[id];
+  localStorage.setItem("nova_msg_locks_" + me.id, JSON.stringify(localMessageLocks));
+}
 async function makeKeyCheck(key){ return await encrypt(KEY_CHECK_TEXT, key); }
 async function verifyKey(c, key){
   if (!c.keyCheck) return key === c.key;
@@ -1092,8 +1101,11 @@ async function renderMessages(stick){
     const chips = Object.entries(counts).map(([e,n]) =>
       `<span class="chip ${rx[me.id] === e ? "mine" : ""}" onclick="reactMessage('${m.id}','${e}')">${e}${n > 1 ? " " + n : ""}</span>`).join("");
     
+    const individuallyLocked = isMessageLocked(c.id, m.id);
     let contentHtml = "";
-    if (locked) {
+    if (individuallyLocked) {
+      contentHtml = "🔒 Tin nhắn này đang bị khóa";
+    } else if (locked) {
       contentHtml = "🔒 Không thể giải mã";
     } else {
       const plainText = texts[i];
@@ -1107,9 +1119,10 @@ async function renderMessages(stick){
     html += `<div class="message-wrapper ${side} ${open.has(m.id) ? "open" : ""}" data-id="${m.id}">
       ${!mine && c.type === "group" ? `<div class="sender-name">${escapeHTML(nameOf[m.sender] || "Thành viên")}</div>` : ""}
       <div class="msg-line">
-        <div class="bubble-wrap"><div class="message ${side} ${locked ? "locked" : ""}" onclick="togglePicker('${m.id}')">${contentHtml}</div></div>
+        <div class="bubble-wrap"><div class="message ${side} ${(locked || individuallyLocked) ? "locked" : ""}" onclick="togglePicker('${m.id}')">${contentHtml}</div></div>
         <div class="msg-tools">
           <button class="tool-btn" onclick="togglePicker('${m.id}')">☺</button>
+          <button class="tool-btn" title="${individuallyLocked ? "Mở khóa tin nhắn này" : "Khóa riêng tin nhắn này"}" onclick="toggleMessageLock('${m.id}')">${individuallyLocked ? "🔓" : "🔒"}</button>
           ${mine ? `<button class="tool-btn" onclick="deleteMessage('${m.id}')">🗑</button>` : ""}
         </div>
       </div>
@@ -1150,6 +1163,27 @@ window.lockChat = () => {
   $("keyActions").style.display = "none";
   toast("Đã khóa cuộc trò chuyện 🔒");
   renderChatTabs();
+  renderMessages();
+};
+
+window.toggleMessageLock = async msgId => {
+  const c = curChat();
+  if (!c || !msgDocs.some(m => m.id === msgId)) return;
+  if (!isMessageLocked(c.id, msgId)) {
+    setMessageLocked(c.id, msgId, true);
+    toast("Đã khóa riêng tin nhắn này 🔒");
+    renderMessages();
+    return;
+  }
+  const entered = prompt("Nhập mã bảo mật 24 ký tự để mở khóa riêng tin nhắn này:");
+  if (entered === null) return;
+  const key = entered.trim().toUpperCase();
+  if (key.length !== 24 || !(await verifyKey(c, key))) {
+    toast("Mã bảo mật không chính xác ❌");
+    return;
+  }
+  setMessageLocked(c.id, msgId, false);
+  toast("Đã mở khóa tin nhắn này 🔓");
   renderMessages();
 };
 
