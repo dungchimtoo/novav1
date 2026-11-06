@@ -39,7 +39,6 @@ h2{font-size:20px}
   width: 36px;
   height: 36px;
 }
-/* FIX: không dùng display:none vì gradient trong SVG bị ẩn sẽ không render */
 .hidden-svg{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
 
 .wordmark{text-align:center;letter-spacing:8px;font-size:24px;font-weight:bold;color:#d5b5ff;
@@ -90,6 +89,8 @@ h2{font-size:20px}
 .time{color:var(--muted);font-size:12px;text-align:right}
 .post-id{font-size:11px;color:var(--muted);margin:2px 0 10px}
 .post-text{line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.post-text .hashtag{color:#b875ff;font-weight:500;cursor:pointer}
+.post-text .hashtag:hover{text-decoration:underline}
 .post-image{width:100%;max-height:400px;object-fit:cover;border-radius:12px;margin-top:10px;cursor:pointer}
 .actions{display:flex;gap:7px;margin-top:14px}
 .action{flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);padding:9px;border-radius:10px}
@@ -244,7 +245,6 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 <body>
 <div id="loading">NOVA…</div>
 
-<!-- SVG defs dùng chung (không display:none) -->
 <svg class="hidden-svg" aria-hidden="true">
   <defs>
     <linearGradient id="novaGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -328,7 +328,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 
 <section id="home" class="page active">
  <div class="card create">
-  <textarea id="postText" maxlength="1000" placeholder="Bạn đang nghĩ gì?"></textarea>
+  <textarea id="postText" maxlength="1000" placeholder="Bạn đang nghĩ gì? Sử dụng #hashtag để phân loại..."></textarea>
 
   <div id="postImagePreviewContainer" style="display:none;position:relative;margin-top:10px;">
     <img id="postImagePreview" src="" alt="Xem trước" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;">
@@ -367,7 +367,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 <section id="search" class="page">
  <div class="card">
   <h2>🔎 Tìm kiếm tài khoản & bài viết</h2>
-  <input id="searchInput" class="input" style="margin-top:15px" placeholder="Tên, @tên, NOVA ID hoặc nội dung bài viết..." oninput="searchEverything()">
+  <input id="searchInput" class="input" style="margin-top:15px" placeholder="Tên, @tên, NOVA ID, #hashtag hoặc nội dung..." oninput="searchEverything()">
   <div id="searchResults"></div>
  </div>
 </section>
@@ -590,15 +590,13 @@ function setMessageLocked(chatId, msgId, locked){
 }
 async function makeKeyCheck(key){ return await encrypt(KEY_CHECK_TEXT, key); }
 
-/* FIX: trước đây catch trả về true => nhập sai mã vẫn được chấp nhận */
 async function verifyKey(c, key){
   if (!key || key.length !== 24) return false;
   if (!c.keyCheck) {
-    // Chat cũ chưa có keyCheck: kiểm tra bằng cách thử giải mã 1 tin nhắn thật
     try {
       const snap = await getDocs(query(collection(db,"chats",c.id,"messages"), orderBy("createdAt","desc"), limit(20)));
       const sample = snap.docs.map(d => d.data()).find(m => !m.isRecalled && m.cipher && m.iv);
-      if (!sample) return true; // chưa có tin nào để đối chiếu
+      if (!sample) return true;
       const aes = await deriveKey(key);
       await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(sample.iv)) }, aes, unb64(sample.cipher));
       return true;
@@ -662,7 +660,6 @@ async function getUser(uid){
 }
 const sortKey = x => (x?.toMillis ? x.toMillis() : (x ? new Date(x).getTime() : Date.now()));
 
-/* Lightbox xem ảnh (thay cho window.open data: URL vốn bị trình duyệt chặn) */
 window.viewImage = src => { if (!src) return; $("lightboxImg").src = src; $("lightbox").classList.add("show"); };
 window.closeImage = () => { $("lightbox").classList.remove("show"); $("lightboxImg").src = ""; };
 document.addEventListener("click", e => {
@@ -675,6 +672,16 @@ document.addEventListener("click", e => {
   }
   const img = e.target.closest("img[data-zoom]");
   if (img) { e.stopPropagation(); window.viewImage(img.src); }
+  
+  // Bấm vào hashtag trên bài viết để tìm kiếm nhanh
+  const tagEl = e.target.closest(".hashtag");
+  if (tagEl) {
+    e.stopPropagation();
+    const tag = tagEl.dataset.tag;
+    $("searchInput").value = tag;
+    showPage("search");
+    searchEverything();
+  }
 }, true);
 
 window.toggleTheme = () => {
@@ -727,7 +734,6 @@ window.resetPassword = async () => {
 
 window.logout = async () => { try { await signOut(auth); } catch { toast("Lỗi đăng xuất"); } };
 
-/* ===== NOVA ID (mã vân tay) + @tên định danh ===== */
 const NID_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 function genNid(){
   const arr = new Uint32Array(8); crypto.getRandomValues(arr);
@@ -862,7 +868,6 @@ function startListeners(){
     posts = s.docs.map(d => ({ id: d.id, ...d.data() }));
     renderFeed(); updateProfileView();
     if (currentPage === "profile") renderMyPosts();
-    /* FIX: chỉ vẽ lại danh sách bài, không reset trang/cuộn lên đầu mỗi lần có like */
     if (currentPage === "userProfile" && viewingUid) renderUserPosts(viewingUid);
     if (currentPage === "search") searchEverything();
   });
@@ -949,7 +954,6 @@ window.previewPostImage = async input => {
   }
 };
 
-/* Chọn chế độ đăng + công tắc ẩn danh */
 document.querySelectorAll("#privacySeg button").forEach(btn => btn.addEventListener("click", () => {
   document.querySelectorAll("#privacySeg button").forEach(b => b.classList.toggle("on", b === btn));
   $("postPrivacy").value = btn.dataset.v;
@@ -967,7 +971,19 @@ window.removePostImage = () => {
   $("postImagePreviewContainer").style.display = "none";
 };
 
-/* Tạo bài viết: Ẩn danh + Quyền riêng tư + isShared=false (bài gốc) */
+// Trích xuất hashtag từ văn bản bài viết
+function extractHashtags(text) {
+  const matches = text.match(/#[a-zA-Z0-9_À-ỹ]+/g);
+  return matches ? [...new Set(matches.map(tag => tag.toLowerCase()))] : [];
+}
+
+// Định dạng văn bản bài viết để bôi đậm hashtag
+function formatPostText(text) {
+  const safe = escapeHTML(text);
+  // Thay thế hashtag bằng span có class hashtag để click vào tìm kiếm
+  return safe.replace(/#[a-zA-Z0-9_À-ỹ]+/g, match => `<span class="hashtag" data-tag="${match}">${match}</span>`);
+}
+
 window.createPost = async () => {
   if (posting) return;
   const text = $("postText").value.trim();
@@ -978,16 +994,18 @@ window.createPost = async () => {
 
   posting = true; $("postBtn").disabled = true;
   try {
+    const hashtags = extractHashtags(text);
     const postData = {
       postCode: genPostCode(),
       userId: me.id,
       authorName: me.name,
       text: text,
+      hashtags: hashtags, // Lưu danh sách hashtag vào Firestore
       isAnonymous: isAnonymous,
       isShared: false,
       sensitive: $("postSensitive").checked,
       reports: [],
-      privacy: privacy, // PUBLIC, FRIENDS, ONLY_ME
+      privacy: privacy,
       likes: [],
       comments: [],
       createdAt: serverTimestamp()
@@ -1007,7 +1025,6 @@ window.createPost = async () => {
   }
 };
 
-/* ===== KIỂM DUYỆT NỘI DUNG ===== */
 const REPORT_LIMIT = 3;
 const revealed = new Set();
 const BAD_PATTERNS = [
@@ -1026,12 +1043,11 @@ function sensWrap(p, inner, cls = ""){
 window.reportPost = async id => {
   const p = posts.find(x => x.id === id); if (!p) return;
   if ((p.reports || []).includes(me.id)) { toast("Bạn đã báo cáo bài này rồi"); return; }
-  if (!confirm("Báo cáo bài này là nội dung nhạy cảm (máu me, khỏa thân, độc hại)? Đủ " + REPORT_LIMIT + " báo cáo bài sẽ bị che.")) return;
+  if (!confirm("Báo cáo bài này là nội dung nhạy cảm? Đủ " + REPORT_LIMIT + " báo cáo bài sẽ bị che.")) return;
   try { await updateDoc(doc(db,"posts",id), { reports: arrayUnion(me.id) }); toast("Đã gửi báo cáo 🚩"); }
   catch (e) { console.error(e); toast("Báo cáo thất bại"); }
 };
 
-/* Quét ảnh bằng AI (NSFWJS) — chạy trên máy người đăng, lỗi/không tải được thì bỏ qua */
 let nsfwPromise = null;
 function loadScript(src){
   return new Promise((res, rej) => {
@@ -1060,10 +1076,9 @@ async function scanImageSensitive(dataUrl){
   } catch (e) { console.warn(e); return false; }
 }
 
-/* ctx: "feed" | "me" | "up" | "search" — tránh trùng id khi cùng 1 bài hiện ở nhiều trang */
 function postHTML(p, withActions = true, ctx = "feed"){
   const mine = p.userId === me.id;
-  const isAnon = p.isAnonymous ?? true; // dữ liệu cũ mặc định ẩn danh
+  const isAnon = p.isAnonymous ?? true;
   const privacy = p.privacy || "PUBLIC";
 
   let displayName = isAnon ? "◉ Anonymous" : escapeHTML(p.authorName || "Người dùng NOVA");
@@ -1084,7 +1099,7 @@ function postHTML(p, withActions = true, ctx = "feed"){
       <span class="time">${ago(ts)} <span class="privacy-badge">${privacyLabel}</span></span>
     </div>
     <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
-    ${p.text ? sensWrap(p, `<div class="post-text">${escapeHTML(p.text)}</div>`, "txt") : ""}`;
+    ${p.text ? sensWrap(p, `<div class="post-text">${formatPostText(p.text)}</div>`, "txt") : ""}`;
 
   if (p.image) {
     html += sensWrap(p, `<img src="${escapeHTML(p.image)}" alt="Ảnh bài viết" class="post-image" data-zoom="1">`);
@@ -1109,7 +1124,6 @@ function postHTML(p, withActions = true, ctx = "feed"){
   return html + `</div>`;
 }
 
-/* Quyền xem bài (Bảng tin / Tìm kiếm) theo Riêng tư */
 function canViewPost(p){
   if (!me) return false;
   if (p.userId === me.id) return true;
@@ -1132,7 +1146,6 @@ function renderFeed(){
   if (keep) { const el = $(keep.id); if (el) { el.value = keep.val; el.focus(); } }
 }
 
-/* Trang cá nhân của chính chủ: hiện đủ cả bài ẩn danh (kèm nhãn [Ẩn danh]) */
 function renderMyPosts(){
   if (!me) return;
   const box = $("myPosts"); if (!box) return;
@@ -1175,9 +1188,20 @@ async function doSearch(){
   const q = rawQ.toLowerCase();
   const box = $("searchResults");
   if (!q) { box.innerHTML = ""; return; }
-  const foundPosts = posts.filter(p => canViewPost(p) && ((p.text || "").toLowerCase().includes(q) || (p.postCode||"").toLowerCase().includes(q)));
+  
+  // Hỗ trợ tìm kiếm theo hashtag nếu từ khóa bắt đầu bằng # hoặc chứa hashtag
+  const isTagSearch = q.startsWith("#");
+  const foundPosts = posts.filter(p => {
+    if (!canViewPost(p)) return false;
+    if (isTagSearch) {
+      const tags = p.hashtags || [];
+      return tags.includes(q);
+    }
+    return (p.text || "").toLowerCase().includes(q) || (p.postCode||"").toLowerCase().includes(q) || (p.hashtags || []).some(t => t.includes(q));
+  });
+
   const found = new Map();
-  if (q.length >= 2) {
+  if (!isTagSearch && q.length >= 2) {
     try {
       const end = q + "\uf8ff";
       const hq = q.replace(/^@/,""), hend = hq + "\uf8ff", nidq = normalizeNid(rawQ);
@@ -1190,12 +1214,12 @@ async function doSearch(){
       [...a.docs, ...b.docs, ...c.docs, ...e.docs].forEach(d => found.set(d.id, { id: d.id, ...d.data() }));
     } catch (e) { console.error(e); }
   }
-  if (rawQ.length >= 20 && !rawQ.includes("/") && !rawQ.includes("@")) {
+  if (!isTagSearch && rawQ.length >= 20 && !rawQ.includes("/") && !rawQ.includes("@")) {
     try { const sn = await getDoc(doc(db,"users",rawQ)); if (sn.exists()) found.set(sn.id, { id: sn.id, ...sn.data() }); } catch {}
   }
   if ($("searchInput").value.toLowerCase().trim() !== q) return;
   let html = "";
-  if (found.size) {
+  if (!isTagSearch && found.size) {
     html += `<h4 style="margin:14px 0 4px;color:var(--purple)">👤 Tài khoản phù hợp</h4>`;
     html += [...found.values()].map(u => {
       const self = u.id === me.id; const friend = isFriend(u.id);
@@ -1208,7 +1232,7 @@ async function doSearch(){
     }).join("");
   }
   if (foundPosts.length) {
-    html += `<h4 style="margin:16px 0 4px;color:var(--purple)">📝 Bài viết phù hợp</h4>`;
+    html += `<h4 style="margin:16px 0 4px;color:var(--purple)">📝 Bài viết phù hợp ${isTagSearch ? '(' + q + ')' : ''}</h4>`;
     html += foundPosts.slice(0,20).map(p => postHTML(p, false, "search").replace('<div class="card">','<div class="card" style="margin-top:10px">')).join("");
   }
   box.innerHTML = html || `<p class="muted" style="margin-top:15px">Không tìm thấy kết quả nào phù hợp.</p>`;
@@ -1370,7 +1394,6 @@ function attachMessages(){
   renderMessages();
 }
 
-/* Hiển thị tin nhắn — gồm Thu hồi (isRecalled) cho cả chat riêng & group */
 async function renderMessages(stick){
   const token = ++renderToken;
   const box = $("messages"); const win = $("chatWindow");
@@ -1393,7 +1416,6 @@ async function renderMessages(stick){
   if (composer) composer.style.display = key ? "flex" : "none";
 
   if (!key) {
-    /* FIX: giữ lại nội dung đang gõ khi panel bị vẽ lại do snapshot */
     const oldInput = document.getElementById("directUnlockInput");
     const oldVal = oldInput ? oldInput.value : "";
     const hadFocus = oldInput && document.activeElement === oldInput;
@@ -1531,7 +1553,6 @@ window.reactMessage = async (msgId, emoji) => {
   catch (e) { console.error(e); toast("Lỗi reaction"); }
 };
 
-/* Thu hồi: chỉ người gửi, chỉ đúng 1 tin được chọn */
 window.recallMessage = async id => {
   const m = msgDocs.find(x => x.id === id);
   if (!m) return;
@@ -1627,7 +1648,7 @@ window.newChatKey = async () => {
     }
     batch.update(doc(db,"chats",c.id), { keyCheck: await makeKeyCheck(newKey), key: deleteField() });
     await batch.commit();
-    saveKey(c.id, newKey); // chỉ lưu mã mới sau khi commit thành công
+    saveKey(c.id, newKey);
     toast("Đã đổi mã. Gửi mã mới cho mọi người 🔐");
   } catch (e) { console.error(e); toast("Đổi mã thất bại"); }
 };
@@ -1739,7 +1760,6 @@ window.addMemberToGroup = async gid => {
       const fName = (friend.name || "").trim().toLowerCase();
       if (fEmail === inputVal || fName === inputVal) { uid = friendUid; break; }
     }
-    /* nếu không khớp chính xác thì thử khớp 1 phần tên, nhưng chỉ nhận khi duy nhất 1 kết quả */
     if (!uid) {
       const partial = [];
       for (const friendship of friendships) {
@@ -1844,7 +1864,6 @@ window.changeName = async () => {
   } catch (e) { console.error(e); toast("Đổi tên thất bại"); }
 };
 
-/* square=true: cắt vuông (avatar). square=false: giữ nguyên tỉ lệ (ảnh bài đăng / chat) */
 function resizeImage(file, size = 160, square = true){
   return new Promise((resolve, reject) => {
     const img = new Image(); const url = URL.createObjectURL(file);
@@ -1929,7 +1948,6 @@ window.copyPost = async () => {
   else { try { await navigator.clipboard.writeText(text); toast("Đã copy bài viết 📋"); } catch { toast("Không copy được"); } }
 };
 
-/* Bài chia sẻ: tôn trọng quyền riêng tư của bài gốc + hiển thị tác giả đúng chế độ ẩn danh */
 async function renderShareList(box, shares, mine){
   if (!box) return;
   if (!shares.length) { box.innerHTML = `<p class="muted" style="margin-top:10px">Chưa chia sẻ bài viết nào.</p>`; return; }
@@ -1945,7 +1963,7 @@ async function renderShareList(box, shares, mine){
       const author = anon ? (p.userId === me.id ? "◉ Anonymous (bạn)" : "◉ Anonymous") : escapeHTML(p.authorName || "Người dùng NOVA");
       body = `<div class="muted" style="margin-top:6px">Tác giả: ${author}</div>
              <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
-             ${p.text ? sensWrap(p, `<div class="post-text">${escapeHTML(p.text)}</div>`, "txt") : ""}
+             ${p.text ? sensWrap(p, `<div class="post-text">${formatPostText(p.text)}</div>`, "txt") : ""}
              ${p.image ? sensWrap(p, `<img src="${escapeHTML(p.image)}" alt="Ảnh" data-zoom="1" style="width:100%;max-height:250px;object-fit:cover;border-radius:10px;cursor:pointer">`) : ""}
              <div class="muted" style="margin-top:8px">♥ ${(p.likes || []).length} · 💬 ${(p.comments || []).length}</div>`;
     }
@@ -1964,7 +1982,6 @@ document.addEventListener("click", e => {
 });
 window.goBack = () => { viewingUid = null; showPage(prevPage && prevPage !== "userProfile" ? prevPage : "home"); };
 
-/* Trang cá nhân người khác — LỌC HOÀN TOÀN bài ẩn danh, tôn trọng Riêng tư */
 function renderUserPosts(uid){
   const upPostsBox = $("upPosts"); if (!upPostsBox) return;
   const isUserFriend = isFriend(uid);
