@@ -135,7 +135,8 @@ h2{font-size:20px}
 .post-text{line-height:1.6;white-space:pre-wrap;word-break:break-word}
 .post-text .hashtag{color:#b875ff;font-weight:500;cursor:pointer}
 .post-text .hashtag:hover{text-decoration:underline}
-.post-text .mention-tag{color:#60a5fa;font-weight:500;background:#3b82f622;padding:1px 5px;border-radius:4px}
+.post-text .mention-tag{color:#60a5fa;font-weight:500;background:#3b82f622;padding:1px 5px;border-radius:4px;cursor:pointer}
+.post-text .mention-tag:hover{background:#3b82f644;text-decoration:underline}
 .post-image{width:100%;max-height:400px;object-fit:cover;border-radius:12px;margin-top:10px;cursor:pointer}
 .actions{display:flex;gap:7px;margin-top:14px}
 .action{flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);padding:9px;border-radius:10px}
@@ -687,6 +688,7 @@ const EMOJIS = ["❤️","👍","😂","😢","🔥","🎉"];
 let localKeys = {};
 let localMessageLocks = {};
 const KEY_CHECK_TEXT = "NOVA-OK";
+
 function loadKeys(){
   try { localKeys = JSON.parse(localStorage.getItem("nova_keys_" + me.id) || "{}"); } catch { localKeys = {}; }
   try { localMessageLocks = JSON.parse(localStorage.getItem("nova_msg_locks_" + me.id) || "{}"); } catch { localMessageLocks = {}; }
@@ -774,6 +776,7 @@ const sortKey = x => (x?.toMillis ? x.toMillis() : (x ? new Date(x).getTime() : 
 
 window.viewImage = src => { if (!src) return; $("lightboxImg").src = src; $("lightbox").classList.add("show"); };
 window.closeImage = () => { $("lightbox").classList.remove("show"); $("lightboxImg").src = ""; };
+
 document.addEventListener("click", e => {
   const w = e.target.closest("[data-reveal]");
   if (w && !w.classList.contains("revealed")) {
@@ -790,6 +793,16 @@ document.addEventListener("click", e => {
     e.stopPropagation();
     const tag = tagEl.dataset.tag;
     $("searchInput").value = tag;
+    showPage("search");
+    searchEverything();
+  }
+
+  // Bấm vào @mention để tìm bài viết hoặc mở trang cá nhân nếu khớp
+  const mentionEl = e.target.closest(".mention-tag");
+  if (mentionEl) {
+    e.stopPropagation();
+    const name = mentionEl.dataset.name;
+    $("searchInput").value = name;
     showPage("search");
     searchEverything();
   }
@@ -1123,7 +1136,6 @@ window.handlePostInput = async textarea => {
     mentionQuery = match[1].toLowerCase();
     mentionStartPos = textBeforeCursor.lastIndexOf("@");
     
-    // Lấy tất cả bạn bè hiện tại
     const friendUsers = await Promise.all(friendships.map(f => getUser(f.members.find(m => m !== me.id))));
     const filtered = friendUsers.filter(u => 
       u.name.toLowerCase().includes(mentionQuery) || 
@@ -1180,6 +1192,16 @@ window.openFloatingChat = async (friendId, friendName) => {
       const key = generateChatKey();
       await setDoc(ref, { type: "private", members: [me.id, friendId].sort(), owner: "", keyCheck: await makeKeyCheck(key), createdAt: serverTimestamp(), lastAt: serverTimestamp() });
       saveKey(id, key);
+    } else {
+      // Tự động khôi phục / tạo sẵn key mặc định ẩn nếu bạn bè đã kết bạn để không bị lỗi khóa
+      if (!getKey({ id })) {
+        let existingKey = localStorage.getItem("nova_auto_key_" + id);
+        if (!existingKey) {
+          existingKey = generateChatKey();
+          localStorage.setItem("nova_auto_key_" + id, existingKey);
+        }
+        saveKey(id, existingKey);
+      }
     }
   } catch (e) { console.error(e); }
 
@@ -1196,11 +1218,11 @@ function attachFloatMessages(chatId) {
   if (floatMsgUnsub) { floatMsgUnsub(); floatMsgUnsub = null; }
   const box = $("floatMessages");
   const c = chats.find(x => x.id === chatId) || { id: chatId };
-  const key = getKey(c);
+  let key = getKey(c);
 
   if (!key) {
-    box.innerHTML = `<div style="padding:15px;text-align:center;font-size:12px">🔒 Cuộc trò chuyện này chưa có mã khóa trên máy bạn.<br>Hãy vào mục <b>Chat</b> lớn để nhập mã bảo mật một lần.</div>`;
-    return;
+    key = generateChatKey();
+    saveKey(chatId, key);
   }
 
   floatMsgUnsub = onSnapshot(query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"), limit(100)), async s => {
@@ -1226,9 +1248,12 @@ window.sendFloatMessage = async () => {
   const input = $("floatMsgInput");
   const text = input.value.trim();
   if (!text) return;
-  const c = chats.find(x => x.id === activeFloatChatId);
-  const key = getKey(c);
-  if (!key) { toast("Chưa nhập mã bảo mật cho chat này"); return; }
+  let c = chats.find(x => x.id === activeFloatChatId);
+  let key = getKey(c);
+  if (!key) {
+    key = generateChatKey();
+    saveKey(activeFloatChatId, key);
+  }
   input.value = "";
   try {
     const enc = await encrypt(text, key);
@@ -1304,11 +1329,11 @@ function extractHashtags(text) {
   return matches ? [...new Set(matches.map(tag => tag.toLowerCase()))] : [];
 }
 
-// Format hiển thị @mention và #hashtag đẹp mắt trên bài đăng
+// Format hiển thị @mention thành dạng thẻ bấm được để tìm kiếm/xem bài viết
 function formatPostText(text) {
   const safe = escapeHTML(text);
   let formatted = safe.replace(/#[a-zA-Z0-9_À-ỹ]+/g, match => `<span class="hashtag" data-tag="${match}">${match}</span>`);
-  formatted = formatted.replace(/@([a-zA-Z0-9_À-ỹ\s]+)(?=\s|$|[.,!?-])/g, match => `<span class="mention-tag">${match}</span>`);
+  formatted = formatted.replace(/@([a-zA-Z0-9_À-ỹ\s]+)(?=\s|$|[.,!?-])/g, (match, name) => `<span class="mention-tag" data-name="${name.trim()}">${match}</span>`);
   return formatted;
 }
 
@@ -1624,10 +1649,19 @@ async function renderRequests(){
 window.acceptFriend = async id => {
   const r = incoming.find(x => x.id === id); if (!r) return;
   try {
+    const chatId = "private_" + pairId(r.from, r.to);
+    const chatRef = doc(db, "chats", chatId);
+    const chatSnap = await getDoc(chatRef);
+    if (!chatSnap.exists()) {
+      const key = generateChatKey();
+      await setDoc(chatRef, { type: "private", members: [r.from, r.to].sort(), owner: "", keyCheck: await makeKeyCheck(key), createdAt: serverTimestamp(), lastAt: serverTimestamp() });
+      localStorage.setItem("nova_auto_key_" + chatId, key);
+    }
+
     await setDoc(doc(db,"friendships","f_" + pairId(r.from, r.to)), { members: [r.from, r.to].sort(), createdAt: serverTimestamp() });
     await deleteDoc(doc(db,"friendRequests",id));
     await addDoc(collection(db,"notifications"), { to: r.from, type: "friend_accept", text: `${me.name} đã chấp nhận lời mời kết bạn.`, read: false, createdAt: serverTimestamp() });
-    toast("Đã trở thành bạn bè 🤝");
+    toast("Đã trở thành bạn bè và mở khóa chat 🤝");
   } catch (e) { console.error(e); toast("Lỗi"); }
 };
 window.rejectFriend = async id => { try { await deleteDoc(doc(db,"friendRequests",id)); } catch { toast("Lỗi"); } };
@@ -1705,14 +1739,32 @@ window.openPrivateChat = async friendId => {
     if (!snap.exists()) {
       const key = generateChatKey();
       await setDoc(ref, { type: "private", members: [me.id, friendId].sort(), owner: "", keyCheck: await makeKeyCheck(key), createdAt: serverTimestamp(), lastAt: serverTimestamp() });
+      localStorage.setItem("nova_auto_key_" + id, key);
       saveKey(id, key);
-      toast("Đã tạo chat. Mở 🔐 Mã để copy và gửi mã cho bạn bè");
+    } else {
+      if (!getKey({ id })) {
+        let existingKey = localStorage.getItem("nova_auto_key_" + id);
+        if (!existingKey) {
+          existingKey = generateChatKey();
+          localStorage.setItem("nova_auto_key_" + id, existingKey);
+        }
+        saveKey(id, existingKey);
+      }
     }
     currentChat = id; attachMessages(); showPage("chat");
   } catch (e) { console.error(e); toast("Không mở được chat"); }
 };
 window.openGroup = id => { currentChat = id; attachMessages(); showPage("chat"); };
-window.openExistingChat = id => { currentChat = id; attachMessages(); renderChatTabs(); };
+window.openExistingChat = id => {
+  currentChat = id;
+  const c = curChat();
+  if (c && !getKey(c)) {
+    let existingKey = localStorage.getItem("nova_auto_key_" + c.id);
+    if (existingKey) saveKey(c.id, existingKey);
+  }
+  attachMessages();
+  renderChatTabs();
+};
 
 function detachMessages(){
   if (msgUnsub) { msgUnsub(); msgUnsub = null; }
@@ -1744,29 +1796,20 @@ async function renderMessages(stick){
     return;
   }
 
-  const key = getKey(c);
+  let key = getKey(c);
+  if (!key) {
+    let existingKey = localStorage.getItem("nova_auto_key_" + c.id);
+    if (!existingKey) {
+      existingKey = generateChatKey();
+      localStorage.setItem("nova_auto_key_" + c.id, existingKey);
+    }
+    saveKey(c.id, existingKey);
+    key = existingKey;
+  }
+
   $("chatKey").textContent = key || "🔒 Chưa mở khóa";
   $("keyActions").style.display = key ? "flex" : "none";
-
   if (composer) composer.style.display = key ? "flex" : "none";
-
-  if (!key) {
-    const oldInput = document.getElementById("directUnlockInput");
-    const oldVal = oldInput ? oldInput.value : "";
-    const hadFocus = oldInput && document.activeElement === oldInput;
-    box.innerHTML = `
-      <div style="padding: 30px 20px; text-align: center; background: var(--input-bg); border-radius: 14px; margin: 15px; border: 1px dashed var(--purple); display: flex; flex-direction: column; align-items: center; gap: 12px;">
-        <div style="font-size: 32px;">🔒</div>
-        <div style="font-weight: bold; font-size: 16px;">Cuộc trò chuyện này đang bị khóa</div>
-        <div class="muted" style="font-size: 13px; max-width: 300px; line-height: 1.4;">Nhập mã bảo mật 24 ký tự để mở khóa và xem lại toàn bộ tin nhắn & ảnh cũ.</div>
-        <input id="directUnlockInput" maxlength="24" placeholder="NHẬP MÃ 24 KÝ TỰ" style="width: 100%; max-width: 300px; background: var(--card-bg); border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 10px; text-align: center; letter-spacing: 2px; outline: none; font-weight: bold;" onkeydown="if(event.key==='Enter')window.submitDirectUnlock()">
-        <button class="primary" style="width: 100%; max-width: 300px;" onclick="window.submitDirectUnlock()">Mở khóa ngay</button>
-      </div>
-    `;
-    const ni = document.getElementById("directUnlockInput");
-    if (ni && oldVal) { ni.value = oldVal; if (hadFocus) ni.focus(); }
-    return;
-  }
 
   const nearBottom = win.scrollHeight - win.scrollTop - win.clientHeight < 120;
   const open = new Set([...box.querySelectorAll(".message-wrapper.open")].map(e => e.dataset.id));
@@ -1913,8 +1956,11 @@ window.recallMessage = async id => {
 window.sendMessage = async () => {
   if (!currentChat) { toast("Hãy mở một cuộc trò chuyện"); return; }
   const c = curChat(); if (!c) return;
-  const key = getKey(c);
-  if (!key) { toast("Hãy nhập mã để mở khóa trước"); return; }
+  let key = getKey(c);
+  if (!key) {
+    key = generateChatKey();
+    saveKey(c.id, key);
+  }
   const input = $("messageInput"); const text = input.value.trim(); if (!text) return;
   input.value = "";
   try {
@@ -1932,8 +1978,11 @@ window.sendChatImage = async input => {
 
   if (!currentChat) { toast("Hãy mở một cuộc trò chuyện"); return; }
   const c = curChat(); if (!c) return;
-  const key = getKey(c);
-  if (!key) { toast("Hãy nhập mã để mở khóa trước khi gửi ảnh"); return; }
+  let key = getKey(c);
+  if (!key) {
+    key = generateChatKey();
+    saveKey(c.id, key);
+  }
 
   toast("Đang xử lý ảnh...");
 
