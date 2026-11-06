@@ -59,7 +59,7 @@ h2{font-size:20px}
 .switch span{color:#b875ff;cursor:pointer}
 .err{color:var(--danger);font-size:13px;margin:-4px 0 10px;min-height:0}
 
-/* APP */
+/* APP & 3 CỘT LAYOUT */
 #app{display:none;min-height:100vh}
 .topbar{height:64px;position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;
  padding:0 17px;background:var(--card-bg);border-bottom:1px solid var(--border)}
@@ -72,13 +72,12 @@ h2{font-size:20px}
  color:#fff;font-size:11px;display:none;align-items:center;justify-content:center;padding:0 4px;font-weight:bold}
 .badge.show{display:flex}
 
-/* LAYOUT 3 CỘT */
 .nova-layout {
     display: flex;
     justify-content: center;
     gap: 20px;
     padding: 18px 14px 96px;
-    max-width: 1350px;
+    max-width: 1400px;
     margin: 0 auto;
 }
 .left-sidebar, .right-sidebar {
@@ -363,7 +362,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
   <div class="card">
    <h3>👥 Bạn bè trực tuyến</h3>
    <div id="onlineFriendsList" style="margin-top:10px">
-    <p class="muted" style="font-size:13px">Đang cập nhật danh sách trực tuyến...</p>
+    <p class="muted" style="font-size:13px">Đang cập nhật...</p>
    </div>
   </div>
  </aside>
@@ -553,7 +552,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
   <div class="card">
    <h3>✨ Gợi ý kết bạn</h3>
    <div id="rightFriendSuggestions" style="margin-top:10px">
-    <p class="muted" style="font-size:13px">Đang tải gợi ý...</p>
+    <p class="muted" style="font-size:13px">Đang tải...</p>
    </div>
   </div>
   <div class="card" style="margin-top:14px">
@@ -975,7 +974,6 @@ function startListeners(){
 // Render dữ liệu cho 2 cột hai bên
 async function renderSidebars() {
   if (!me) return;
-  // Cột trái: Bạn bè
   const onlineBox = $("onlineFriendsList");
   if (onlineBox) {
     if (!friendships.length) {
@@ -994,7 +992,6 @@ async function renderSidebars() {
     }
   }
 
-  // Cột phải: Gợi ý kết bạn & Nhóm
   const rightFriendBox = $("rightFriendSuggestions");
   if (rightFriendBox) {
     try {
