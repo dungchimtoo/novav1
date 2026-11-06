@@ -2231,7 +2231,12 @@ function renderNotifications(){
 }
 window.markAllRead = async () => {
   const unread = notifs.filter(n => !n.read); if (!unread.length) return;
-  try { const b = writeBatch(db); unread.forEach(n => b.update(doc(doc(db,"notifications",n.id), { read: true })); await b.commit(); } catch { toast("Lỗi"); }
+  try { 
+    const b = writeBatch(db); 
+    unread.forEach(n => b.update(doc(db, "notifications", n.id), { read: true })); 
+    await b.commit(); 
+    toast("Đã đánh dấu tất cả là đã đọc ✓");
+  } catch (e) { console.error(e); toast("Lỗi"); }
 };
 
 function updateProfileView(){
