@@ -72,7 +72,38 @@ h2{font-size:20px}
  color:#fff;font-size:11px;display:none;align-items:center;justify-content:center;padding:0 4px;font-weight:bold}
 .badge.show{display:flex}
 
-.main{max-width:720px;margin:auto;padding:18px 14px 96px}
+/* LAYOUT 3 CỘT */
+.nova-layout {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 18px 14px 96px;
+    max-width: 1350px;
+    margin: 0 auto;
+}
+.left-sidebar, .right-sidebar {
+    width: 270px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 82px;
+    height: calc(100vh - 100px);
+    overflow-y: auto;
+}
+.left-sidebar::-webkit-scrollbar, .right-sidebar::-webkit-scrollbar { width: 5px; }
+.left-sidebar::-webkit-scrollbar-thumb, .right-sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.main {
+    flex-grow: 1;
+    max-width: 680px;
+    margin: 0;
+    padding: 0;
+}
+@media(max-width: 1024px) {
+    .left-sidebar, .right-sidebar { display: none; }
+    .nova-layout { display: block; padding: 18px 14px 96px; }
+    .main { max-width: 720px; margin: auto; }
+}
+
 .page{display:none}.page.active{display:block}
 .card{background:var(--card-bg);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -324,184 +355,217 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
  </div>
 </header>
 
-<main class="main">
+<!-- Khung Layout 3 Cột Tổng Thể -->
+<div class="nova-layout">
 
-<section id="home" class="page active">
- <div class="card create">
-  <textarea id="postText" maxlength="1000" placeholder="Bạn đang nghĩ gì? Sử dụng #hashtag để phân loại..."></textarea>
-
-  <div id="postImagePreviewContainer" style="display:none;position:relative;margin-top:10px;">
-    <img id="postImagePreview" src="" alt="Xem trước" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;">
-    <button onclick="removePostImage()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:0;border-radius:50%;width:28px;height:28px;cursor:pointer;">✕</button>
+ <!-- Cột Trái: Bạn bè trực tuyến -->
+ <aside class="left-sidebar">
+  <div class="card">
+   <h3>👥 Bạn bè trực tuyến</h3>
+   <div id="onlineFriendsList" style="margin-top:10px">
+    <p class="muted" style="font-size:13px">Đang cập nhật danh sách trực tuyến...</p>
+   </div>
   </div>
+ </aside>
 
-  <div class="post-opts">
-   <div class="opt-row">
-    <span class="opt-label">Chế độ đăng</span>
-    <div class="seg" id="privacySeg">
-     <button type="button" data-v="PUBLIC" class="on">🌐 Công khai</button>
-     <button type="button" data-v="FRIENDS">👥 Bạn bè</button>
-     <button type="button" data-v="ONLY_ME">🔒 Riêng tư</button>
+ <!-- Cột Giữa: Nội dung chính -->
+ <main class="main">
+
+  <section id="home" class="page active">
+   <div class="card create">
+    <textarea id="postText" maxlength="1000" placeholder="Bạn đang nghĩ gì? Sử dụng #hashtag để phân loại..."></textarea>
+
+    <div id="postImagePreviewContainer" style="display:none;position:relative;margin-top:10px;">
+      <img id="postImagePreview" src="" alt="Xem trước" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;">
+      <button onclick="removePostImage()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:0;border-radius:50%;width:28px;height:28px;cursor:pointer;">✕</button>
     </div>
-    <input type="hidden" id="postPrivacy" value="PUBLIC">
+
+    <div class="post-opts">
+     <div class="opt-row">
+      <span class="opt-label">Chế độ đăng</span>
+      <div class="seg" id="privacySeg">
+       <button type="button" data-v="PUBLIC" class="on">🌐 Công khai</button>
+       <button type="button" data-v="FRIENDS">👥 Bạn bè</button>
+       <button type="button" data-v="ONLY_ME">🔒 Riêng tư</button>
+      </div>
+      <input type="hidden" id="postPrivacy" value="PUBLIC">
+     </div>
+     <div class="opt-row">
+      <span class="opt-label">Ẩn danh</span>
+      <label class="tgl"><input type="checkbox" id="postAnonymous" checked><span class="tgl-slider"></span></label>
+      <span id="anonHint" class="muted">BẬT — người khác chỉ thấy "Anonymous"</span>
+     </div>
+     <div class="opt-row">
+      <span class="opt-label">Nhạy cảm</span>
+      <label class="tgl"><input type="checkbox" id="postSensitive"><span class="tgl-slider"></span></label>
+      <span class="muted">Che ảnh/chữ (máu me, 18+, độc hại...)</span>
+     </div>
+    </div>
+    <div class="row" style="margin-top:12px;gap:8px;">
+     <button class="secondary" style="padding:8px 12px;font-size:14px" onclick="document.getElementById('postImageFile').click()" title="Đính kèm ảnh">📷 Ảnh</button>
+     <button class="primary" id="postBtn" onclick="createPost()">Đăng</button>
+    </div>
    </div>
-   <div class="opt-row">
-    <span class="opt-label">Ẩn danh</span>
-    <label class="tgl"><input type="checkbox" id="postAnonymous" checked><span class="tgl-slider"></span></label>
-    <span id="anonHint" class="muted">BẬT — người khác chỉ thấy "Anonymous"</span>
+   <div id="feed"></div>
+  </section>
+
+  <section id="search" class="page">
+   <div class="card">
+    <h2>🔎 Tìm kiếm tài khoản & bài viết</h2>
+    <input id="searchInput" class="input" style="margin-top:15px" placeholder="Tên, @tên, NOVA ID, #hashtag hoặc nội dung..." oninput="searchEverything()">
+    <div id="searchResults"></div>
    </div>
-   <div class="opt-row">
-    <span class="opt-label">Nhạy cảm</span>
-    <label class="tgl"><input type="checkbox" id="postSensitive"><span class="tgl-slider"></span></label>
-    <span class="muted">Che ảnh/chữ (máu me, 18+, độc hại...)</span>
+  </section>
+
+  <section id="friends" class="page">
+   <h2>👥 Bạn bè</h2>
+   <div class="card" style="margin-top:15px">
+    <p class="muted" style="margin-bottom:12px">Nhập @tên, NOVA ID (NV-XXXX-XXXX) hoặc Gmail chính xác để kết bạn.</p>
+    <div class="search-friend">
+     <input id="friendEmail" class="input" placeholder="@tên, NV-XXXX-XXXX hoặc Gmail" onkeydown="if(event.key==='Enter')findFriend()">
+     <button class="primary" onclick="findFriend()">Tìm</button>
+    </div>
+    <div id="friendResult"></div>
+   </div>
+   <div class="card"><h3>📨 Lời mời kết bạn</h3><div id="requests"></div></div>
+   <div class="card"><h3>🤝 Bạn bè của bạn</h3><div id="friendList"></div></div>
+  </section>
+
+  <section id="chat" class="page">
+   <h2>💬 Chat</h2>
+   <div id="chatTabs" class="chat-tabs"></div>
+   <div class="chat-box">
+    <div class="chat-head">
+     <div class="chat-title" id="chatTitle">Chưa chọn cuộc trò chuyện</div>
+     <div style="display:flex;gap:6px;">
+      <button class="secondary" style="padding:6px 10px;font-size:13px" onclick="toggleKeyPanel()">🔐 Mã</button>
+      <button class="secondary" style="padding:6px 10px;font-size:13px;color:var(--danger);border-color:var(--danger);" onclick="lockChat()">🔒 Khóa lại</button>
+     </div>
+    </div>
+    <div id="keyPanel" class="chat-key">
+     <div class="key-title">MÃ CUỘC TRÒ CHUYỆN — 24 KÝ TỰ (chỉ lưu trên máy bạn)</div>
+     <div id="chatKey" class="key-value">--</div>
+     <div class="key-actions" id="keyActions">
+      <button onclick="copyChatKey()">📋 Copy</button>
+      <button onclick="newChatKey()">🔄 Đổi mã</button>
+     </div>
+    </div>
+
+    <div class="chat-window" id="chatWindow"><div id="messages"></div></div>
+
+    <div class="chat-input">
+     <button class="secondary" style="padding:0 10px;font-size:16px" onclick="document.getElementById('chatImageFile').click()" title="Gửi ảnh">📷</button>
+     <input id="messageInput" placeholder="Nhập tin nhắn..." autocomplete="off" onkeydown="if(event.key==='Enter')sendMessage()">
+     <button onclick="sendMessage()">Gửi</button>
+    </div>
+   </div>
+  </section>
+
+  <section id="groups" class="page">
+   <h2>👥 Group & Thành viên</h2>
+   <div class="card" style="margin-top:15px">
+    <input id="groupName" class="input" placeholder="Tên group mới" maxlength="40">
+    <div class="muted" style="margin-bottom:4px">Chọn bạn bè để thêm vào group:</div>
+    <div id="groupPicker" style="max-height:170px;overflow:auto;margin-bottom:10px"></div>
+    <button class="primary full" onclick="createGroup()">＋ Tạo group</button>
+   </div>
+   <div id="groupList"></div>
+  </section>
+
+  <section id="notifications" class="page">
+   <div class="row"><h2>🔔 Thông báo</h2><button class="secondary" style="padding:7px 12px;font-size:13px" onclick="markAllRead()">Đã đọc hết</button></div>
+   <div id="notificationList" style="margin-top:15px"></div>
+  </section>
+
+  <section id="profile" class="page">
+   <div class="card profile">
+    <div id="avatar" class="avatar editable" onclick="document.getElementById('avatarFile').click()">N</div>
+    <div class="avatar-hint" onclick="document.getElementById('avatarFile').click()">Đổi ảnh đại diện</div>
+    <div id="profileName" class="profile-name" style="margin-top:8px">Nova</div>
+    <div id="profileEmail" class="muted" style="cursor:pointer;word-break:break-all" title="Bấm để copy NOVA ID" onclick="copyUid()">--</div>
+   </div>
+   <div class="card">
+    <div class="setting"><span>📝 Bài viết</span><strong id="postCount">0</strong></div>
+    <div class="setting"><span>🤝 Bạn bè</span><strong id="friendCount">0</strong></div>
+    <div class="setting"><span>👥 Group</span><strong id="groupCount">0</strong></div>
+    <div class="setting"><span>↗ Đã chia sẻ</span><strong id="shareCount">0</strong></div>
+   </div>
+
+   <div class="card">
+    <h3>📝 Bài viết của tôi</h3>
+    <div id="myPosts"></div>
+   </div>
+
+   <div class="card"><h3>↗ Bài viết đã chia sẻ</h3><div id="myShares"></div></div>
+  </section>
+
+  <section id="settings" class="page">
+   <h2>⚙️ Cài đặt</h2>
+   <div class="card" style="margin-top:15px">
+    <div class="setting"><span>🖼️ Ảnh đại diện</span>
+     <div class="btn-row">
+      <button class="secondary" onclick="document.getElementById('avatarFile').click()">Chọn ảnh</button>
+      <button class="secondary" onclick="removeAvatar()">Xóa</button>
+     </div>
+    </div>
+    <div class="setting" style="flex-direction:column;align-items:stretch">
+     <span>✏️ Tên hiển thị</span>
+     <div class="search-friend" style="margin-top:8px">
+      <input id="newName" class="input" maxlength="30" placeholder="Tên mới">
+      <button class="primary" onclick="changeName()">Lưu</button>
+     </div>
+    </div>
+    <div class="setting" style="flex-direction:column;align-items:stretch">
+     <span>＠ Tên định danh</span>
+     <div class="search-friend" style="margin-top:8px">
+      <input id="newHandle" class="input" maxlength="20" placeholder="vd: dung_nova">
+      <button class="primary" onclick="changeHandle()">Lưu</button>
+     </div>
+     <div class="muted" id="myNidLine"></div>
+    </div>
+    <div class="setting"><span>🌌 Giao diện</span><button class="secondary" onclick="toggleTheme()" id="themeBtn">Chuyển Sáng</button></div>
+    <div class="setting"><span>🔐 Tin nhắn mã hóa</span><span style="color:#bd7fff">AES-GCM</span></div>
+    <div class="setting"><span class="danger">Đăng xuất</span><button class="secondary" onclick="logout()">Thoát</button></div>
+   </div>
+  </section>
+
+  <section id="userProfile" class="page">
+   <button class="secondary" style="margin-bottom:12px" onclick="goBack()">← Quay lại</button>
+   <div class="card profile">
+    <div id="upAvatar" class="avatar">N</div>
+    <div id="upName" class="profile-name">--</div>
+    <div id="upEmail" class="muted" style="word-break:break-all">--</div>
+    <div id="upActions" class="btn-row" style="justify-content:center;margin-top:14px"></div>
+   </div>
+
+   <div class="card">
+    <h3>📝 Bài viết công khai</h3>
+    <div id="upPosts"></div>
+   </div>
+
+   <div class="card"><h3>↗ Bài viết đã chia sẻ</h3><div id="upShares"></div></div>
+  </section>
+
+ </main>
+
+ <!-- Cột Phải: Gợi ý kết bạn & Nhóm của bạn -->
+ <aside class="right-sidebar">
+  <div class="card">
+   <h3>✨ Gợi ý kết bạn</h3>
+   <div id="rightFriendSuggestions" style="margin-top:10px">
+    <p class="muted" style="font-size:13px">Đang tải gợi ý...</p>
    </div>
   </div>
-  <div class="row" style="margin-top:12px;gap:8px;">
-   <button class="secondary" style="padding:8px 12px;font-size:14px" onclick="document.getElementById('postImageFile').click()" title="Đính kèm ảnh">📷 Ảnh</button>
-   <button class="primary" id="postBtn" onclick="createPost()">Đăng</button>
-  </div>
- </div>
- <div id="feed"></div>
-</section>
-
-<section id="search" class="page">
- <div class="card">
-  <h2>🔎 Tìm kiếm tài khoản & bài viết</h2>
-  <input id="searchInput" class="input" style="margin-top:15px" placeholder="Tên, @tên, NOVA ID, #hashtag hoặc nội dung..." oninput="searchEverything()">
-  <div id="searchResults"></div>
- </div>
-</section>
-
-<section id="friends" class="page">
- <h2>👥 Bạn bè</h2>
- <div class="card" style="margin-top:15px">
-  <p class="muted" style="margin-bottom:12px">Nhập @tên, NOVA ID (NV-XXXX-XXXX) hoặc Gmail chính xác để kết bạn.</p>
-  <div class="search-friend">
-   <input id="friendEmail" class="input" placeholder="@tên, NV-XXXX-XXXX hoặc Gmail" onkeydown="if(event.key==='Enter')findFriend()">
-   <button class="primary" onclick="findFriend()">Tìm</button>
-  </div>
-  <div id="friendResult"></div>
- </div>
- <div class="card"><h3>📨 Lời mời kết bạn</h3><div id="requests"></div></div>
- <div class="card"><h3>🤝 Bạn bè của bạn</h3><div id="friendList"></div></div>
-</section>
-
-<section id="chat" class="page">
- <h2>💬 Chat</h2>
- <div id="chatTabs" class="chat-tabs"></div>
- <div class="chat-box">
-  <div class="chat-head">
-   <div class="chat-title" id="chatTitle">Chưa chọn cuộc trò chuyện</div>
-   <div style="display:flex;gap:6px;">
-    <button class="secondary" style="padding:6px 10px;font-size:13px" onclick="toggleKeyPanel()">🔐 Mã</button>
-    <button class="secondary" style="padding:6px 10px;font-size:13px;color:var(--danger);border-color:var(--danger);" onclick="lockChat()">🔒 Khóa lại</button>
+  <div class="card" style="margin-top:14px">
+   <h3>❖ Nhóm của bạn</h3>
+   <div id="rightGroupList" style="margin-top:10px">
+    <p class="muted" style="font-size:13px">Chưa có nhóm nào.</p>
    </div>
   </div>
-  <div id="keyPanel" class="chat-key">
-   <div class="key-title">MÃ CUỘC TRÒ CHUYỆN — 24 KÝ TỰ (chỉ lưu trên máy bạn)</div>
-   <div id="chatKey" class="key-value">--</div>
-   <div class="key-actions" id="keyActions">
-    <button onclick="copyChatKey()">📋 Copy</button>
-    <button onclick="newChatKey()">🔄 Đổi mã</button>
-   </div>
-  </div>
+ </aside>
 
-  <div class="chat-window" id="chatWindow"><div id="messages"></div></div>
-
-  <div class="chat-input">
-   <button class="secondary" style="padding:0 10px;font-size:16px" onclick="document.getElementById('chatImageFile').click()" title="Gửi ảnh">📷</button>
-   <input id="messageInput" placeholder="Nhập tin nhắn..." autocomplete="off" onkeydown="if(event.key==='Enter')sendMessage()">
-   <button onclick="sendMessage()">Gửi</button>
-  </div>
- </div>
+</div>
 </section>
-
-<section id="groups" class="page">
- <h2>👥 Group & Thành viên</h2>
- <div class="card" style="margin-top:15px">
-  <input id="groupName" class="input" placeholder="Tên group mới" maxlength="40">
-  <div class="muted" style="margin-bottom:4px">Chọn bạn bè để thêm vào group:</div>
-  <div id="groupPicker" style="max-height:170px;overflow:auto;margin-bottom:10px"></div>
-  <button class="primary full" onclick="createGroup()">＋ Tạo group</button>
- </div>
- <div id="groupList"></div>
-</section>
-
-<section id="notifications" class="page">
- <div class="row"><h2>🔔 Thông báo</h2><button class="secondary" style="padding:7px 12px;font-size:13px" onclick="markAllRead()">Đã đọc hết</button></div>
- <div id="notificationList" style="margin-top:15px"></div>
-</section>
-
-<section id="profile" class="page">
- <div class="card profile">
-  <div id="avatar" class="avatar editable" onclick="document.getElementById('avatarFile').click()">N</div>
-  <div class="avatar-hint" onclick="document.getElementById('avatarFile').click()">Đổi ảnh đại diện</div>
-  <div id="profileName" class="profile-name" style="margin-top:8px">Nova</div>
-  <div id="profileEmail" class="muted" style="cursor:pointer;word-break:break-all" title="Bấm để copy NOVA ID" onclick="copyUid()">--</div>
- </div>
- <div class="card">
-  <div class="setting"><span>📝 Bài viết</span><strong id="postCount">0</strong></div>
-  <div class="setting"><span>🤝 Bạn bè</span><strong id="friendCount">0</strong></div>
-  <div class="setting"><span>👥 Group</span><strong id="groupCount">0</strong></div>
-  <div class="setting"><span>↗ Đã chia sẻ</span><strong id="shareCount">0</strong></div>
- </div>
-
- <div class="card">
-  <h3>📝 Bài viết của tôi</h3>
-  <div id="myPosts"></div>
- </div>
-
- <div class="card"><h3>↗ Bài viết đã chia sẻ</h3><div id="myShares"></div></div>
-</section>
-
-<section id="settings" class="page">
- <h2>⚙️ Cài đặt</h2>
- <div class="card" style="margin-top:15px">
-  <div class="setting"><span>🖼️ Ảnh đại diện</span>
-   <div class="btn-row">
-    <button class="secondary" onclick="document.getElementById('avatarFile').click()">Chọn ảnh</button>
-    <button class="secondary" onclick="removeAvatar()">Xóa</button>
-   </div>
-  </div>
-  <div class="setting" style="flex-direction:column;align-items:stretch">
-   <span>✏️ Tên hiển thị</span>
-   <div class="search-friend" style="margin-top:8px">
-    <input id="newName" class="input" maxlength="30" placeholder="Tên mới">
-    <button class="primary" onclick="changeName()">Lưu</button>
-   </div>
-  </div>
-  <div class="setting" style="flex-direction:column;align-items:stretch">
-   <span>＠ Tên định danh</span>
-   <div class="search-friend" style="margin-top:8px">
-    <input id="newHandle" class="input" maxlength="20" placeholder="vd: dung_nova">
-    <button class="primary" onclick="changeHandle()">Lưu</button>
-   </div>
-   <div class="muted" id="myNidLine"></div>
-  </div>
-  <div class="setting"><span>🌌 Giao diện</span><button class="secondary" onclick="toggleTheme()" id="themeBtn">Chuyển Sáng</button></div>
-  <div class="setting"><span>🔐 Tin nhắn mã hóa</span><span style="color:#bd7fff">AES-GCM</span></div>
-  <div class="setting"><span class="danger">Đăng xuất</span><button class="secondary" onclick="logout()">Thoát</button></div>
- </div>
-</section>
-
-<section id="userProfile" class="page">
- <button class="secondary" style="margin-bottom:12px" onclick="goBack()">← Quay lại</button>
- <div class="card profile">
-  <div id="upAvatar" class="avatar">N</div>
-  <div id="upName" class="profile-name">--</div>
-  <div id="upEmail" class="muted" style="word-break:break-all">--</div>
-  <div id="upActions" class="btn-row" style="justify-content:center;margin-top:14px"></div>
- </div>
-
- <div class="card">
-  <h3>📝 Bài viết công khai</h3>
-  <div id="upPosts"></div>
- </div>
-
- <div class="card"><h3>↗ Bài viết đã chia sẻ</h3><div id="upShares"></div></div>
-</section>
-
-</main>
 
 <nav class="bottom-nav">
  <button class="nav-btn active" data-page="home" onclick="showPage('home')"><span class="nav-icon">⌂</span>Feed</button>
@@ -511,7 +575,6 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
  <button class="nav-btn" data-page="groups" onclick="showPage('groups')"><span class="nav-icon">❖</span>Group</button>
  <button class="nav-btn" data-page="profile" onclick="showPage('profile')"><span class="nav-icon">◉</span>Me</button>
 </nav>
-</section>
 
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
  <div class="modal-box">
@@ -673,7 +736,6 @@ document.addEventListener("click", e => {
   const img = e.target.closest("img[data-zoom]");
   if (img) { e.stopPropagation(); window.viewImage(img.src); }
   
-  // Bấm vào hashtag trên bài viết để tìm kiếm nhanh
   const tagEl = e.target.closest(".hashtag");
   if (tagEl) {
     e.stopPropagation();
@@ -839,6 +901,7 @@ onAuthStateChanged(auth, async user => {
       $("app").style.display = "block";
       startListeners();
       showPage("home");
+      renderSidebars();
     } catch (e) {
       console.error(e);
       toast("Không truy cập được Firestore — kiểm tra Rules");
@@ -881,7 +944,7 @@ function startListeners(){
   });
   listen(query(collection(db,"friendships"), where("members","array-contains",me.id)), s => {
     friendships = s.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderFriendList(); renderGroupPicker(); renderGroups(); updateProfileView();
+    renderFriendList(); renderGroupPicker(); renderGroups(); updateProfileView(); renderSidebars();
     if (currentPage === "home") renderFeed();
     if (currentPage === "userProfile" && viewingUid) renderUserPosts(viewingUid);
   });
@@ -892,7 +955,7 @@ function startListeners(){
       if (c.keyCheck && localKeys[c.id] && !(await verifyKey(c, localKeys[c.id]))) forgetKey(c.id);
     }
     if (currentChat && !chats.find(c => c.id === currentChat)) { currentChat = null; detachMessages(); }
-    await renderChatTabs(); renderGroups(); updateProfileView();
+    await renderChatTabs(); renderGroups(); updateProfileView(); renderSidebars();
     if (currentChat) renderMessages();
   });
   listen(query(collection(db,"shares"), where("userId","==",me.id)), s => {
@@ -907,6 +970,71 @@ function startListeners(){
     const b = $("notifBadge"); b.textContent = unread > 9 ? "9+" : unread; b.classList.toggle("show", unread > 0);
     renderNotifications();
   });
+}
+
+// Render dữ liệu cho 2 cột hai bên
+async function renderSidebars() {
+  if (!me) return;
+  // Cột trái: Bạn bè
+  const onlineBox = $("onlineFriendsList");
+  if (onlineBox) {
+    if (!friendships.length) {
+      onlineBox.innerHTML = `<p class="muted" style="font-size:12px">Chưa có bạn bè nào.</p>`;
+    } else {
+      const friends = await Promise.all(friendships.map(f => getUser(f.members.find(m => m !== me.id))));
+      onlineBox.innerHTML = friends.map(u => `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:4px 0;cursor:pointer" onclick="openPrivateChat('${u.id}')">
+          <div style="display:flex;align-items:center;gap:8px;overflow:hidden">
+            ${avatarHTML(u, "mini-avatar sm")}
+            <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHTML(u.name)}</span>
+          </div>
+          <span style="width:8px;height:8px;background:#22c55e;border-radius:50%;flex-shrink:0" title="Trực tuyến"></span>
+        </div>
+      `).join("");
+    }
+  }
+
+  // Cột phải: Gợi ý kết bạn & Nhóm
+  const rightFriendBox = $("rightFriendSuggestions");
+  if (rightFriendBox) {
+    try {
+      const snap = await getDocs(query(collection(db,"users"), limit(6)));
+      const suggestions = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(u => u.id !== me.id && !isFriend(u.id));
+      if (!suggestions.length) {
+        rightFriendBox.innerHTML = `<p class="muted" style="font-size:12px">Không có gợi ý mới.</p>`;
+      } else {
+        rightFriendBox.innerHTML = suggestions.slice(0,4).map(u => `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:6px">
+            <div style="display:flex;align-items:center;gap:6px;overflow:hidden;cursor:pointer" data-uid="${escapeHTML(u.id)}">
+              ${avatarHTML(u, "mini-avatar sm")}
+              <span style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHTML(u.name)}</span>
+            </div>
+            <button class="primary" style="padding:3px 8px;font-size:11px" onclick="sendFriendRequest('${u.id}')">Kết bạn</button>
+          </div>
+        `).join("");
+      }
+    } catch {
+      rightFriendBox.innerHTML = `<p class="muted" style="font-size:12px">Không thể tải gợi ý.</p>`;
+    }
+  }
+
+  const rightGroupBox = $("rightGroupList");
+  if (rightGroupBox) {
+    const myGroups = chats.filter(c => c.type === "group");
+    if (!myGroups.length) {
+      rightGroupBox.innerHTML = `<p class="muted" style="font-size:12px">Chưa tham gia nhóm nào.</p>`;
+    } else {
+      rightGroupBox.innerHTML = myGroups.map(g => `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;cursor:pointer" onclick="openGroup('${g.id}')">
+          <div style="display:flex;align-items:center;gap:8px;overflow:hidden">
+            <div class="mini-avatar sm" style="font-size:11px">${escapeHTML(initial(g.name))}</div>
+            <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHTML(g.name)}</span>
+          </div>
+          <span class="muted" style="font-size:11px">${g.members.length}</span>
+        </div>
+      `).join("");
+    }
+  }
 }
 
 window.showPage = page => {
@@ -971,16 +1099,13 @@ window.removePostImage = () => {
   $("postImagePreviewContainer").style.display = "none";
 };
 
-// Trích xuất hashtag từ văn bản bài viết
 function extractHashtags(text) {
   const matches = text.match(/#[a-zA-Z0-9_À-ỹ]+/g);
   return matches ? [...new Set(matches.map(tag => tag.toLowerCase()))] : [];
 }
 
-// Định dạng văn bản bài viết để bôi đậm hashtag
 function formatPostText(text) {
   const safe = escapeHTML(text);
-  // Thay thế hashtag bằng span có class hashtag để click vào tìm kiếm
   return safe.replace(/#[a-zA-Z0-9_À-ỹ]+/g, match => `<span class="hashtag" data-tag="${match}">${match}</span>`);
 }
 
@@ -1000,7 +1125,7 @@ window.createPost = async () => {
       userId: me.id,
       authorName: me.name,
       text: text,
-      hashtags: hashtags, // Lưu danh sách hashtag vào Firestore
+      hashtags: hashtags,
       isAnonymous: isAnonymous,
       isShared: false,
       sensitive: $("postSensitive").checked,
@@ -1189,7 +1314,6 @@ async function doSearch(){
   const box = $("searchResults");
   if (!q) { box.innerHTML = ""; return; }
   
-  // Hỗ trợ tìm kiếm theo hashtag nếu từ khóa bắt đầu bằng # hoặc chứa hashtag
   const isTagSearch = q.startsWith("#");
   const foundPosts = posts.filter(p => {
     if (!canViewPost(p)) return false;
@@ -1837,6 +1961,7 @@ function updateProfileView(){
   $("friendCount").textContent = friendships.length;
   $("groupCount").textContent = chats.filter(c => c.type === "group").length;
   $("shareCount").textContent = myShares.length;
+  renderSidebars();
 }
 window.copyUid = async () => {
   try { await navigator.clipboard.writeText(me.nid || me.id); toast("Đã copy NOVA ID 📋"); } catch { toast("Không copy được"); }
@@ -1898,7 +2023,7 @@ window.changeAvatar = async input => {
     await updateDoc(doc(db,"users",me.id), { avatar: data });
     me.avatar = data;
     userCache.set(me.id, { ...(userCache.get(me.id) || {}), id: me.id, avatar: data });
-    updateProfileView(); renderFriendList(); renderGroups();
+    updateProfileView(); renderFriendList(); renderGroups(); renderSidebars();
     toast("Đã đổi ảnh đại diện ✓");
   } catch (e) { console.error(e); toast("Đổi ảnh thất bại (thử ảnh JPG/PNG)"); }
 };
@@ -1908,7 +2033,7 @@ window.removeAvatar = async () => {
     await updateDoc(doc(db,"users",me.id), { avatar: deleteField() });
     me.avatar = "";
     userCache.set(me.id, { ...(userCache.get(me.id) || {}), id: me.id, avatar: "" });
-    updateProfileView(); renderFriendList(); renderGroups();
+    updateProfileView(); renderFriendList(); renderGroups(); renderSidebars();
     toast("Đã xóa ảnh đại diện");
   } catch (e) { console.error(e); toast("Lỗi"); }
 };
