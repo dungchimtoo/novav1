@@ -111,9 +111,10 @@ h2{font-size:20px}
 
 /* POSTS & AUTOCOMPLETE TAG */
 .create{position:relative}
-.create textarea{width:100%;min-height:90px;resize:none;background:var(--input-bg);border:1px solid var(--border);
+.create textarea{width:100%;min-height:95px;resize:vertical;background:var(--input-bg);border:1px solid var(--border);
  color:var(--text);border-radius:14px;padding:13px;outline:none}
 .create textarea:focus{border-color:var(--purple)}
+.char-counter { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; }
 
 #mentionDropdown {
   position: absolute; background: var(--card-bg); border: 1px solid var(--border);
@@ -150,7 +151,7 @@ h2{font-size:20px}
 .privacy-badge{font-size:11px;padding:2px 6px;border-radius:6px;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);margin-left:6px}
 .anon-tag{font-size:11px;padding:2px 6px;border-radius:6px;background:#9b4dff22;border:1px solid #9b4dff66;color:#c994ff;margin-left:6px;font-weight:normal}
 
-/* FLOATING CHAT BOX (Cửa sổ chat nhỏ góc dưới phải) */
+/* FLOATING CHAT BOX */
 #floatingChat {
   position: fixed; bottom: 0; right: 20px; width: 320px; background: var(--card-bg);
   border: 1px solid var(--border); border-top-left-radius: 14px; border-top-right-radius: 14px;
@@ -384,7 +385,6 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
  </div>
 </header>
 
-<!-- Layout 3 Cột (Trái = Gợi ý kết bạn, Giữa = Feed, Phải = Bạn bè trực tuyến) -->
 <div class="nova-layout">
 
  <!-- Cột Trái: Gợi ý kết bạn & Nhóm của bạn -->
@@ -408,7 +408,8 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 
   <section id="home" class="page active">
    <div class="card create">
-    <textarea id="postText" maxlength="1000" placeholder="Bạn đang nghĩ gì? Gõ @ để gắn thẻ bạn bè, dùng #hashtag..." oninput="handlePostInput(this)" onkeyup="handlePostInput(this)" onclick="handlePostInput(this)"></textarea>
+    <textarea id="postText" maxlength="4000" placeholder="Bạn đang nghĩ gì? Gõ @ để gắn thẻ bạn bè, dùng #hashtag (tối đa 4000 chữ)..." oninput="handlePostInput(this)" onkeyup="handlePostInput(this)" onclick="handlePostInput(this)"></textarea>
+    <div class="char-counter" id="postCharCounter">0 / 4000 chữ</div>
     
     <!-- Hộp gợi ý @mention bạn bè -->
     <div id="mentionDropdown"></div>
@@ -586,7 +587,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 
  </main>
 
- <!-- Cột Phải: Bạn bè trực tuyến (Chỉ hiển thị nếu online trong vòng 5 phút) -->
+ <!-- Cột Phải: Bạn bè trực tuyến -->
  <aside class="right-sidebar">
   <div class="card">
    <h3>👥 Bạn bè trực tuyến</h3>
@@ -599,7 +600,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 </div>
 </section>
 
-<!-- Cửa sổ Chat nhỏ dạng Floating (Nổi góc dưới bên phải) -->
+<!-- Cửa sổ Chat nhỏ dạng Floating -->
 <div id="floatingChat">
   <div class="float-head">
     <div class="float-title" id="floatTitle">💬 Tin nhắn</div>
@@ -1040,7 +1041,6 @@ function startListeners(){
   });
 }
 
-// Render 2 cột: Gợi ý kết bạn bên trái, Bạn bè trực tuyến bên phải (Lọc < 5 phút)
 async function renderSidebars() {
   if (!me) return;
   
@@ -1099,7 +1099,7 @@ async function renderSidebars() {
       const onlineFriends = friends.filter(u => {
         if (!u.lastSeen) return false;
         const lastTime = toDate(u.lastSeen).getTime();
-        return (now - lastTime) < 300000; // 5 phút
+        return (now - lastTime) < 300000;
       });
 
       if (!onlineFriends.length) {
@@ -1119,12 +1119,16 @@ async function renderSidebars() {
   }
 }
 
-// ================= TÍNH NĂNG @MENTION (GẮN THẺ BẠN BÈ) =================
+// ================= TÍNH NĂNG @MENTION & GIỚI HẠN 4000 CHỮ =================
 let mentionQuery = "";
 let mentionStartPos = -1;
 
 window.handlePostInput = async textarea => {
   const val = textarea.value;
+  const len = val.length;
+  const counter = $("postCharCounter");
+  if (counter) counter.textContent = `${len} / 4000 chữ`;
+
   const pos = textarea.selectionStart;
   const drop = $("mentionDropdown");
 
@@ -1170,11 +1174,17 @@ window.selectMention = name => {
   const textBefore = ta.value.slice(0, mentionStartPos);
   const textAfter = ta.value.slice(pos);
 
+  if ((textBefore.length + name.length + 2 + textAfter.length) > 4000) {
+    toast("Vượt quá giới hạn 4000 chữ!");
+    return;
+  }
+
   ta.value = textBefore + `@${name} ` + textAfter;
   $("mentionDropdown").classList.remove("show");
   ta.focus();
   const newPos = mentionStartPos + name.length + 2;
   ta.setSelectionRange(newPos, newPos);
+  handlePostInput(ta);
 };
 
 // ================= CỬA SỔ CHAT NỔI (FLOATING CHAT) =================
@@ -1333,7 +1343,6 @@ function extractHashtags(text) {
   return matches ? [...new Set(matches.map(tag => tag.toLowerCase()))] : [];
 }
 
-// Bắt chính xác tên có dấu hoặc khoảng trắng cho @mention
 function formatPostText(text) {
   const safe = escapeHTML(text);
   let formatted = safe.replace(/#[a-zA-Z0-9_À-ỹ]+/g, match => `<span class="hashtag" data-tag="${match}">${match}</span>`);
@@ -1348,6 +1357,7 @@ window.createPost = async () => {
   const privacy = $("postPrivacy").value;
 
   if (!text && !currentPostImageBase64) { toast("Hãy viết gì đó hoặc đính kèm ảnh"); return; }
+  if (text.length > 4000) { toast("Bài viết vượt quá giới hạn 4000 chữ"); return; }
 
   posting = true; $("postBtn").disabled = true;
   try {
@@ -1375,6 +1385,7 @@ window.createPost = async () => {
     $("postText").value = ""; $("postSensitive").checked = false;
     removePostImage();
     $("mentionDropdown").classList.remove("show");
+    const counter = $("postCharCounter"); if (counter) counter.textContent = "0 / 4000 chữ";
     toast("Đã đăng bài thành công 🚀");
   } catch (e) {
     console.error(e);
@@ -1801,19 +1812,25 @@ async function renderMessages(stick){
   }
 
   let key = getKey(c);
+
   if (!key) {
-    let existingKey = localStorage.getItem("nova_auto_key_" + c.id);
-    if (!existingKey) {
-      existingKey = generateChatKey();
-      localStorage.setItem("nova_auto_key_" + c.id, existingKey);
-    }
-    saveKey(c.id, existingKey);
-    key = existingKey;
+    box.innerHTML = `<div class="card" style="text-align:center;padding:25px">
+      <h3>🔒 Cuộc trò chuyện này đang bị khóa</h3>
+      <p class="muted" style="margin:8px 0 14px">Nhập mã bảo mật 24 ký tự để mở khóa hoặc nhập nhanh nếu máy đã lưu:</p>
+      <div style="display:flex;gap:8px;max-width:320px;margin:0 auto">
+        <input id="directUnlockInput" class="input" placeholder="Nhập mã 24 ký tự..." maxlength="24" style="margin-bottom:0">
+        <button class="primary" onclick="submitDirectUnlock()">Mở</button>
+      </div>
+    </div>`;
+    if (composer) composer.style.display = "none";
+    $("chatKey").textContent = "🔒 Chưa mở khóa";
+    $("keyActions").style.display = "none";
+    return;
   }
 
-  $("chatKey").textContent = key || "🔒 Chưa mở khóa";
-  $("keyActions").style.display = key ? "flex" : "none";
-  if (composer) composer.style.display = key ? "flex" : "none";
+  $("chatKey").textContent = key;
+  $("keyActions").style.display = "flex";
+  if (composer) composer.style.display = "flex";
 
   const nearBottom = win.scrollHeight - win.scrollTop - win.clientHeight < 120;
   const open = new Set([...box.querySelectorAll(".message-wrapper.open")].map(e => e.dataset.id));
@@ -1962,8 +1979,8 @@ window.sendMessage = async () => {
   const c = curChat(); if (!c) return;
   let key = getKey(c);
   if (!key) {
-    key = generateChatKey();
-    saveKey(c.id, key);
+    toast("Cuộc trò chuyện đang bị khóa. Hãy nhập mã bảo mật để mở khóa trước.");
+    return;
   }
   const input = $("messageInput"); const text = input.value.trim(); if (!text) return;
   input.value = "";
@@ -1984,8 +2001,8 @@ window.sendChatImage = async input => {
   const c = curChat(); if (!c) return;
   let key = getKey(c);
   if (!key) {
-    key = generateChatKey();
-    saveKey(c.id, key);
+    toast("Cuộc trò chuyện đang bị khóa. Hãy mở khóa trước khi gửi ảnh.");
+    return;
   }
 
   toast("Đang xử lý ảnh...");
