@@ -117,11 +117,12 @@ h2{font-size:20px}
 
 #mentionDropdown {
   position: absolute; background: var(--card-bg); border: 1px solid var(--border);
-  border-radius: 12px; max-height: 160px; overflow-y: auto; width: 240px; z-index: 50;
+  border-radius: 12px; max-height: 180px; overflow-y: auto; width: 260px; z-index: 50;
   display: none; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
 }
 #mentionDropdown.show { display: block; }
-.mention-item { padding: 8px 12px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
+.mention-item { padding: 9px 12px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; border-bottom: 1px solid var(--border); }
+.mention-item:last-child { border-bottom: none; }
 .mention-item:hover { background: var(--input-bg); color: var(--purple); }
 
 .anonymous{color:#ad70ff;font-size:13px}
@@ -134,7 +135,7 @@ h2{font-size:20px}
 .post-text{line-height:1.6;white-space:pre-wrap;word-break:break-word}
 .post-text .hashtag{color:#b875ff;font-weight:500;cursor:pointer}
 .post-text .hashtag:hover{text-decoration:underline}
-.post-text .mention-tag{color:#60a5fa;font-weight:500;background:#3b82f622;padding:1px 4px;border-radius:4px}
+.post-text .mention-tag{color:#60a5fa;font-weight:500;background:#3b82f622;padding:1px 5px;border-radius:4px}
 .post-image{width:100%;max-height:400px;object-fit:cover;border-radius:12px;margin-top:10px;cursor:pointer}
 .actions{display:flex;gap:7px;margin-top:14px}
 .action{flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);padding:9px;border-radius:10px}
@@ -979,7 +980,7 @@ function listen(q, cb){
 function stopListeners(){
   unsubs.forEach(u => u()); unsubs = [];
   if (msgUnsub) { msgUnsub(); msgUnsub = null; }
-  posts = []; incoming = []; outgoing = []; friendships = []; chats = []; notifs = []; myShares = []; msgDocs = [];
+  posts = []; incoming = []; outgoing = []; friendships = []; chats = []; notifs = []; myShares = [];
 }
 function startListeners(){
   listen(query(collection(db,"posts"), orderBy("createdAt","desc"), limit(100)), s => {
@@ -1115,17 +1116,19 @@ window.handlePostInput = async textarea => {
   const pos = textarea.selectionStart;
   const drop = $("mentionDropdown");
 
-  // Tìm vị trí ký tự @ ngay trước con trỏ
   const textBeforeCursor = val.slice(0, pos);
-  const match = textBeforeCursor.match(/@([a-zA-Z0-9_À-ỹ]*)$/);
+  const match = textBeforeCursor.match(/@([^@\s]*)$/);
 
   if (match) {
     mentionQuery = match[1].toLowerCase();
-    mentionStartPos = match.index;
+    mentionStartPos = textBeforeCursor.lastIndexOf("@");
     
-    // Lấy danh sách bạn bè để gợi ý
+    // Lấy tất cả bạn bè hiện tại
     const friendUsers = await Promise.all(friendships.map(f => getUser(f.members.find(m => m !== me.id))));
-    const filtered = friendUsers.filter(u => u.name.toLowerCase().includes(mentionQuery) || (u.handle && u.handle.toLowerCase().includes(mentionQuery)));
+    const filtered = friendUsers.filter(u => 
+      u.name.toLowerCase().includes(mentionQuery) || 
+      (u.handle && u.handle.toLowerCase().includes(mentionQuery))
+    );
 
     if (!filtered.length) {
       drop.classList.remove("show");
@@ -1142,7 +1145,6 @@ window.handlePostInput = async textarea => {
       </div>
     `).join("");
 
-    // Định vị dropdown ngay dưới ô textarea
     drop.style.left = "16px";
     drop.style.bottom = "75px";
     drop.classList.add("show");
@@ -1160,7 +1162,8 @@ window.selectMention = name => {
   ta.value = textBefore + `@${name} ` + textAfter;
   $("mentionDropdown").classList.remove("show");
   ta.focus();
-  ta.selectionStart = ta.selectionEnd = mentionStartPos + name.length + 2;
+  const newPos = mentionStartPos + name.length + 2;
+  ta.setSelectionRange(newPos, newPos);
 };
 
 // ================= CỬA SỔ CHAT NỔI (FLOATING CHAT) =================
