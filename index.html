@@ -59,7 +59,7 @@ h2{font-size:20px}
 .switch span{color:#b875ff;cursor:pointer}
 .err{color:var(--danger);font-size:13px;margin:-4px 0 10px;min-height:0}
 
-/* APP & 3 CỘT LAYOUT */
+/* APP & LAYOUT 3 CỘT */
 #app{display:none;min-height:100vh}
 .topbar{height:64px;position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;
  padding:0 17px;background:var(--card-bg);border-bottom:1px solid var(--border)}
@@ -136,7 +136,7 @@ h2{font-size:20px}
 .privacy-badge{font-size:11px;padding:2px 6px;border-radius:6px;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);margin-left:6px}
 .anon-tag{font-size:11px;padding:2px 6px;border-radius:6px;background:#9b4dff22;border:1px solid #9b4dff66;color:#c994ff;margin-left:6px;font-weight:normal}
 
-/* FLOATING CHAT BOX (Cửa sổ chat nhỏ góc phải) */
+/* FLOATING CHAT BOX (Cửa sổ chat nhỏ góc dưới phải) */
 #floatingChat {
   position: fixed; bottom: 0; right: 20px; width: 320px; background: var(--card-bg);
   border: 1px solid var(--border); border-top-left-radius: 14px; border-top-right-radius: 14px;
@@ -370,7 +370,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
  </div>
 </header>
 
-<!-- Khung Layout 3 Cột Tổng Thể (Đã đảo vị trí: Trái = Gợi ý, Phải = Bạn bè trực tuyến) -->
+<!-- Khung Layout 3 Cột (Trái = Gợi ý kết bạn, Giữa = Feed, Phải = Bạn bè trực tuyến) -->
 <div class="nova-layout">
 
  <!-- Cột Trái: Gợi ý kết bạn & Nhóm của bạn -->
@@ -569,7 +569,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 
  </main>
 
- <!-- Cột Phải: Bạn bè trực tuyến (Chỉ hiện khi thực sự online trong vòng 5 phút) -->
+ <!-- Cột Phải: Bạn bè trực tuyến (Chỉ hiển thị khi online trong vòng 5 phút) -->
  <aside class="right-sidebar">
   <div class="card">
    <h3>👥 Bạn bè trực tuyến</h3>
@@ -937,7 +937,7 @@ onAuthStateChanged(auth, async user => {
       showPage("home");
       renderSidebars();
       
-      // Định kỳ cập nhật trạng thái hoạt động (lastSeen) mỗi phút
+      // Cập nhật trạng thái hoạt động (lastSeen) mỗi phút
       setInterval(async () => {
         if (me) {
           try { await updateDoc(doc(db, "users", me.id), { lastSeen: serverTimestamp() }); } catch {}
@@ -1060,7 +1060,7 @@ async function renderSidebars() {
     }
   }
 
-  // Cột Phải: Bạn bè trực tuyến (Chỉ hiển thị online nếu hoạt động trong vòng 5 phút)
+  // Cột Phải: Bạn bè trực tuyến (Lọc theo thời gian hoạt động dưới 5 phút)
   const onlineBox = $("onlineFriendsList");
   if (onlineBox) {
     if (!friendships.length) {
@@ -1072,11 +1072,10 @@ async function renderSidebars() {
       }));
       
       const now = Date.now();
-      // Lọc bạn bè hoạt động trong vòng 5 phút (300000 ms)
       const onlineFriends = friends.filter(u => {
         if (!u.lastSeen) return false;
         const lastTime = toDate(u.lastSeen).getTime();
-        return (now - lastTime) < 300000;
+        return (now - lastTime) < 300000; // 5 phút = 300,000 ms
       });
 
       if (!onlineFriends.length) {
@@ -1096,14 +1095,13 @@ async function renderSidebars() {
   }
 }
 
-// ================= HÀM QUẢN LÝ CỬA SỔ CHAT NỔI (FLOATING CHAT) =================
+// ================= CỬA SỔ CHAT NỔI (FLOATING CHAT) =================
 window.openFloatingChat = async (friendId, friendName) => {
   const id = "private_" + pairId(me.id, friendId);
   activeFloatChatId = id;
-  $("floatTitleinnerHTML") = `💬 ${friendName}`;
+  $("floatTitle").textContent = `💬 ${friendName}`;
   $("floatingChat").classList.add("show");
   
-  // Kiểm tra hoặc tạo phòng chat nếu chưa có
   try {
     const ref = doc(db, "chats", id);
     const snap = await getDoc(ref);
@@ -1205,7 +1203,7 @@ window.previewPostImage = async input => {
     toast("Đã đính kèm ảnh ✓ — đang kiểm duyệt...");
     if (await scanImageSensitive(base64)) {
       $("postSensitive").checked = true;
-      toast("⚠ Ảnh có thể nhạy cảm — đã tự bật chế độ che");
+      toast("⚠ Ảnh có thể nhạy cảm — đã tự động bật chế độ che");
     }
   } catch (e) {
     console.error(e);
