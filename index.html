@@ -349,7 +349,7 @@ h2{font-size:20px}
 <section id="search" class="page">
  <div class="card">
   <h2>🔎 Tìm kiếm tài khoản & bài viết</h2>
-  <input id="searchInput" class="input" style="margin-top:15px" placeholder="Tên, Gmail hoặc nội dung bài viết..." oninput="searchEverything()">
+  <input id="searchInput" class="input" style="margin-top:15px" placeholder="Tên, @tên, NOVA ID hoặc nội dung bài viết..." oninput="searchEverything()">
   <div id="searchResults"></div>
  </div>
 </section>
@@ -357,9 +357,9 @@ h2{font-size:20px}
 <section id="friends" class="page">
  <h2>👥 Bạn bè</h2>
  <div class="card" style="margin-top:15px">
-  <p class="muted" style="margin-bottom:12px">Nhập Gmail hoặc UID chính xác của người đã đăng ký NOVA để kết bạn.</p>
+  <p class="muted" style="margin-bottom:12px">Nhập @tên, NOVA ID (NV-XXXX-XXXX) hoặc Gmail chính xác để kết bạn.</p>
   <div class="search-friend">
-   <input id="friendEmail" class="input" placeholder="Gmail hoặc UID" onkeydown="if(event.key==='Enter')findFriend()">
+   <input id="friendEmail" class="input" placeholder="@tên, NV-XXXX-XXXX hoặc Gmail" onkeydown="if(event.key==='Enter')findFriend()">
    <button class="primary" onclick="findFriend()">Tìm</button>
   </div>
   <div id="friendResult"></div>
@@ -419,7 +419,7 @@ h2{font-size:20px}
   <div id="avatar" class="avatar editable" onclick="document.getElementById('avatarFile').click()">N</div>
   <div class="avatar-hint" onclick="document.getElementById('avatarFile').click()">Đổi ảnh đại diện</div>
   <div id="profileName" class="profile-name" style="margin-top:8px">Nova</div>
-  <div id="profileEmail" class="muted" style="cursor:pointer;word-break:break-all" title="Bấm để copy UID" onclick="copyUid()">--</div>
+  <div id="profileEmail" class="muted" style="cursor:pointer;word-break:break-all" title="Bấm để copy NOVA ID" onclick="copyUid()">--</div>
  </div>
  <div class="card">
   <div class="setting"><span>📝 Bài viết</span><strong id="postCount">0</strong></div>
@@ -451,6 +451,14 @@ h2{font-size:20px}
     <input id="newName" class="input" maxlength="30" placeholder="Tên mới">
     <button class="primary" onclick="changeName()">Lưu</button>
    </div>
+  </div>
+  <div class="setting" style="flex-direction:column;align-items:stretch">
+   <span>＠ Tên định danh</span>
+   <div class="search-friend" style="margin-top:8px">
+    <input id="newHandle" class="input" maxlength="20" placeholder="vd: dung_nova">
+    <button class="primary" onclick="changeHandle()">Lưu</button>
+   </div>
+   <div class="muted" id="myNidLine"></div>
   </div>
   <div class="setting"><span>🌌 Giao diện</span><button class="secondary" onclick="toggleTheme()" id="themeBtn">Chuyển Sáng</button></div>
   <div class="setting"><span>🔐 Tin nhắn mã hóa</span><span style="color:#bd7fff">AES-GCM</span></div>
@@ -514,7 +522,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, query, where, orderBy, limit,
-  onSnapshot, getDocs, serverTimestamp, arrayUnion, arrayRemove, deleteField, writeBatch
+  onSnapshot, getDocs, serverTimestamp, arrayUnion, arrayRemove, deleteField, writeBatch, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -694,6 +702,80 @@ window.resetPassword = async () => {
 
 window.logout = async () => { try { await signOut(auth); } catch { toast("Lỗi đăng xuất"); } };
 
+/* ===== NOVA ID (mã vân tay) + @tên định danh ===== */
+const NID_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+function genNid(){
+  const arr = new Uint32Array(8); crypto.getRandomValues(arr);
+  let a = ""; for (let i=0;i<8;i++) a += NID_CHARS[arr[i] % NID_CHARS.length];
+  return `NV-${a.slice(0,4)}-${a.slice(4)}`;
+}
+function normalizeNid(input){
+  const t = String(input || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  return (t.length === 10 && t.startsWith("NV")) ? `NV-${t.slice(2,6)}-${t.slice(6)}` : null;
+}
+function slugHandle(name){
+  let h = String(name || "").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/đ/gi,"d")
+    .toLowerCase().replace(/[^a-z0-9_]/g,"").slice(0,15);
+  if (h.length < 3) h = "user" + Math.floor(1000 + Math.random()*9000);
+  return h;
+}
+const HANDLE_RE = /^[a-z0-9_.]{3,20}$/;
+async function claimId(coll, id, uid){
+  await runTransaction(db, async tx => {
+    const ref = doc(db, coll, id);
+    const snap = await tx.get(ref);
+    if (snap.exists() && snap.data().uid !== uid) throw new Error("taken");
+    tx.set(ref, { uid });
+  });
+}
+async function ensureIds(uid, data){
+  const patch = {};
+  try {
+    if (!data.nid) {
+      for (let i=0;i<8 && !patch.nid;i++) {
+        const nid = genNid();
+        try { await claimId("nids", nid, uid); patch.nid = nid; } catch (e) { if (e.message !== "taken") throw e; }
+      }
+    }
+    if (!data.handle) {
+      const base = slugHandle(data.name);
+      for (let i=0;i<8 && !patch.handle;i++) {
+        const h = i === 0 ? base : base.slice(0,15) + Math.floor(1000 + Math.random()*9000);
+        try { await claimId("handles", h, uid); patch.handle = h; } catch (e) { if (e.message !== "taken") throw e; }
+      }
+    }
+    if (Object.keys(patch).length) await setDoc(doc(db,"users",uid), patch, { merge: true });
+  } catch (e) {
+    console.error(e);
+    toast("Chưa tạo được NOVA ID/@tên — cần cập nhật Firestore Rules (handles, nids)");
+    return {};
+  }
+  return patch;
+}
+const idLine = u => [u?.handle ? "@" + u.handle : "", u?.nid || ""].filter(Boolean).join(" · ");
+async function findUserByAny(raw){
+  raw = raw.trim(); if (!raw) return null;
+  if (raw.includes("@") && !raw.startsWith("@")) {
+    const s = await getDocs(query(collection(db,"users"), where("emailLower","==",raw.toLowerCase()), limit(1)));
+    return s.empty ? null : s.docs[0];
+  }
+  const nid = normalizeNid(raw);
+  if (nid) {
+    const s = await getDocs(query(collection(db,"users"), where("nid","==",nid), limit(1)));
+    return s.empty ? null : s.docs[0];
+  }
+  const h = raw.replace(/^@/,"").toLowerCase();
+  if (HANDLE_RE.test(h)) {
+    const s = await getDocs(query(collection(db,"users"), where("handle","==",h), limit(1)));
+    if (!s.empty) return s.docs[0];
+  }
+  if (raw.length >= 20 && !raw.includes("/")) {
+    const sn = await getDoc(doc(db,"users",raw));
+    if (sn.exists()) return sn;
+  }
+  return null;
+}
+
 async function ensureUserDoc(user){
   const ref = doc(db,"users",user.uid);
   const snap = await getDoc(ref);
@@ -718,7 +800,8 @@ onAuthStateChanged(auth, async user => {
   if (user) {
     try {
       const data = await ensureUserDoc(user);
-      me = { id: user.uid, name: data.name, email: (user.email || data.email || "").toLowerCase(), avatar: data.avatar || "" };
+      Object.assign(data, await ensureIds(user.uid, data));
+      me = { id: user.uid, name: data.name, email: (user.email || data.email || "").toLowerCase(), avatar: data.avatar || "", handle: data.handle || "", nid: data.nid || "" };
       userCache.set(me.id, { id: me.id, ...data });
       loadKeys();
       $("auth").style.display = "none";
@@ -808,7 +891,7 @@ window.showPage = page => {
   if (page === "groups") { renderGroups(); renderGroupPicker(); }
   if (page === "notifications") renderNotifications();
   if (page === "profile") { updateProfileView(); renderMyPosts(); renderMyShares(); }
-  if (page === "settings") $("newName").value = me?.name || "";
+  if (page === "settings") { $("newName").value = me?.name || ""; $("newHandle").value = me?.handle || ""; $("myNidLine").textContent = me?.nid ? "NOVA ID của bạn: " + me.nid + " (cố định)" : ""; }
   if (page === "search") searchEverything();
   if (changed) window.scrollTo(0,0);
 };
@@ -1012,11 +1095,14 @@ async function doSearch(){
   if (q.length >= 2) {
     try {
       const end = q + "\uf8ff";
-      const [a, b] = await Promise.all([
+      const hq = q.replace(/^@/,""), hend = hq + "\uf8ff", nidq = normalizeNid(rawQ);
+      const [a, b, c, e] = await Promise.all([
         getDocs(query(collection(db,"users"), where("nameLower",">=",q), where("nameLower","<=",end), limit(10))),
-        getDocs(query(collection(db,"users"), where("emailLower",">=",q), where("emailLower","<=",end), limit(10)))
+        getDocs(query(collection(db,"users"), where("emailLower",">=",q), where("emailLower","<=",end), limit(10))),
+        hq.length >= 2 ? getDocs(query(collection(db,"users"), where("handle",">=",hq), where("handle","<=",hend), limit(10))) : Promise.resolve({ docs: [] }),
+        nidq ? getDocs(query(collection(db,"users"), where("nid","==",nidq), limit(1))) : Promise.resolve({ docs: [] })
       ]);
-      [...a.docs, ...b.docs].forEach(d => found.set(d.id, { id: d.id, ...d.data() }));
+      [...a.docs, ...b.docs, ...c.docs, ...e.docs].forEach(d => found.set(d.id, { id: d.id, ...d.data() }));
     } catch (e) { console.error(e); }
   }
   if (rawQ.length >= 20 && !rawQ.includes("/") && !rawQ.includes("@")) {
@@ -1030,7 +1116,7 @@ async function doSearch(){
       const self = u.id === me.id; const friend = isFriend(u.id);
       return `<div class="item">
         <div class="item-left">${avatarHTML(u)}
-          <div><div class="item-name" data-uid="${escapeHTML(u.id)}">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>
+          <div><div class="item-name" data-uid="${escapeHTML(u.id)}">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(idLine(u))}</div></div></div>
         <div class="btn-row">${self ? `<span class="muted">Bạn</span>`
           : friend ? `<button class="primary" onclick="openPrivateChat('${u.id}')">💬</button>`
           : `<button class="primary" onclick="sendFriendRequest('${u.id}')">Kết bạn</button>`}</div></div>`;
@@ -1049,18 +1135,11 @@ const isFriend = uid => friendships.some(f => f.members.includes(uid));
 window.findFriend = async () => {
   const raw = $("friendEmail").value.trim();
   const box = $("friendResult");
-  if (!raw) { toast("Nhập Gmail hoặc UID"); return; }
+  if (!raw) { toast("Nhập Gmail, @tên hoặc NOVA ID"); return; }
   try {
-    let d = null;
-    if (raw.includes("@")) {
-      const s = await getDocs(query(collection(db,"users"), where("emailLower","==",raw.toLowerCase()), limit(1)));
-      if (!s.empty) d = s.docs[0];
-    } else if (!raw.includes("/")) {
-      const snap = await getDoc(doc(db,"users",raw));
-      if (snap.exists()) d = snap;
-    }
+    const d = await findUserByAny(raw);
     if (!d) {
-      box.innerHTML = `<div class="item"><div><div class="item-name">Không tìm thấy</div><div class="item-sub">Gmail hoặc UID này chưa đăng ký NOVA.</div></div></div>`;
+      box.innerHTML = `<div class="item"><div><div class="item-name">Không tìm thấy</div><div class="item-sub">Không có tài khoản NOVA nào khớp.</div></div></div>`;
       return;
     }
     const u = { id: d.id, ...d.data() }; userCache.set(u.id, u);
@@ -1071,7 +1150,7 @@ window.findFriend = async () => {
     else if (incoming.some(r => r.from === u.id)) action = `<span class="muted">Họ đã mời bạn — xem bên dưới</span>`;
     else action = `<button class="primary" onclick="sendFriendRequest('${u.id}')">Kết bạn</button>`;
     box.innerHTML = `<div class="item"><div class="item-left">${avatarHTML(u)}
-      <div><div class="item-name" data-uid="${escapeHTML(u.id)}">${escapeHTML(u.name)}</div><div class="item-sub">UID: ${escapeHTML(u.id)}</div></div></div>${action}</div>`;
+      <div><div class="item-name" data-uid="${escapeHTML(u.id)}">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(idLine(u))}</div></div></div>${action}</div>`;
   } catch (e) { console.error(e); toast("Tìm kiếm thất bại"); }
 };
 
@@ -1647,7 +1726,7 @@ window.markAllRead = async () => {
 
 function updateProfileView(){
   if (!me) return;
-  $("profileName").textContent = me.name; $("profileEmail").textContent = "UID: " + me.id;
+  $("profileName").textContent = me.name; $("profileEmail").textContent = idLine(me) || "Đang tạo ID...";
   $("avatar").innerHTML = me.avatar ? `<img src="${escapeHTML(me.avatar)}" alt="">` : escapeHTML(initial(me.name));
   $("postCount").textContent = posts.filter(p => p.userId === me.id && !p.isShared).length;
   $("friendCount").textContent = friendships.length;
@@ -1655,7 +1734,20 @@ function updateProfileView(){
   $("shareCount").textContent = myShares.length;
 }
 window.copyUid = async () => {
-  try { await navigator.clipboard.writeText(me.id); toast("Đã copy UID 📋"); } catch { toast("Không copy được"); }
+  try { await navigator.clipboard.writeText(me.nid || me.id); toast("Đã copy NOVA ID 📋"); } catch { toast("Không copy được"); }
+};
+window.changeHandle = async () => {
+  const h = $("newHandle").value.trim().replace(/^@/,"").toLowerCase();
+  if (!HANDLE_RE.test(h)) { toast("@tên 3-20 ký tự: a-z, 0-9, _ ."); return; }
+  if (h === me.handle) { toast("Đây đang là @tên của bạn"); return; }
+  try {
+    await claimId("handles", h, me.id);
+    await updateDoc(doc(db,"users",me.id), { handle: h });
+    const old = me.handle; me.handle = h;
+    userCache.set(me.id, { ...(userCache.get(me.id) || {}), id: me.id, handle: h });
+    if (old) { try { await deleteDoc(doc(db,"handles",old)); } catch {} }
+    updateProfileView(); toast("Đã đổi @tên ✓");
+  } catch (e) { console.error(e); toast(e.message === "taken" ? "@tên này đã có người dùng" : "Đổi @tên thất bại"); }
 };
 window.changeName = async () => {
   const name = $("newName").value.trim();
@@ -1819,7 +1911,7 @@ window.openUserProfile = async uid => {
   const u = await getUser(uid);
   if (viewingUid !== uid) return;
   $("upName").textContent = u.name;
-  $("upEmail").textContent = "UID: " + uid;
+  $("upEmail").textContent = idLine(u);
   $("upAvatar").innerHTML = u.avatar ? `<img src="${escapeHTML(u.avatar)}" alt="">` : escapeHTML(initial(u.name));
   renderUPActions(uid);
   renderUserPosts(uid);
