@@ -225,6 +225,19 @@ h2{font-size:20px}
 .tgl-slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
 .tgl input:checked + .tgl-slider{background:linear-gradient(135deg,#7628e8,#b866ff)}
 .tgl input:checked + .tgl-slider:before{transform:translateX(20px)}
+
+/* KIỂM DUYỆT NỘI DUNG */
+.sens-wrap{position:relative;overflow:hidden;border-radius:12px;margin-top:10px;cursor:pointer}
+.sens-wrap .post-image{margin-top:0}
+.sens-wrap img{filter:blur(30px) brightness(.7);transform:scale(1.12);display:block;width:100%}
+.sens-wrap.txt{min-height:92px;padding:10px;background:var(--input-bg);border:1px dashed #ffb347;margin-top:0}
+.sens-wrap.txt .post-text{filter:blur(8px);user-select:none}
+.sens-note{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+ color:#fff;font-weight:bold;text-align:center;text-shadow:0 1px 6px #000;padding:10px;font-size:14px}
+body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
+.sens-wrap.revealed img{filter:none;transform:none}
+.sens-wrap.revealed.txt .post-text{filter:none;user-select:auto}
+.sens-wrap.revealed .sens-note{display:none}
 </style>
 </head>
 
@@ -336,6 +349,11 @@ h2{font-size:20px}
     <span class="opt-label">Ẩn danh</span>
     <label class="tgl"><input type="checkbox" id="postAnonymous" checked><span class="tgl-slider"></span></label>
     <span id="anonHint" class="muted">BẬT — người khác chỉ thấy "Anonymous"</span>
+   </div>
+   <div class="opt-row">
+    <span class="opt-label">Nhạy cảm</span>
+    <label class="tgl"><input type="checkbox" id="postSensitive"><span class="tgl-slider"></span></label>
+    <span class="muted">Che ảnh/chữ (máu me, 18+, độc hại...)</span>
    </div>
   </div>
   <div class="row" style="margin-top:12px;gap:8px;">
@@ -648,6 +666,13 @@ const sortKey = x => (x?.toMillis ? x.toMillis() : (x ? new Date(x).getTime() : 
 window.viewImage = src => { if (!src) return; $("lightboxImg").src = src; $("lightbox").classList.add("show"); };
 window.closeImage = () => { $("lightbox").classList.remove("show"); $("lightboxImg").src = ""; };
 document.addEventListener("click", e => {
+  const w = e.target.closest("[data-reveal]");
+  if (w && !w.classList.contains("revealed")) {
+    e.stopPropagation(); e.preventDefault();
+    const id = w.dataset.reveal; revealed.add(id);
+    document.querySelectorAll("[data-reveal]").forEach(x => { if (x.dataset.reveal === id) x.classList.add("revealed"); });
+    return;
+  }
   const img = e.target.closest("img[data-zoom]");
   if (img) { e.stopPropagation(); window.viewImage(img.src); }
 }, true);
@@ -913,7 +938,11 @@ window.previewPostImage = async input => {
     currentPostImageBase64 = base64;
     $("postImagePreview").src = base64;
     $("postImagePreviewContainer").style.display = "block";
-    toast("Đã đính kèm ảnh ✓");
+    toast("Đã đính kèm ảnh ✓ — đang kiểm duyệt...");
+    if (await scanImageSensitive(base64)) {
+      $("postSensitive").checked = true;
+      toast("⚠ Ảnh có thể nhạy cảm — đã tự bật chế độ che");
+    }
   } catch (e) {
     console.error(e);
     toast("Không tải được ảnh");
@@ -956,6 +985,8 @@ window.createPost = async () => {
       text: text,
       isAnonymous: isAnonymous,
       isShared: false,
+      sensitive: $("postSensitive").checked,
+      reports: [],
       privacy: privacy, // PUBLIC, FRIENDS, ONLY_ME
       likes: [],
       comments: [],
@@ -965,7 +996,7 @@ window.createPost = async () => {
 
     await addDoc(collection(db,"posts"), postData);
 
-    $("postText").value = "";
+    $("postText").value = ""; $("postSensitive").checked = false;
     removePostImage();
     toast("Đã đăng bài thành công 🚀");
   } catch (e) {
@@ -975,6 +1006,59 @@ window.createPost = async () => {
     posting = false; $("postBtn").disabled = false;
   }
 };
+
+/* ===== KIỂM DUYỆT NỘI DUNG ===== */
+const REPORT_LIMIT = 3;
+const revealed = new Set();
+const BAD_PATTERNS = [
+  /máu me|mau me|xác chết|xac chet|chặt đầu|chat dau|mổ bụng|moi ruột|cắt cổ tay|cat co tay|tự tử|tu tu|tự sát|tu sat/i,
+  /khoả thân|khỏa thân|khoa than|ảnh nóng|anh nong|clip nóng|clip nong|lộ hàng|lo hang|đồ lót|\b18\+|\bnsfw\b/i,
+  /\b(porn|sex|nude|nudes|gore|hentai|xxx)\b/i,
+  /\b(đ[ịi]t|đụ|dit me|đm|cặc|lồn|buồi)\b/i
+];
+function badText(t){ if (!t) return false; return BAD_PATTERNS.some(r => r.test(t)); }
+function isFlagged(p){ return p.sensitive === true || (p.reports || []).length >= REPORT_LIMIT || badText(p.text); }
+function sensWrap(p, inner, cls = ""){
+  if (!isFlagged(p)) return inner;
+  return `<div class="sens-wrap ${cls} ${revealed.has(p.id) ? "revealed" : ""}" data-reveal="${escapeHTML(p.id)}">${inner}
+    <div class="sens-note"><div style="font-size:22px">⚠️</div><div>Nội dung nhạy cảm</div><div style="font-size:12px;font-weight:normal">Bấm để xem</div></div></div>`;
+}
+window.reportPost = async id => {
+  const p = posts.find(x => x.id === id); if (!p) return;
+  if ((p.reports || []).includes(me.id)) { toast("Bạn đã báo cáo bài này rồi"); return; }
+  if (!confirm("Báo cáo bài này là nội dung nhạy cảm (máu me, khỏa thân, độc hại)? Đủ " + REPORT_LIMIT + " báo cáo bài sẽ bị che.")) return;
+  try { await updateDoc(doc(db,"posts",id), { reports: arrayUnion(me.id) }); toast("Đã gửi báo cáo 🚩"); }
+  catch (e) { console.error(e); toast("Báo cáo thất bại"); }
+};
+
+/* Quét ảnh bằng AI (NSFWJS) — chạy trên máy người đăng, lỗi/không tải được thì bỏ qua */
+let nsfwPromise = null;
+function loadScript(src){
+  return new Promise((res, rej) => {
+    const sc = document.createElement("script"); sc.src = src; sc.onload = res;
+    sc.onerror = () => rej(new Error("load " + src)); document.head.appendChild(sc);
+  });
+}
+function getNsfwModel(){
+  if (!nsfwPromise) nsfwPromise = (async () => {
+    try {
+      await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4/dist/tf.min.js");
+      await loadScript("https://cdn.jsdelivr.net/npm/nsfwjs@4");
+      return await window.nsfwjs.load();
+    } catch (e) { console.warn("NSFW model không tải được", e); return null; }
+  })();
+  return nsfwPromise;
+}
+async function scanImageSensitive(dataUrl){
+  try {
+    const model = await Promise.race([getNsfwModel(), new Promise(r => setTimeout(() => r(null), 12000))]);
+    if (!model) return false;
+    const img = new Image(); img.src = dataUrl; await img.decode();
+    const pred = await model.classify(img);
+    const pr = Object.fromEntries(pred.map(x => [x.className, x.probability]));
+    return ((pr.Porn || 0) + (pr.Hentai || 0)) > 0.45 || (pr.Sexy || 0) > 0.6;
+  } catch (e) { console.warn(e); return false; }
+}
 
 /* ctx: "feed" | "me" | "up" | "search" — tránh trùng id khi cùng 1 bài hiện ở nhiều trang */
 function postHTML(p, withActions = true, ctx = "feed"){
@@ -1000,10 +1084,10 @@ function postHTML(p, withActions = true, ctx = "feed"){
       <span class="time">${ago(ts)} <span class="privacy-badge">${privacyLabel}</span></span>
     </div>
     <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
-    ${p.text ? `<div class="post-text">${escapeHTML(p.text)}</div>` : ""}`;
+    ${p.text ? sensWrap(p, `<div class="post-text">${escapeHTML(p.text)}</div>`, "txt") : ""}`;
 
   if (p.image) {
-    html += `<img src="${escapeHTML(p.image)}" alt="Ảnh bài viết" class="post-image" data-zoom="1">`;
+    html += sensWrap(p, `<img src="${escapeHTML(p.image)}" alt="Ảnh bài viết" class="post-image" data-zoom="1">`);
   }
 
   if (withActions) {
@@ -1011,6 +1095,7 @@ function postHTML(p, withActions = true, ctx = "feed"){
       <button class="action ${liked ? "liked" : ""}" onclick="likePost('${p.id}')">♥ ${likes.length}</button>
       <button class="action" onclick="toggleComments('${p.id}','${ctx}')">💬 ${comments.length}</button>
       <button class="action" onclick="openShare('${p.id}')">↗ Share</button>
+      ${!mine ? `<button class="action" title="Báo cáo nội dung nhạy cảm" onclick="reportPost('${p.id}')">🚩</button>` : ""}
       ${mine ? `<button class="action" style="color:var(--danger)" onclick="deletePost('${p.id}')">🗑</button>` : ""}
     </div>
     <div id="comments-${ctx}-${p.id}" class="comments" style="display:${openComments.has(cKey) ? "block" : "none"}">
@@ -1860,8 +1945,8 @@ async function renderShareList(box, shares, mine){
       const author = anon ? (p.userId === me.id ? "◉ Anonymous (bạn)" : "◉ Anonymous") : escapeHTML(p.authorName || "Người dùng NOVA");
       body = `<div class="muted" style="margin-top:6px">Tác giả: ${author}</div>
              <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
-             ${p.text ? `<div class="post-text">${escapeHTML(p.text)}</div>` : ""}
-             ${p.image ? `<img src="${escapeHTML(p.image)}" alt="Ảnh" data-zoom="1" style="width:100%;max-height:250px;object-fit:cover;border-radius:10px;margin-top:8px;cursor:pointer">` : ""}
+             ${p.text ? sensWrap(p, `<div class="post-text">${escapeHTML(p.text)}</div>`, "txt") : ""}
+             ${p.image ? sensWrap(p, `<img src="${escapeHTML(p.image)}" alt="Ảnh" data-zoom="1" style="width:100%;max-height:250px;object-fit:cover;border-radius:10px;cursor:pointer">`) : ""}
              <div class="muted" style="margin-top:8px">♥ ${(p.likes || []).length} · 💬 ${(p.comments || []).length}</div>`;
     }
     return `<div class="shared-card">
