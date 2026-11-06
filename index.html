@@ -39,6 +39,8 @@ h2{font-size:20px}
   width: 36px;
   height: 36px;
 }
+/* FIX: không dùng display:none vì gradient trong SVG bị ẩn sẽ không render */
+.hidden-svg{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
 
 .wordmark{text-align:center;letter-spacing:8px;font-size:24px;font-weight:bold;color:#d5b5ff;
  text-shadow:0 0 15px #8b5cf6;margin-bottom:8px}
@@ -83,9 +85,9 @@ h2{font-size:20px}
  color:var(--text);border-radius:14px;padding:13px;outline:none}
 .create textarea:focus{border-color:var(--purple)}
 .anonymous{color:#ad70ff;font-size:13px}
-.post-head{display:flex;justify-content:space-between;margin-bottom:6px}
+.post-head{display:flex;justify-content:space-between;margin-bottom:6px;gap:8px}
 .user{color:#bd87ff;font-weight:bold}
-.time{color:var(--muted);font-size:12px}
+.time{color:var(--muted);font-size:12px;text-align:right}
 .post-id{font-size:11px;color:var(--muted);margin:2px 0 10px}
 .post-text{line-height:1.6;white-space:pre-wrap;word-break:break-word}
 .post-image{width:100%;max-height:400px;object-fit:cover;border-radius:12px;margin-top:10px;cursor:pointer}
@@ -98,6 +100,8 @@ h2{font-size:20px}
 .comment-box{display:flex;gap:7px;margin-top:9px}
 .comment-box input{flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px;outline:none}
 .comment-box button{background:#7628e8;color:#fff;border:0;border-radius:9px;padding:0 13px}
+.privacy-badge{font-size:11px;padding:2px 6px;border-radius:6px;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);margin-left:6px}
+.anon-tag{font-size:11px;padding:2px 6px;border-radius:6px;background:#9b4dff22;border:1px solid #9b4dff66;color:#c994ff;margin-left:6px;font-weight:normal}
 
 /* LISTS */
 .item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--input-bg);
@@ -126,7 +130,7 @@ h2{font-size:20px}
 .chat-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;
  background:var(--card-bg);border-bottom:1px solid var(--border)}
 .chat-title{font-weight:bold}
-.chat-window{height:calc(100vh - 370px);min-height:300px;padding:13px;overflow-y:auto}
+.chat-window{height:calc(100vh - 370px);height:calc(100dvh - 370px);min-height:300px;padding:13px;overflow-y:auto}
 .chat-key{background:var(--card-bg);border-bottom:1px solid #713bc0;padding:11px 14px;display:none}
 .chat-key.open{display:block}
 .key-title{font-size:11px;color:var(--muted)}
@@ -143,7 +147,7 @@ h2{font-size:20px}
 .message{max-width:100%;padding:9px 13px;border-radius:16px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
 .message.me{background:var(--bubble-me);color:#fff;border-bottom-right-radius:5px}
 .message.other{background:var(--card-bg);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:5px}
-.message.locked{opacity:.55;font-style:italic}
+.message.locked,.message.recalled{opacity:.65;font-style:italic}
 .msg-line .bubble-wrap{max-width:78%}
 .msg-tools{display:none;gap:4px}
 .message-wrapper:hover .msg-tools,.message-wrapper.open .msg-tools{display:flex}
@@ -158,7 +162,7 @@ h2{font-size:20px}
 .chip.mine{border-color:#9b4dff}
 .chat-input{display:flex;gap:8px;padding:10px;background:var(--card-bg);border-top:1px solid var(--border)}
 .chat-input input{flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--text);
- border-radius:12px;padding:12px;outline:none}
+ border-radius:12px;padding:12px;outline:none;min-width:0}
 .chat-input input:focus{border-color:var(--purple)}
 .chat-input input:disabled{opacity:.5}
 .chat-input button{background:#7b2cff;color:#fff;border:0;border-radius:12px;padding:0 18px}
@@ -188,17 +192,22 @@ h2{font-size:20px}
 .modal-box button{margin-top:10px}
 .warn{display:none;font-size:12px;color:#ffb347;margin-top:10px;line-height:1.5}
 
+/* LIGHTBOX */
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:250;padding:16px}
+#lightbox.show{display:flex}
+#lightbox img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
+
 /* BOTTOM NAV */
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;height:66px;padding-bottom:env(safe-area-inset-bottom);
  display:flex;justify-content:space-around;align-items:center;background:var(--card-bg);border-top:1px solid var(--border);z-index:30}
-.nav-btn{background:none;border:0;color:var(--muted);font-size:11px;position:relative}
+.nav-btn{background:none;border:0;color:var(--muted);font-size:11px;position:relative;flex:1;height:100%}
 .nav-btn.active{color:#bd7fff}
 .nav-icon{display:block;font-size:21px;margin-bottom:2px}
-.dot{position:absolute;top:-2px;right:-2px;width:9px;height:9px;border-radius:50%;background:var(--danger);display:none}
+.dot{position:absolute;top:8px;right:calc(50% - 20px);width:9px;height:9px;border-radius:50%;background:var(--danger);display:none}
 .dot.show{display:block}
 
 #toast{position:fixed;left:50%;bottom:82px;transform:translate(-50%,20px);background:var(--card-bg);border:1px solid #703bb2;
- color:var(--text);padding:10px 15px;border-radius:11px;opacity:0;pointer-events:none;transition:.25s;z-index:200;max-width:90%;text-align:center}
+ color:var(--text);padding:10px 15px;border-radius:11px;opacity:0;pointer-events:none;transition:.25s;z-index:400;max-width:90%;text-align:center}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 #loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:300;
  color:#c994ff;letter-spacing:6px;font-weight:bold}
@@ -207,6 +216,26 @@ h2{font-size:20px}
 
 <body>
 <div id="loading">NOVA…</div>
+
+<!-- SVG defs dùng chung (không display:none) -->
+<svg class="hidden-svg" aria-hidden="true">
+  <defs>
+    <linearGradient id="novaGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="50%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#60a5fa"/>
+    </linearGradient>
+    <linearGradient id="ringGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  <g id="novaSvgLogo">
+    <ellipse cx="50" cy="52" rx="42" ry="14" fill="none" stroke="url(#ringGrad2)" stroke-width="4" transform="rotate(-20 50 52)" stroke-linecap="round" opacity="0.8"/>
+    <path d="M 30 74 L 30 26 L 42 26 L 58 58 L 58 26 L 70 26 L 70 74 L 58 74 L 42 42 L 42 74 Z" fill="url(#novaGrad2)"/>
+    <path d="M 78 16 Q 78 23 85 23 Q 78 23 78 30 Q 78 23 71 23 Q 78 23 78 16 Z" fill="#f3e8ff"/>
+  </g>
+</svg>
 
 <!-- ================= AUTH ================= -->
 <section id="auth" style="display:none">
@@ -268,42 +297,33 @@ h2{font-size:20px}
  </div>
 </header>
 
-<svg style="display:none">
-  <defs>
-    <linearGradient id="novaGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#c084fc"/>
-      <stop offset="50%" stop-color="#a855f7"/>
-      <stop offset="100%" stop-color="#60a5fa"/>
-    </linearGradient>
-    <linearGradient id="ringGrad2" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#c084fc"/>
-      <stop offset="100%" stop-color="#3b82f6"/>
-    </linearGradient>
-  </defs>
-  <g id="novaSvgLogo">
-    <ellipse cx="50" cy="52" rx="42" ry="14" fill="none" stroke="url(#ringGrad2)" stroke-width="4" transform="rotate(-20 50 52)" stroke-linecap="round" opacity="0.8"/>
-    <path d="M 30 74 L 30 26 L 42 26 L 58 58 L 58 26 L 70 26 L 70 74 L 58 74 L 42 42 L 42 74 Z" fill="url(#novaGrad2)"/>
-    <path d="M 78 16 Q 78 23 85 23 Q 78 23 78 30 Q 78 23 71 23 Q 78 23 78 16 Z" fill="#f3e8ff"/>
-  </g>
-</svg>
-
 <main class="main">
 
 <section id="home" class="page active">
  <div class="card create">
   <textarea id="postText" maxlength="1000" placeholder="Bạn đang nghĩ gì?"></textarea>
-  
+
   <div id="postImagePreviewContainer" style="display:none;position:relative;margin-top:10px;">
     <img id="postImagePreview" src="" alt="Xem trước" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;">
     <button onclick="removePostImage()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:0;border-radius:50%;width:28px;height:28px;cursor:pointer;">✕</button>
   </div>
 
-  <div class="row" style="margin-top:9px">
-   <div style="display:flex;align-items:center;gap:10px;">
-     <span class="anonymous">◉ Anonymous</span>
+  <div class="row" style="margin-top:9px;flex-wrap:wrap;gap:8px;">
+   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+     <label style="display:flex;align-items:center;gap:5px;cursor:pointer;" class="anonymous">
+       <input type="checkbox" id="postAnonymous" checked style="accent-color:#9b4dff;">
+       <span>◉ Đăng ẩn danh</span>
+     </label>
+
+     <select id="postPrivacy" class="secondary" style="padding:4px 8px;font-size:13px;border-radius:8px;">
+       <option value="PUBLIC">🌐 Công khai</option>
+       <option value="FRIENDS">👥 Bạn bè</option>
+       <option value="ONLY_ME">🔒 Chỉ mình tôi</option>
+     </select>
+
      <button class="secondary" style="padding:5px 10px;font-size:14px" onclick="document.getElementById('postImageFile').click()" title="Đính kèm ảnh">📷 Ảnh</button>
    </div>
-   <button class="primary" onclick="createPost()">Đăng</button>
+   <button class="primary" id="postBtn" onclick="createPost()">Đăng</button>
   </div>
  </div>
  <div id="feed"></div>
@@ -350,9 +370,9 @@ h2{font-size:20px}
     <button onclick="newChatKey()">🔄 Đổi mã</button>
    </div>
   </div>
-  
+
   <div class="chat-window" id="chatWindow"><div id="messages"></div></div>
-  
+
   <div class="chat-input">
    <button class="secondary" style="padding:0 10px;font-size:16px" onclick="document.getElementById('chatImageFile').click()" title="Gửi ảnh">📷</button>
    <input id="messageInput" placeholder="Nhập tin nhắn..." autocomplete="off" onkeydown="if(event.key==='Enter')sendMessage()">
@@ -390,6 +410,12 @@ h2{font-size:20px}
   <div class="setting"><span>👥 Group</span><strong id="groupCount">0</strong></div>
   <div class="setting"><span>↗ Đã chia sẻ</span><strong id="shareCount">0</strong></div>
  </div>
+
+ <div class="card">
+  <h3>📝 Bài viết của tôi</h3>
+  <div id="myPosts"></div>
+ </div>
+
  <div class="card"><h3>↗ Bài viết đã chia sẻ</h3><div id="myShares"></div></div>
 </section>
 
@@ -423,6 +449,12 @@ h2{font-size:20px}
   <div id="upEmail" class="muted">--</div>
   <div id="upActions" class="btn-row" style="justify-content:center;margin-top:14px"></div>
  </div>
+
+ <div class="card">
+  <h3>📝 Bài viết công khai</h3>
+  <div id="upPosts"></div>
+ </div>
+
  <div class="card"><h3>↗ Bài viết đã chia sẻ</h3><div id="upShares"></div></div>
 </section>
 
@@ -448,6 +480,8 @@ h2{font-size:20px}
   <button class="secondary full" onclick="closeModal()">Đóng</button>
  </div>
 </div>
+
+<div id="lightbox" onclick="closeImage()"><img id="lightboxImg" alt=""></div>
 
 <input id="avatarFile" type="file" accept="image/*" style="display:none" onchange="changeAvatar(this)">
 <input id="chatImageFile" type="file" accept="image/*" style="display:none" onchange="sendChatImage(this)">
@@ -488,6 +522,7 @@ let currentTheme = localStorage.getItem("nova_theme") || "dark";
 let currentPage = "home";
 let viewingUid = null, prevPage = "home", shareTarget = null;
 let currentPostImageBase64 = null;
+let posting = false;
 
 const userCache = new Map();
 const decCache = new Map();
@@ -512,16 +547,26 @@ function setMessageLocked(chatId, msgId, locked){
 }
 async function makeKeyCheck(key){ return await encrypt(KEY_CHECK_TEXT, key); }
 
-/* ĐÃ CẬP NHẬT: Hàm kiểm tra mã khóa linh hoạt, chống kẹt 100% */
+/* FIX: trước đây catch trả về true => nhập sai mã vẫn được chấp nhận */
 async function verifyKey(c, key){
   if (!key || key.length !== 24) return false;
-  if (key === c.key || !c.keyCheck) return true;
+  if (!c.keyCheck) {
+    // Chat cũ chưa có keyCheck: kiểm tra bằng cách thử giải mã 1 tin nhắn thật
+    try {
+      const snap = await getDocs(query(collection(db,"chats",c.id,"messages"), orderBy("createdAt","desc"), limit(20)));
+      const sample = snap.docs.map(d => d.data()).find(m => !m.isRecalled && m.cipher && m.iv);
+      if (!sample) return true; // chưa có tin nào để đối chiếu
+      const aes = await deriveKey(key);
+      await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(sample.iv)) }, aes, unb64(sample.cipher));
+      return true;
+    } catch { return false; }
+  }
   try {
     const aes = await deriveKey(key);
     const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(c.keyCheck.iv)) }, aes, unb64(c.keyCheck.cipher));
     return new TextDecoder().decode(plain) === KEY_CHECK_TEXT;
-  } catch { 
-    return true; // Cho phép mở khóa ngay khi đúng độ dài 24 ký tự để tránh bị nghẽn dữ liệu cũ
+  } catch {
+    return false;
   }
 }
 
@@ -564,6 +609,7 @@ function authErr(code){
   return map[code] || "Có lỗi xảy ra, thử lại nhé";
 }
 async function getUser(uid){
+  if (!uid) return { id: null, name: "Người dùng", email: "" };
   if (userCache.has(uid)) return userCache.get(uid);
   try {
     const s = await getDoc(doc(db,"users",uid));
@@ -572,6 +618,14 @@ async function getUser(uid){
   } catch { return { id: uid, name: "Người dùng", email: "" }; }
 }
 const sortKey = x => (x?.toMillis ? x.toMillis() : (x ? new Date(x).getTime() : Date.now()));
+
+/* Lightbox xem ảnh (thay cho window.open data: URL vốn bị trình duyệt chặn) */
+window.viewImage = src => { if (!src) return; $("lightboxImg").src = src; $("lightbox").classList.add("show"); };
+window.closeImage = () => { $("lightbox").classList.remove("show"); $("lightboxImg").src = ""; };
+document.addEventListener("click", e => {
+  const img = e.target.closest("img[data-zoom]");
+  if (img) { e.stopPropagation(); window.viewImage(img.src); }
+}, true);
 
 window.toggleTheme = () => {
   const light = document.body.classList.toggle("light");
@@ -659,7 +713,8 @@ onAuthStateChanged(auth, async user => {
       toast("Không truy cập được Firestore — kiểm tra Rules");
     }
   } else {
-    me = null; currentChat = null; localKeys = {};
+    me = null; currentChat = null; localKeys = {}; viewingUid = null; currentPage = "home";
+    userCache.clear(); decCache.clear(); openComments.clear();
     $("app").style.display = "none";
     $("auth").style.display = "flex";
     showLogin();
@@ -681,6 +736,9 @@ function startListeners(){
   listen(query(collection(db,"posts"), orderBy("createdAt","desc"), limit(100)), s => {
     posts = s.docs.map(d => ({ id: d.id, ...d.data() }));
     renderFeed(); updateProfileView();
+    if (currentPage === "profile") renderMyPosts();
+    /* FIX: chỉ vẽ lại danh sách bài, không reset trang/cuộn lên đầu mỗi lần có like */
+    if (currentPage === "userProfile" && viewingUid) renderUserPosts(viewingUid);
     if (currentPage === "search") searchEverything();
   });
   listen(query(collection(db,"friendRequests"), where("to","==",me.id)), s => {
@@ -694,6 +752,8 @@ function startListeners(){
   listen(query(collection(db,"friendships"), where("members","array-contains",me.id)), s => {
     friendships = s.docs.map(d => ({ id: d.id, ...d.data() }));
     renderFriendList(); renderGroupPicker(); renderGroups(); updateProfileView();
+    if (currentPage === "home") renderFeed();
+    if (currentPage === "userProfile" && viewingUid) renderUserPosts(viewingUid);
   });
   listen(query(collection(db,"chats"), where("members","array-contains",me.id)), async s => {
     chats = s.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -720,6 +780,7 @@ function startListeners(){
 }
 
 window.showPage = page => {
+  const changed = currentPage !== page;
   currentPage = page;
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   $(page).classList.add("active");
@@ -729,10 +790,10 @@ window.showPage = page => {
   if (page === "chat") { renderChatTabs(); renderMessages(); }
   if (page === "groups") { renderGroups(); renderGroupPicker(); }
   if (page === "notifications") renderNotifications();
-  if (page === "profile") { updateProfileView(); renderMyShares(); }
+  if (page === "profile") { updateProfileView(); renderMyPosts(); renderMyShares(); }
   if (page === "settings") $("newName").value = me?.name || "";
   if (page === "search") searchEverything();
-  window.scrollTo(0,0);
+  if (changed) window.scrollTo(0,0);
 };
 
 function genPostCode(){
@@ -745,10 +806,10 @@ window.previewPostImage = async input => {
   input.value = "";
   if (!file) return;
   if (!file.type.startsWith("image/")) { toast("Vui lòng chọn file ảnh hợp lệ"); return; }
-  
+
   try {
     toast("Đang xử lý ảnh...");
-    const base64 = await resizeImage(file, 800);
+    const base64 = await resizeImage(file, 900, false);
     currentPostImageBase64 = base64;
     $("postImagePreview").src = base64;
     $("postImagePreviewContainer").style.display = "block";
@@ -765,23 +826,30 @@ window.removePostImage = () => {
   $("postImagePreviewContainer").style.display = "none";
 };
 
+/* Tạo bài viết: Ẩn danh + Quyền riêng tư + isShared=false (bài gốc) */
 window.createPost = async () => {
+  if (posting) return;
   const text = $("postText").value.trim();
+  const isAnonymous = $("postAnonymous").checked;
+  const privacy = $("postPrivacy").value;
+
   if (!text && !currentPostImageBase64) { toast("Hãy viết gì đó hoặc đính kèm ảnh"); return; }
-  
+
+  posting = true; $("postBtn").disabled = true;
   try {
     const postData = {
       postCode: genPostCode(),
       userId: me.id,
+      authorName: me.name,
       text: text,
+      isAnonymous: isAnonymous,
+      isShared: false,
+      privacy: privacy, // PUBLIC, FRIENDS, ONLY_ME
       likes: [],
       comments: [],
       createdAt: serverTimestamp()
     };
-
-    if (currentPostImageBase64) {
-      postData.image = currentPostImageBase64;
-    }
+    if (currentPostImageBase64) postData.image = currentPostImageBase64;
 
     await addDoc(collection(db,"posts"), postData);
 
@@ -791,63 +859,106 @@ window.createPost = async () => {
   } catch (e) {
     console.error(e);
     toast("Đăng bài thất bại");
+  } finally {
+    posting = false; $("postBtn").disabled = false;
   }
 };
 
-function postHTML(p, withActions = true){
+/* ctx: "feed" | "me" | "up" | "search" — tránh trùng id khi cùng 1 bài hiện ở nhiều trang */
+function postHTML(p, withActions = true, ctx = "feed"){
   const mine = p.userId === me.id;
+  const isAnon = p.isAnonymous ?? true; // dữ liệu cũ mặc định ẩn danh
+  const privacy = p.privacy || "PUBLIC";
+
+  let displayName = isAnon ? "◉ Anonymous" : escapeHTML(p.authorName || "Người dùng NOVA");
+  if (mine) displayName += isAnon ? " (bạn)" : " (chính bạn)";
+  const anonTag = (mine && isAnon) ? `<span class="anon-tag">[Ẩn danh]</span>` : "";
+
+  const privacyMap = { PUBLIC: "🌐 Công khai", FRIENDS: "👥 Bạn bè", ONLY_ME: "🔒 Chỉ mình tôi" };
+  const privacyLabel = privacyMap[privacy] || "🌐 Công khai";
+
   const likes = p.likes || [], comments = p.comments || [];
   const liked = likes.includes(me.id);
   const ts = p.createdAt || new Date();
-  
+  const cKey = ctx + ":" + p.id;
+
   let html = `<div class="card">
-    <div class="post-head"><span class="user">◉ Anonymous${mine ? " (bạn)" : ""}</span><span class="time">${ago(ts)}</span></div>
+    <div class="post-head">
+      <span class="user" ${(!isAnon && p.userId) ? `data-uid="${escapeHTML(p.userId)}"` : ""}>${displayName}${anonTag}</span>
+      <span class="time">${ago(ts)} <span class="privacy-badge">${privacyLabel}</span></span>
+    </div>
     <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
     ${p.text ? `<div class="post-text">${escapeHTML(p.text)}</div>` : ""}`;
-  
+
   if (p.image) {
-    html += `<img src="${p.image}" alt="Ảnh bài viết" class="post-image" onclick="window.open('${p.image}')">`;
+    html += `<img src="${escapeHTML(p.image)}" alt="Ảnh bài viết" class="post-image" data-zoom="1">`;
   }
 
   if (withActions) {
     html += `<div class="actions">
       <button class="action ${liked ? "liked" : ""}" onclick="likePost('${p.id}')">♥ ${likes.length}</button>
-      <button class="action" onclick="toggleComments('${p.id}')">💬 ${comments.length}</button>
+      <button class="action" onclick="toggleComments('${p.id}','${ctx}')">💬 ${comments.length}</button>
       <button class="action" onclick="openShare('${p.id}')">↗ Share</button>
       ${mine ? `<button class="action" style="color:var(--danger)" onclick="deletePost('${p.id}')">🗑</button>` : ""}
     </div>
-    <div id="comments-${p.id}" class="comments" style="display:${openComments.has(p.id) ? "block" : "none"}">
+    <div id="comments-${ctx}-${p.id}" class="comments" style="display:${openComments.has(cKey) ? "block" : "none"}">
       ${comments.map(c => `<div class="comment"><b>Anonymous${c.userId === me.id ? " (bạn)" : ""}:</b> ${escapeHTML(c.text)}</div>`).join("")}
       <div class="comment-box">
-        <input id="comment-${p.id}" maxlength="300" placeholder="Viết bình luận..." onkeydown="if(event.key==='Enter')addComment('${p.id}')">
-        <button onclick="addComment('${p.id}')">Gửi</button>
+        <input id="comment-${ctx}-${p.id}" maxlength="300" placeholder="Viết bình luận..." onkeydown="if(event.key==='Enter')addComment('${p.id}','${ctx}')">
+        <button onclick="addComment('${p.id}','${ctx}')">Gửi</button>
       </div>
     </div>`;
   }
   return html + `</div>`;
 }
 
+/* Quyền xem bài (Bảng tin / Tìm kiếm) theo Riêng tư */
+function canViewPost(p){
+  if (!me) return false;
+  if (p.userId === me.id) return true;
+  const privacy = p.privacy || "PUBLIC";
+  if (privacy === "ONLY_ME") return false;
+  if (privacy === "FRIENDS") return isFriend(p.userId);
+  return true;
+}
+const canViewPostOnFeed = canViewPost;
+
 function renderFeed(){
   if (!me) return;
   const focused = document.activeElement?.id || "";
-  const keep = focused.startsWith("comment-") ? { id: focused, val: document.activeElement.value } : null;
-  if (!posts.length) { $("feed").innerHTML = `<div class="card empty">Chưa có bài viết nào. Hãy là người đầu tiên!</div>`; return; }
-  $("feed").innerHTML = posts.map(p => postHTML(p)).join("");
+  const keep = focused.startsWith("comment-feed-") ? { id: focused, val: document.activeElement.value } : null;
+
+  const visiblePosts = posts.filter(p => !p.isShared && canViewPostOnFeed(p));
+
+  if (!visiblePosts.length) { $("feed").innerHTML = `<div class="card empty">Chưa có bài viết nào hiển thị.</div>`; return; }
+  $("feed").innerHTML = visiblePosts.map(p => postHTML(p, true, "feed")).join("");
   if (keep) { const el = $(keep.id); if (el) { el.value = keep.val; el.focus(); } }
 }
+
+/* Trang cá nhân của chính chủ: hiện đủ cả bài ẩn danh (kèm nhãn [Ẩn danh]) */
+function renderMyPosts(){
+  if (!me) return;
+  const box = $("myPosts"); if (!box) return;
+  const myPostList = posts.filter(p => p.userId === me.id && !p.isShared);
+  if (!myPostList.length) { box.innerHTML = `<p class="muted" style="margin-top:10px">Bạn chưa đăng bài viết nào.</p>`; return; }
+  box.innerHTML = myPostList.map(p => postHTML(p, true, "me")).join("");
+}
+
 window.likePost = async id => {
   const p = posts.find(x => x.id === id); if (!p) return;
   const liked = (p.likes || []).includes(me.id);
   try { await updateDoc(doc(db,"posts",id), { likes: liked ? arrayRemove(me.id) : arrayUnion(me.id) }); } catch { toast("Lỗi"); }
 };
-window.toggleComments = id => {
-  const el = $("comments-" + id); if (!el) return;
+window.toggleComments = (id, ctx = "feed") => {
+  const el = $("comments-" + ctx + "-" + id); if (!el) return;
   const show = el.style.display === "none"; el.style.display = show ? "block" : "none";
-  show ? openComments.add(id) : openComments.delete(id);
+  const k = ctx + ":" + id;
+  show ? openComments.add(k) : openComments.delete(k);
 };
-window.addComment = async id => {
-  const input = $("comment-" + id); const text = input.value.trim(); if (!text) return;
-  openComments.add(id);
+window.addComment = async (id, ctx = "feed") => {
+  const input = $("comment-" + ctx + "-" + id); if (!input) return;
+  const text = input.value.trim(); if (!text) return;
+  openComments.add(ctx + ":" + id);
   try { await updateDoc(doc(db,"posts",id), { comments: arrayUnion({ id: crypto.randomUUID(), userId: me.id, text, createdAt: Date.now() }) }); input.value = ""; }
   catch { toast("Bình luận thất bại"); }
 };
@@ -862,10 +973,11 @@ window.searchEverything = () => {
   searchTimer = setTimeout(doSearch, 250);
 };
 async function doSearch(){
+  if (!me) return;
   const q = $("searchInput").value.toLowerCase().trim();
   const box = $("searchResults");
   if (!q) { box.innerHTML = ""; return; }
-  const foundPosts = posts.filter(p => (p.text || "").toLowerCase().includes(q) || (p.postCode||"").toLowerCase().includes(q));
+  const foundPosts = posts.filter(p => canViewPost(p) && ((p.text || "").toLowerCase().includes(q) || (p.postCode||"").toLowerCase().includes(q)));
   const found = new Map();
   if (q.length >= 2) {
     try {
@@ -885,7 +997,7 @@ async function doSearch(){
       const self = u.id === me.id; const friend = isFriend(u.id);
       return `<div class="item">
         <div class="item-left">${avatarHTML(u)}
-          <div><div class="item-name" data-uid="${u.id}">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>
+          <div><div class="item-name" data-uid="${escapeHTML(u.id)}">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>
         <div class="btn-row">${self ? `<span class="muted">Bạn</span>`
           : friend ? `<button class="primary" onclick="openPrivateChat('${u.id}')">💬</button>`
           : `<button class="primary" onclick="sendFriendRequest('${u.id}')">Kết bạn</button>`}</div></div>`;
@@ -893,7 +1005,7 @@ async function doSearch(){
   }
   if (foundPosts.length) {
     html += `<h4 style="margin:16px 0 4px;color:var(--purple)">📝 Bài viết phù hợp</h4>`;
-    html += foundPosts.slice(0,20).map(p => postHTML(p, false).replace('<div class="card">','<div class="card" style="margin-top:10px">')).join("");
+    html += foundPosts.slice(0,20).map(p => postHTML(p, false, "search").replace('<div class="card">','<div class="card" style="margin-top:10px">')).join("");
   }
   box.innerHTML = html || `<p class="muted" style="margin-top:15px">Không tìm thấy kết quả nào phù hợp.</p>`;
 }
@@ -919,7 +1031,7 @@ window.findFriend = async () => {
     else if (incoming.some(r => r.from === u.id)) action = `<span class="muted">Họ đã mời bạn — xem bên dưới</span>`;
     else action = `<button class="primary" onclick="sendFriendRequest('${u.id}')">Kết bạn</button>`;
     box.innerHTML = `<div class="item"><div class="item-left">${avatarHTML(u)}
-      <div><div class="item-name" data-uid="${u.id}">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>${action}</div>`;
+      <div><div class="item-name" data-uid="${escapeHTML(u.id)}">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>${action}</div>`;
   } catch (e) { console.error(e); toast("Tìm kiếm thất bại"); }
 };
 
@@ -942,7 +1054,7 @@ async function renderRequests(){
   await Promise.all(incoming.map(r => getUser(r.from)));
   box.innerHTML = incoming.map(r => `<div class="item">
     <div class="item-left">${avatarHTML({ id: r.from, name: r.fromName, avatar: userCache.get(r.from)?.avatar })}
-      <div><div class="item-name" data-uid="${r.from}">${escapeHTML(r.fromName || "Người dùng")}</div><div class="item-sub">${escapeHTML(r.fromEmail || "")}</div></div></div>
+      <div><div class="item-name" data-uid="${escapeHTML(r.from)}">${escapeHTML(r.fromName || "Người dùng")}</div><div class="item-sub">${escapeHTML(r.fromEmail || "")}</div></div></div>
     <div class="btn-row"><button class="primary" onclick="acceptFriend('${r.id}')">✓</button>
     <button class="secondary" onclick="rejectFriend('${r.id}')">×</button></div></div>`).join("");
 }
@@ -968,7 +1080,7 @@ async function renderFriendList(){
   const users = await Promise.all(friendships.map(f => getUser(f.members.find(m => m !== me.id))));
   box.innerHTML = users.map(u => `<div class="item">
     <div class="item-left">${avatarHTML(u)}
-      <div><div class="item-name" data-uid="${u.id}">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>
+      <div><div class="item-name" data-uid="${escapeHTML(u.id)}">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>
     <div class="btn-row"><button class="primary" onclick="openPrivateChat('${u.id}')">💬 Chat</button>
     <button class="secondary" onclick="unfriend('${u.id}')">✕</button></div></div>`).join("");
 }
@@ -985,7 +1097,7 @@ async function deriveKey(chatKey){
   const k = await crypto.subtle.importKey("raw", hash, { name: "AES-GCM" }, false, ["encrypt","decrypt"]);
   aesCache.set(chatKey, k); return k;
 }
-const b64 = buf => { let s = ""; new Uint8Array(buf).forEach(b => s += String.fromCharCode(b)); return btoa(s); };
+const b64 = buf => { let s = ""; const u = new Uint8Array(buf); const CH = 0x8000; for (let i=0;i<u.length;i+=CH) s += String.fromCharCode.apply(null, u.subarray(i, i+CH)); return btoa(s); };
 const unb64 = str => { const s = atob(str); const a = new Uint8Array(s.length); for (let i=0;i<s.length;i++) a[i] = s.charCodeAt(i); return a.buffer; };
 async function encrypt(text, key){
   const aes = await deriveKey(key); const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -993,7 +1105,9 @@ async function encrypt(text, key){
   return { cipher: b64(enc), iv: b64(iv) };
 }
 async function decrypt(msg, key){
-  const ck = msg.id + "|" + key + "|" + msg.cipher;
+  if (msg.isRecalled) return "Tin nhắn đã được thu hồi.";
+  if (!msg.cipher || !msg.iv) return "🔒 Không thể giải mã";
+  const ck = msg.id + "|" + key + "|" + msg.cipher.length + "|" + msg.cipher.slice(0, 24) + msg.cipher.slice(-24);
   if (decCache.has(ck)) return decCache.get(ck);
   let out;
   try {
@@ -1052,12 +1166,13 @@ function attachMessages(){
   renderMessages();
 }
 
+/* Hiển thị tin nhắn — gồm Thu hồi (isRecalled) cho cả chat riêng & group */
 async function renderMessages(stick){
   const token = ++renderToken;
   const box = $("messages"); const win = $("chatWindow");
   const composer = document.querySelector("#chat .chat-input");
   const c = curChat();
-  
+
   if (!currentChat || !c) {
     if (composer) composer.style.display = "none";
     $("chatTitle").textContent = "Chưa chọn cuộc trò chuyện";
@@ -1074,6 +1189,10 @@ async function renderMessages(stick){
   if (composer) composer.style.display = key ? "flex" : "none";
 
   if (!key) {
+    /* FIX: giữ lại nội dung đang gõ khi panel bị vẽ lại do snapshot */
+    const oldInput = document.getElementById("directUnlockInput");
+    const oldVal = oldInput ? oldInput.value : "";
+    const hadFocus = oldInput && document.activeElement === oldInput;
     box.innerHTML = `
       <div style="padding: 30px 20px; text-align: center; background: var(--input-bg); border-radius: 14px; margin: 15px; border: 1px dashed var(--purple); display: flex; flex-direction: column; align-items: center; gap: 12px;">
         <div style="font-size: 32px;">🔒</div>
@@ -1083,6 +1202,8 @@ async function renderMessages(stick){
         <button class="primary" style="width: 100%; max-width: 300px;" onclick="window.submitDirectUnlock()">Mở khóa ngay</button>
       </div>
     `;
+    const ni = document.getElementById("directUnlockInput");
+    if (ni && oldVal) { ni.value = oldVal; if (hadFocus) ni.focus(); }
     return;
   }
 
@@ -1098,24 +1219,29 @@ async function renderMessages(stick){
   let html = "", lastDay = "";
   msgDocs.forEach((m, i) => {
     const mine = m.sender === me.id; const side = mine ? "me" : "other";
-    const locked = texts[i] === "🔒 Không thể giải mã";
+    const isRecalled = m.isRecalled === true;
+    const locked = !isRecalled && texts[i] === "🔒 Không thể giải mã";
+
     const day = dayLabel(m.createdAt);
     if (day !== lastDay) { html += `<div class="day-sep">${escapeHTML(day)}</div>`; lastDay = day; }
     const rx = m.reactions || {}; const counts = {};
     Object.values(rx).forEach(e => counts[e] = (counts[e] || 0) + 1);
     const chips = Object.entries(counts).map(([e,n]) =>
       `<span class="chip ${rx[me.id] === e ? "mine" : ""}" onclick="reactMessage('${m.id}','${e}')">${e}${n > 1 ? " " + n : ""}</span>`).join("");
-    
+
     const individuallyLocked = isMessageLocked(c.id, m.id);
     let contentHtml = "";
-    if (individuallyLocked) {
+
+    if (isRecalled) {
+      contentHtml = "Tin nhắn đã được thu hồi.";
+    } else if (individuallyLocked) {
       contentHtml = "🔒 Tin nhắn này đang bị khóa";
     } else if (locked) {
       contentHtml = "🔒 Không thể giải mã";
     } else {
       const plainText = texts[i];
       if (plainText && plainText.startsWith("data:image/")) {
-        contentHtml = `<img src="${plainText}" alt="Ảnh chat" style="max-width:100%;max-height:250px;border-radius:10px;display:block;cursor:pointer;" onclick="window.open('${plainText}')">`;
+        contentHtml = `<img src="${escapeHTML(plainText)}" alt="Ảnh chat" data-zoom="1" style="max-width:100%;max-height:250px;border-radius:10px;display:block;cursor:pointer;">`;
       } else {
         contentHtml = escapeHTML(plainText);
       }
@@ -1124,15 +1250,16 @@ async function renderMessages(stick){
     html += `<div class="message-wrapper ${side} ${open.has(m.id) ? "open" : ""}" data-id="${m.id}">
       ${!mine && c.type === "group" ? `<div class="sender-name">${escapeHTML(nameOf[m.sender] || "Thành viên")}</div>` : ""}
       <div class="msg-line">
-        <div class="bubble-wrap"><div class="message ${side} ${(locked || individuallyLocked) ? "locked" : ""}" onclick="togglePicker('${m.id}')">${contentHtml}</div></div>
-        <div class="msg-tools">
+        <div class="bubble-wrap"><div class="message ${side} ${(locked || individuallyLocked) ? "locked" : ""} ${isRecalled ? "recalled" : ""}" ${isRecalled ? "" : `onclick="togglePicker('${m.id}')"`}>${contentHtml}</div></div>
+
+        ${!isRecalled ? `<div class="msg-tools">
           <button class="tool-btn" onclick="togglePicker('${m.id}')">☺</button>
           <button class="tool-btn" title="${individuallyLocked ? "Mở khóa tin nhắn này" : "Khóa riêng tin nhắn này"}" onclick="toggleMessageLock('${m.id}')">${individuallyLocked ? "🔓" : "🔒"}</button>
-          ${mine ? `<button class="tool-btn" onclick="deleteMessage('${m.id}')">🗑</button>` : ""}
-        </div>
+          ${mine ? `<button class="tool-btn" title="Thu hồi tin nhắn" onclick="recallMessage('${m.id}')">🗑</button>` : ""}
+        </div>` : ""}
       </div>
-      <div class="reaction-picker">${EMOJIS.map(e => `<span onclick="reactMessage('${m.id}','${e}')">${e}</span>`).join("")}</div>
-      ${chips ? `<div class="reactions">${chips}</div>` : ""}
+      ${!isRecalled ? `<div class="reaction-picker">${EMOJIS.map(e => `<span onclick="reactMessage('${m.id}','${e}')">${e}</span>`).join("")}</div>` : ""}
+      ${chips && !isRecalled ? `<div class="reactions">${chips}</div>` : ""}
       <div class="msg-time">${hhmm(m.createdAt)}</div>
     </div>`;
   });
@@ -1147,10 +1274,10 @@ window.submitDirectUnlock = async () => {
   const key = inputEl.value.trim().toUpperCase();
   if (key.length !== 24) { toast("Mã bảo mật phải gồm đúng 24 ký tự"); return; }
   if (!(await verifyKey(c, key))) { toast("Mã không chính xác, thử lại ❌"); return; }
-  
+
   saveKey(c.id, key);
-  toast("Đã mở khóa thành công 🔓"); 
-  renderChatTabs(); 
+  toast("Đã mở khóa thành công 🔓");
+  renderChatTabs();
   renderMessages(true);
 };
 
@@ -1194,14 +1321,33 @@ window.togglePicker = id => {
   const el = document.querySelector(`.message-wrapper[data-id="${id}"]`); if (el) el.classList.toggle("open");
 };
 window.reactMessage = async (msgId, emoji) => {
-  const m = msgDocs.find(x => x.id === msgId); if (!m) return;
+  const m = msgDocs.find(x => x.id === msgId); if (!m || m.isRecalled) return;
   const same = m.reactions?.[me.id] === emoji;
   try { await updateDoc(doc(db,"chats",currentChat,"messages",msgId), { [`reactions.${me.id}`]: same ? deleteField() : emoji }); }
   catch (e) { console.error(e); toast("Lỗi reaction"); }
 };
-window.deleteMessage = async id => {
-  if (!confirm("Xóa tin nhắn này?")) return;
-  try { await deleteDoc(doc(db,"chats",currentChat,"messages",id)); } catch { toast("Không xóa được"); }
+
+/* Thu hồi: chỉ người gửi, chỉ đúng 1 tin được chọn */
+window.recallMessage = async id => {
+  const m = msgDocs.find(x => x.id === id);
+  if (!m) return;
+  if (m.sender !== me.id) { toast("Bạn chỉ có thể thu hồi tin nhắn của mình"); return; }
+  if (m.isRecalled) return;
+  if (!confirm("Bạn muốn thu hồi tin nhắn này?")) return;
+
+  try {
+    await updateDoc(doc(db,"chats",currentChat,"messages",id), {
+      isRecalled: true,
+      cipher: "",
+      iv: "",
+      reactions: {}
+    });
+    setMessageLocked(currentChat, id, false);
+    toast("Đã thu hồi tin nhắn ↩");
+  } catch (e) {
+    console.error(e);
+    toast("Thu hồi tin nhắn thất bại");
+  }
 };
 
 window.sendMessage = async () => {
@@ -1213,7 +1359,7 @@ window.sendMessage = async () => {
   input.value = "";
   try {
     const enc = await encrypt(text, key);
-    await addDoc(collection(db,"chats",currentChat,"messages"), { sender: me.id, cipher: enc.cipher, iv: enc.iv, reactions: {}, createdAt: serverTimestamp() });
+    await addDoc(collection(db,"chats",currentChat,"messages"), { sender: me.id, cipher: enc.cipher, iv: enc.iv, reactions: {}, isRecalled: false, createdAt: serverTimestamp() });
     await updateDoc(doc(db,"chats",currentChat), { lastAt: serverTimestamp() });
   } catch (e) { console.error(e); input.value = text; toast("Gửi thất bại"); }
 };
@@ -1223,7 +1369,7 @@ window.sendChatImage = async input => {
   input.value = "";
   if (!file) return;
   if (!file.type.startsWith("image/")) { toast("Vui lòng chọn file ảnh hợp lệ"); return; }
-  
+
   if (!currentChat) { toast("Hãy mở một cuộc trò chuyện"); return; }
   const c = curChat(); if (!c) return;
   const key = getKey(c);
@@ -1232,17 +1378,18 @@ window.sendChatImage = async input => {
   toast("Đang xử lý ảnh...");
 
   try {
-    const base64Image = await resizeImage(file, 600);
+    const base64Image = await resizeImage(file, 640, false);
     const enc = await encrypt(base64Image, key);
-    
-    await addDoc(collection(db, "chats", currentChat, "messages"), { 
-      sender: me.id, 
-      cipher: enc.cipher, 
-      iv: enc.iv, 
-      reactions: {}, 
-      createdAt: serverTimestamp() 
+
+    await addDoc(collection(db, "chats", currentChat, "messages"), {
+      sender: me.id,
+      cipher: enc.cipher,
+      iv: enc.iv,
+      reactions: {},
+      isRecalled: false,
+      createdAt: serverTimestamp()
     });
-    
+
     await updateDoc(doc(db, "chats", currentChat), { lastAt: serverTimestamp() });
     toast("Đã gửi ảnh thành công 📷");
   } catch (e) {
@@ -1267,16 +1414,18 @@ window.newChatKey = async () => {
     const snap = await getDocs(query(collection(db,"chats",c.id,"messages"), orderBy("createdAt","asc"), limit(450)));
     const batch = writeBatch(db);
     for (const d of snap.docs) {
-      const plain = await decrypt({ id: d.id, ...d.data() }, oldKey);
+      const data = d.data();
+      if (data.isRecalled) continue;
+      const plain = await decrypt({ id: d.id, ...data }, oldKey);
       if (plain.startsWith("🔒")) continue;
       const enc = await encrypt(plain, newKey);
       batch.update(d.ref, { cipher: enc.cipher, iv: enc.iv });
     }
     batch.update(doc(db,"chats",c.id), { keyCheck: await makeKeyCheck(newKey), key: deleteField() });
-    saveKey(c.id, newKey);
     await batch.commit();
+    saveKey(c.id, newKey); // chỉ lưu mã mới sau khi commit thành công
     toast("Đã đổi mã. Gửi mã mới cho mọi người 🔐");
-  } catch (e) { console.error(e); saveKey(c.id, oldKey); toast("Đổi mã thất bại"); }
+  } catch (e) { console.error(e); toast("Đổi mã thất bại"); }
 };
 
 async function renderGroupPicker(){
@@ -1285,7 +1434,7 @@ async function renderGroupPicker(){
   if (!friendships.length) { box.innerHTML = `<p class="muted">Hãy kết bạn trước để thêm vào group.</p>`; return; }
   const checked = new Set([...box.querySelectorAll("input:checked")].map(i => i.value));
   const users = await Promise.all(friendships.map(f => getUser(f.members.find(m => m !== me.id))));
-  box.innerHTML = users.map(u => `<label class="pick"><input type="checkbox" value="${u.id}" ${checked.has(u.id) ? "checked" : ""}> ${escapeHTML(u.name)} <span class="muted">${escapeHTML(u.email)}</span></label>`).join("");
+  box.innerHTML = users.map(u => `<label class="pick"><input type="checkbox" value="${escapeHTML(u.id)}" ${checked.has(u.id) ? "checked" : ""}> ${escapeHTML(u.name)} <span class="muted">${escapeHTML(u.email)}</span></label>`).join("");
 }
 window.createGroup = async () => {
   const name = $("groupName").value.trim();
@@ -1326,7 +1475,7 @@ async function renderGroups(){
       <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
         ${members.map(u => `<div class="row" style="font-size:13px;margin-top:8px">
           <span style="display:flex;align-items:center;gap:8px;min-width:0">${avatarHTML(u,"mini-avatar sm")}
-            <span data-uid="${u.id}">${escapeHTML(u.name)} ${u.id === g.owner ? "👑" : ""}
+            <span data-uid="${escapeHTML(u.id)}">${escapeHTML(u.name)} ${u.id === g.owner ? "👑" : ""}
             <span class="muted">${escapeHTML(u.email)}</span></span></span>
           ${isOwner && u.id !== me.id
             ? `<button class="danger-btn" onclick="kickMember('${g.id}','${u.id}')">Kick</button>` : ""}
@@ -1374,7 +1523,7 @@ window.addMemberToGroup = async gid => {
   if (!inputVal) { toast("Nhập Gmail hoặc tên người cần thêm"); return; }
   const g = chats.find(c => c.id === gid); if (!g) return;
   if (g.owner !== me.id) { toast("Chỉ chủ group được thêm thành viên"); return; }
-  
+
   try {
     let uid = null;
 
@@ -1384,10 +1533,19 @@ window.addMemberToGroup = async gid => {
       const friend = await getUser(friendUid);
       const fEmail = (friend.email || "").trim().toLowerCase();
       const fName = (friend.name || "").trim().toLowerCase();
-      if (fEmail === inputVal || fName.includes(inputVal)) {
-        uid = friendUid;
-        break;
+      if (fEmail === inputVal || fName === inputVal) { uid = friendUid; break; }
+    }
+    /* nếu không khớp chính xác thì thử khớp 1 phần tên, nhưng chỉ nhận khi duy nhất 1 kết quả */
+    if (!uid) {
+      const partial = [];
+      for (const friendship of friendships) {
+        const friendUid = friendship.members.find(id => id !== me.id);
+        if (!friendUid) continue;
+        const friend = await getUser(friendUid);
+        if ((friend.name || "").trim().toLowerCase().includes(inputVal)) partial.push(friendUid);
       }
+      if (partial.length === 1) uid = partial[0];
+      else if (partial.length > 1) { toast("Có nhiều bạn trùng tên, hãy nhập Gmail cụ thể"); return; }
     }
 
     if (!uid) {
@@ -1396,27 +1554,27 @@ window.addMemberToGroup = async gid => {
       if (!s.empty) uid = s.docs[0].id;
     }
 
-    if (!uid) { 
-      toast("Không tìm thấy tài khoản NOVA này. Hãy kiểm tra lại Gmail hoặc tên."); 
-      return; 
+    if (!uid) {
+      toast("Không tìm thấy tài khoản NOVA này. Hãy kiểm tra lại Gmail hoặc tên.");
+      return;
     }
     if (uid === me.id) { toast("Bạn không thể tự thêm chính mình"); return; }
     if (g.members.includes(uid)) { toast("Người này đã có trong group rồi"); return; }
 
     await updateDoc(doc(db,"chats",gid), { members: arrayUnion(uid) });
-    await addDoc(collection(db,"notifications"), { 
-      to: uid, 
-      type: "group_add", 
-      text: `${me.name} đã thêm bạn vào group "${g.name}". Hãy xin mã từ chủ group để mở khóa tin nhắn.`, 
-      read: false, 
-      createdAt: serverTimestamp() 
+    await addDoc(collection(db,"notifications"), {
+      to: uid,
+      type: "group_add",
+      text: `${me.name} đã thêm bạn vào group "${g.name}". Hãy xin mã từ chủ group để mở khóa tin nhắn.`,
+      read: false,
+      createdAt: serverTimestamp()
     });
-    
+
     input.value = "";
     toast("Đã thêm thành viên thành công ✓");
-  } catch (e) { 
-    console.error("addMemberToGroup error:", e); 
-    toast("Thêm thất bại — kiểm tra lại kết nối mạng"); 
+  } catch (e) {
+    console.error("addMemberToGroup error:", e);
+    toast("Thêm thất bại — kiểm tra lại kết nối mạng");
   }
 };
 
@@ -1451,7 +1609,7 @@ function updateProfileView(){
   if (!me) return;
   $("profileName").textContent = me.name; $("profileEmail").textContent = me.email;
   $("avatar").innerHTML = me.avatar ? `<img src="${escapeHTML(me.avatar)}" alt="">` : escapeHTML(initial(me.name));
-  $("postCount").textContent = posts.filter(p => p.userId === me.id).length;
+  $("postCount").textContent = posts.filter(p => p.userId === me.id && !p.isShared).length;
   $("friendCount").textContent = friendships.length;
   $("groupCount").textContent = chats.filter(c => c.type === "group").length;
   $("shareCount").textContent = myShares.length;
@@ -1466,16 +1624,26 @@ window.changeName = async () => {
   } catch (e) { console.error(e); toast("Đổi tên thất bại"); }
 };
 
-function resizeImage(file, size = 160){
+/* square=true: cắt vuông (avatar). square=false: giữ nguyên tỉ lệ (ảnh bài đăng / chat) */
+function resizeImage(file, size = 160, square = true){
   return new Promise((resolve, reject) => {
     const img = new Image(); const url = URL.createObjectURL(file);
     img.onload = () => {
-      const s = Math.min(img.width, img.height);
-      const sx = (img.width - s) / 2, sy = (img.height - s) / 2;
-      const canvas = document.createElement("canvas"); canvas.width = canvas.height = size;
-      canvas.getContext("2d").drawImage(img, sx, sy, s, s, 0, 0, size, size);
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (square) {
+        const s = Math.min(img.width, img.height);
+        const sx = (img.width - s) / 2, sy = (img.height - s) / 2;
+        canvas.width = canvas.height = size;
+        ctx.drawImage(img, sx, sy, s, s, 0, 0, size, size);
+      } else {
+        const scale = Math.min(1, size / Math.max(img.width, img.height));
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      }
       URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL("image/jpeg", 0.8));
+      resolve(canvas.toDataURL("image/jpeg", 0.78));
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Ảnh không hợp lệ")); };
     img.src = url;
@@ -1487,7 +1655,7 @@ window.changeAvatar = async input => {
   if (!file.type.startsWith("image/")) { toast("Hãy chọn file ảnh"); return; }
   if (file.size > 10 * 1024 * 1024) { toast("Ảnh quá lớn (tối đa 10MB)"); return; }
   try {
-    const data = await resizeImage(file);
+    const data = await resizeImage(file, 160, true);
     await updateDoc(doc(db,"users",me.id), { avatar: data });
     me.avatar = data;
     userCache.set(me.id, { ...(userCache.get(me.id) || {}), id: me.id, avatar: data });
@@ -1512,7 +1680,7 @@ window.openShare = id => {
   const sid = me.id + "_" + id;
   const shared = myShares.some(s => s.id === sid);
   $("modalPostCode").textContent = "Post ID: " + p.postCode;
-  $("modalWarn").style.display = (p.userId === me.id && !shared) ? "block" : "none";
+  $("modalWarn").style.display = (p.userId === me.id && (p.isAnonymous ?? true) && !shared) ? "block" : "none";
   const b = $("shareProfileBtn");
   b.textContent = shared ? "✓ Đã chia sẻ — bấm để gỡ" : "↗ Chia sẻ lên trang cá nhân";
   b.onclick = shared ? () => { closeModal(); unshare(sid); } : () => shareToProfile(id);
@@ -1525,7 +1693,7 @@ window.shareToProfile = async id => {
   const sid = me.id + "_" + id;
   if (myShares.some(s => s.id === sid)) { toast("Bạn đã chia sẻ bài này rồi"); return; }
   try {
-    await setDoc(doc(db,"shares",sid), { userId: me.id, postId: id, createdAt: serverTimestamp() });
+    await setDoc(doc(db,"shares",sid), { userId: me.id, postId: id, isShared: true, createdAt: serverTimestamp() });
     toast("Đã chia sẻ lên trang cá nhân ↗");
   } catch (e) { console.error(e); toast("Chia sẻ thất bại"); }
 };
@@ -1541,20 +1709,30 @@ window.copyPost = async () => {
   else { try { await navigator.clipboard.writeText(text); toast("Đã copy bài viết 📋"); } catch { toast("Không copy được"); } }
 };
 
+/* Bài chia sẻ: tôn trọng quyền riêng tư của bài gốc + hiển thị tác giả đúng chế độ ẩn danh */
 async function renderShareList(box, shares, mine){
   if (!box) return;
   if (!shares.length) { box.innerHTML = `<p class="muted" style="margin-top:10px">Chưa chia sẻ bài viết nào.</p>`; return; }
   const snaps = await Promise.all(shares.map(s => getDoc(doc(db,"posts",s.postId)).catch(() => null)));
   box.innerHTML = shares.map((s,i) => {
-    const p = snaps[i]?.exists() ? snaps[i].data() : null;
+    const p = snaps[i]?.exists() ? { id: snaps[i].id, ...snaps[i].data() } : null;
+    const unavailable = p && !canViewPost(p);
+    let body;
+    if (!p) body = `<div class="muted" style="margin-top:8px">Bài viết gốc đã bị xóa.</div>`;
+    else if (unavailable) body = `<div class="muted" style="margin-top:8px">Bài viết này không khả dụng với bạn.</div>`;
+    else {
+      const anon = p.isAnonymous ?? true;
+      const author = anon ? (p.userId === me.id ? "◉ Anonymous (bạn)" : "◉ Anonymous") : escapeHTML(p.authorName || "Người dùng NOVA");
+      body = `<div class="muted" style="margin-top:6px">Tác giả: ${author}</div>
+             <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
+             ${p.text ? `<div class="post-text">${escapeHTML(p.text)}</div>` : ""}
+             ${p.image ? `<img src="${escapeHTML(p.image)}" alt="Ảnh" data-zoom="1" style="width:100%;max-height:250px;object-fit:cover;border-radius:10px;margin-top:8px;cursor:pointer">` : ""}
+             <div class="muted" style="margin-top:8px">♥ ${(p.likes || []).length} · 💬 ${(p.comments || []).length}</div>`;
+    }
     return `<div class="shared-card">
       <div class="row"><span class="muted">↗ Đã chia sẻ · ${ago(s.createdAt)}</span>
         ${mine ? `<button class="danger-btn" onclick="unshare('${s.id}')">Gỡ</button>` : ""}</div>
-      ${p ? `<div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
-             ${p.text ? `<div class="post-text">${escapeHTML(p.text)}</div>` : ""}
-             ${p.image ? `<img src="${p.image}" alt="Ảnh" style="width:100%;max-height:250px;object-fit:cover;border-radius:10px;margin-top:8px;">` : ""}
-             <div class="muted" style="margin-top:8px">♥ ${(p.likes || []).length} · 💬 ${(p.comments || []).length}</div>`
-          : `<div class="muted" style="margin-top:8px">Bài viết gốc đã bị xóa.</div>`}
+      ${body}
     </div>`;
   }).join("");
 }
@@ -1564,15 +1742,36 @@ document.addEventListener("click", e => {
   const el = e.target.closest("[data-uid]");
   if (el && me) openUserProfile(el.dataset.uid);
 });
-window.goBack = () => showPage(prevPage && prevPage !== "userProfile" ? prevPage : "home");
+window.goBack = () => { viewingUid = null; showPage(prevPage && prevPage !== "userProfile" ? prevPage : "home"); };
+
+/* Trang cá nhân người khác — LỌC HOÀN TOÀN bài ẩn danh, tôn trọng Riêng tư */
+function renderUserPosts(uid){
+  const upPostsBox = $("upPosts"); if (!upPostsBox) return;
+  const isUserFriend = isFriend(uid);
+  const list = posts.filter(p => {
+    if (p.userId !== uid || p.isShared) return false;
+    if (p.isAnonymous ?? true) return false;
+    const privacy = p.privacy || "PUBLIC";
+    if (privacy === "ONLY_ME") return false;
+    if (privacy === "FRIENDS" && !isUserFriend) return false;
+    return true;
+  });
+  const focused = document.activeElement?.id || "";
+  const keep = focused.startsWith("comment-up-") ? { id: focused, val: document.activeElement.value } : null;
+  upPostsBox.innerHTML = list.length
+    ? list.map(p => postHTML(p, true, "up")).join("")
+    : `<p class="muted" style="margin-top:10px">Không có bài viết công khai nào.</p>`;
+  if (keep) { const el = $(keep.id); if (el) { el.value = keep.val; el.focus(); } }
+}
 
 window.openUserProfile = async uid => {
-  if (uid === me.id) { showPage("profile"); return; }
+  if (uid === me.id) { viewingUid = null; showPage("profile"); return; }
   if (currentPage !== "userProfile") prevPage = currentPage;
   viewingUid = uid;
   showPage("userProfile");
   $("upName").textContent = "Đang tải..."; $("upEmail").textContent = ""; $("upActions").innerHTML = "";
-  $("upShares").innerHTML = "";
+  $("upPosts").innerHTML = ""; $("upShares").innerHTML = "";
+
   userCache.delete(uid);
   const u = await getUser(uid);
   if (viewingUid !== uid) return;
@@ -1580,6 +1779,8 @@ window.openUserProfile = async uid => {
   $("upEmail").textContent = u.email || "";
   $("upAvatar").innerHTML = u.avatar ? `<img src="${escapeHTML(u.avatar)}" alt="">` : escapeHTML(initial(u.name));
   renderUPActions(uid);
+  renderUserPosts(uid);
+
   try {
     const s = await getDocs(query(collection(db,"shares"), where("userId","==",uid)));
     const shares = s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => sortKey(b.createdAt) - sortKey(a.createdAt));
