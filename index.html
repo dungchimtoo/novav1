@@ -211,6 +211,20 @@ h2{font-size:20px}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 #loading{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:300;
  color:#c994ff;letter-spacing:6px;font-weight:bold}
+
+/* POST OPTIONS */
+.post-opts{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+.opt-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.opt-label{font-size:13px;color:var(--muted);min-width:78px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{background:var(--input-bg);border:1px solid var(--border);color:var(--muted);border-radius:20px;padding:7px 12px;font-size:13px}
+.seg button.on{border-color:#9b4dff;color:var(--text);background:#9b4dff2b;font-weight:bold}
+.tgl{position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0}
+.tgl input{opacity:0;width:0;height:0}
+.tgl-slider{position:absolute;inset:0;background:var(--border);border-radius:26px;transition:.2s;cursor:pointer}
+.tgl-slider:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.tgl input:checked + .tgl-slider{background:linear-gradient(135deg,#7628e8,#b866ff)}
+.tgl input:checked + .tgl-slider:before{transform:translateX(20px)}
 </style>
 </head>
 
@@ -308,21 +322,24 @@ h2{font-size:20px}
     <button onclick="removePostImage()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:0;border-radius:50%;width:28px;height:28px;cursor:pointer;">✕</button>
   </div>
 
-  <div class="row" style="margin-top:9px;flex-wrap:wrap;gap:8px;">
-   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-     <label style="display:flex;align-items:center;gap:5px;cursor:pointer;" class="anonymous">
-       <input type="checkbox" id="postAnonymous" checked style="accent-color:#9b4dff;">
-       <span>◉ Đăng ẩn danh</span>
-     </label>
-
-     <select id="postPrivacy" class="secondary" style="padding:4px 8px;font-size:13px;border-radius:8px;">
-       <option value="PUBLIC">🌐 Công khai</option>
-       <option value="FRIENDS">👥 Bạn bè</option>
-       <option value="ONLY_ME">🔒 Chỉ mình tôi</option>
-     </select>
-
-     <button class="secondary" style="padding:5px 10px;font-size:14px" onclick="document.getElementById('postImageFile').click()" title="Đính kèm ảnh">📷 Ảnh</button>
+  <div class="post-opts">
+   <div class="opt-row">
+    <span class="opt-label">Chế độ đăng</span>
+    <div class="seg" id="privacySeg">
+     <button type="button" data-v="PUBLIC" class="on">🌐 Công khai</button>
+     <button type="button" data-v="FRIENDS">👥 Bạn bè</button>
+     <button type="button" data-v="ONLY_ME">🔒 Riêng tư</button>
+    </div>
+    <input type="hidden" id="postPrivacy" value="PUBLIC">
    </div>
+   <div class="opt-row">
+    <span class="opt-label">Ẩn danh</span>
+    <label class="tgl"><input type="checkbox" id="postAnonymous" checked><span class="tgl-slider"></span></label>
+    <span id="anonHint" class="muted">BẬT — người khác chỉ thấy "Anonymous"</span>
+   </div>
+  </div>
+  <div class="row" style="margin-top:12px;gap:8px;">
+   <button class="secondary" style="padding:8px 12px;font-size:14px" onclick="document.getElementById('postImageFile').click()" title="Đính kèm ảnh">📷 Ảnh</button>
    <button class="primary" id="postBtn" onclick="createPost()">Đăng</button>
   </div>
  </div>
@@ -819,6 +836,18 @@ window.previewPostImage = async input => {
     toast("Không tải được ảnh");
   }
 };
+
+/* Chọn chế độ đăng + công tắc ẩn danh */
+document.querySelectorAll("#privacySeg button").forEach(btn => btn.addEventListener("click", () => {
+  document.querySelectorAll("#privacySeg button").forEach(b => b.classList.toggle("on", b === btn));
+  $("postPrivacy").value = btn.dataset.v;
+}));
+function syncAnonHint(){
+  $("anonHint").textContent = $("postAnonymous").checked
+    ? 'BẬT — người khác chỉ thấy "Anonymous"'
+    : "TẮT — bài hiện tên của bạn và lên trang cá nhân công khai";
+}
+$("postAnonymous").addEventListener("change", syncAnonHint);
 
 window.removePostImage = () => {
   currentPostImageBase64 = null;
