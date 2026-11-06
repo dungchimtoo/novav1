@@ -109,10 +109,21 @@ h2{font-size:20px}
 .muted{color:var(--muted);font-size:13px}
 .empty{text-align:center;color:var(--muted);padding:22px}
 
-/* POSTS */
+/* POSTS & AUTOCOMPLETE TAG */
+.create{position:relative}
 .create textarea{width:100%;min-height:90px;resize:none;background:var(--input-bg);border:1px solid var(--border);
  color:var(--text);border-radius:14px;padding:13px;outline:none}
 .create textarea:focus{border-color:var(--purple)}
+
+#mentionDropdown {
+  position: absolute; background: var(--card-bg); border: 1px solid var(--border);
+  border-radius: 12px; max-height: 160px; overflow-y: auto; width: 240px; z-index: 50;
+  display: none; box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+#mentionDropdown.show { display: block; }
+.mention-item { padding: 8px 12px; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
+.mention-item:hover { background: var(--input-bg); color: var(--purple); }
+
 .anonymous{color:#ad70ff;font-size:13px}
 .post-head{display:flex;justify-content:space-between;margin-bottom:6px;gap:8px}
 .user-info-area{display:flex;flex-direction:column}
@@ -123,6 +134,7 @@ h2{font-size:20px}
 .post-text{line-height:1.6;white-space:pre-wrap;word-break:break-word}
 .post-text .hashtag{color:#b875ff;font-weight:500;cursor:pointer}
 .post-text .hashtag:hover{text-decoration:underline}
+.post-text .mention-tag{color:#60a5fa;font-weight:500;background:#3b82f622;padding:1px 4px;border-radius:4px}
 .post-image{width:100%;max-height:400px;object-fit:cover;border-radius:12px;margin-top:10px;cursor:pointer}
 .actions{display:flex;gap:7px;margin-top:14px}
 .action{flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);padding:9px;border-radius:10px}
@@ -370,7 +382,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
  </div>
 </header>
 
-<!-- Khung Layout 3 Cột (Trái = Gợi ý kết bạn, Giữa = Feed, Phải = Bạn bè trực tuyến) -->
+<!-- Layout 3 Cột (Trái = Gợi ý kết bạn, Giữa = Feed, Phải = Bạn bè trực tuyến) -->
 <div class="nova-layout">
 
  <!-- Cột Trái: Gợi ý kết bạn & Nhóm của bạn -->
@@ -394,7 +406,10 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 
   <section id="home" class="page active">
    <div class="card create">
-    <textarea id="postText" maxlength="1000" placeholder="Bạn đang nghĩ gì? Sử dụng #hashtag để phân loại..."></textarea>
+    <textarea id="postText" maxlength="1000" placeholder="Bạn đang nghĩ gì? Gõ @ để gắn thẻ bạn bè, dùng #hashtag..." oninput="handlePostInput(this)" onkeyup="handlePostInput(this)" onclick="handlePostInput(this)"></textarea>
+    
+    <!-- Hộp gợi ý @mention bạn bè -->
+    <div id="mentionDropdown"></div>
 
     <div id="postImagePreviewContainer" style="display:none;position:relative;margin-top:10px;">
       <img id="postImagePreview" src="" alt="Xem trước" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;">
@@ -569,7 +584,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 
  </main>
 
- <!-- Cột Phải: Bạn bè trực tuyến (Chỉ hiển thị khi online trong vòng 5 phút) -->
+ <!-- Cột Phải: Bạn bè trực tuyến (Chỉ hiển thị nếu online trong vòng 5 phút) -->
  <aside class="right-sidebar">
   <div class="card">
    <h3>👥 Bạn bè trực tuyến</h3>
@@ -660,7 +675,6 @@ let viewingUid = null, prevPage = "home", shareTarget = null;
 let currentPostImageBase64 = null;
 let posting = false;
 
-// Biến lưu trạng thái cửa sổ chat nổi (floating chat)
 let activeFloatChatId = null;
 let floatMsgUnsub = null;
 
@@ -937,7 +951,6 @@ onAuthStateChanged(auth, async user => {
       showPage("home");
       renderSidebars();
       
-      // Cập nhật trạng thái hoạt động (lastSeen) mỗi phút
       setInterval(async () => {
         if (me) {
           try { await updateDoc(doc(db, "users", me.id), { lastSeen: serverTimestamp() }); } catch {}
@@ -1014,11 +1027,10 @@ function startListeners(){
   });
 }
 
-// Render dữ liệu 2 cột (Trái = Gợi ý kết bạn, Phải = Bạn bè trực tuyến chỉ hiển thị khi thực sự đang online)
+// Render 2 cột: Gợi ý kết bạn bên trái, Bạn bè trực tuyến bên phải (Lọc < 5 phút)
 async function renderSidebars() {
   if (!me) return;
   
-  // Cột Trái: Gợi ý kết bạn & Nhóm
   const rightFriendBox = $("rightFriendSuggestions");
   if (rightFriendBox) {
     try {
@@ -1060,7 +1072,6 @@ async function renderSidebars() {
     }
   }
 
-  // Cột Phải: Bạn bè trực tuyến (Lọc theo thời gian hoạt động dưới 5 phút)
   const onlineBox = $("onlineFriendsList");
   if (onlineBox) {
     if (!friendships.length) {
@@ -1075,7 +1086,7 @@ async function renderSidebars() {
       const onlineFriends = friends.filter(u => {
         if (!u.lastSeen) return false;
         const lastTime = toDate(u.lastSeen).getTime();
-        return (now - lastTime) < 300000; // 5 phút = 300,000 ms
+        return (now - lastTime) < 300000; // 5 phút
       });
 
       if (!onlineFriends.length) {
@@ -1094,6 +1105,63 @@ async function renderSidebars() {
     }
   }
 }
+
+// ================= TÍNH NĂNG @MENTION (GẮN THẺ BẠN BÈ) =================
+let mentionQuery = "";
+let mentionStartPos = -1;
+
+window.handlePostInput = async textarea => {
+  const val = textarea.value;
+  const pos = textarea.selectionStart;
+  const drop = $("mentionDropdown");
+
+  // Tìm vị trí ký tự @ ngay trước con trỏ
+  const textBeforeCursor = val.slice(0, pos);
+  const match = textBeforeCursor.match(/@([a-zA-Z0-9_À-ỹ]*)$/);
+
+  if (match) {
+    mentionQuery = match[1].toLowerCase();
+    mentionStartPos = match.index;
+    
+    // Lấy danh sách bạn bè để gợi ý
+    const friendUsers = await Promise.all(friendships.map(f => getUser(f.members.find(m => m !== me.id))));
+    const filtered = friendUsers.filter(u => u.name.toLowerCase().includes(mentionQuery) || (u.handle && u.handle.toLowerCase().includes(mentionQuery)));
+
+    if (!filtered.length) {
+      drop.classList.remove("show");
+      return;
+    }
+
+    drop.innerHTML = filtered.map(u => `
+      <div class="mention-item" onclick="selectMention('${escapeHTML(u.name)}')">
+        ${avatarHTML(u, "mini-avatar sm")}
+        <div>
+          <div style="font-weight:bold">${escapeHTML(u.name)}</div>
+          <div class="muted" style="font-size:11px">@${escapeHTML(u.handle || 'user')}</div>
+        </div>
+      </div>
+    `).join("");
+
+    // Định vị dropdown ngay dưới ô textarea
+    drop.style.left = "16px";
+    drop.style.bottom = "75px";
+    drop.classList.add("show");
+  } else {
+    drop.classList.remove("show");
+  }
+};
+
+window.selectMention = name => {
+  const ta = $("postText");
+  const pos = ta.selectionStart;
+  const textBefore = ta.value.slice(0, mentionStartPos);
+  const textAfter = ta.value.slice(pos);
+
+  ta.value = textBefore + `@${name} ` + textAfter;
+  $("mentionDropdown").classList.remove("show");
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = mentionStartPos + name.length + 2;
+};
 
 // ================= CỬA SỔ CHAT NỔI (FLOATING CHAT) =================
 window.openFloatingChat = async (friendId, friendName) => {
@@ -1233,9 +1301,12 @@ function extractHashtags(text) {
   return matches ? [...new Set(matches.map(tag => tag.toLowerCase()))] : [];
 }
 
+// Format hiển thị @mention và #hashtag đẹp mắt trên bài đăng
 function formatPostText(text) {
   const safe = escapeHTML(text);
-  return safe.replace(/#[a-zA-Z0-9_À-ỹ]+/g, match => `<span class="hashtag" data-tag="${match}">${match}</span>`);
+  let formatted = safe.replace(/#[a-zA-Z0-9_À-ỹ]+/g, match => `<span class="hashtag" data-tag="${match}">${match}</span>`);
+  formatted = formatted.replace(/@([a-zA-Z0-9_À-ỹ\s]+)(?=\s|$|[.,!?-])/g, match => `<span class="mention-tag">${match}</span>`);
+  return formatted;
 }
 
 window.createPost = async () => {
@@ -1271,6 +1342,7 @@ window.createPost = async () => {
 
     $("postText").value = ""; $("postSensitive").checked = false;
     removePostImage();
+    $("mentionDropdown").classList.remove("show");
     toast("Đã đăng bài thành công 🚀");
   } catch (e) {
     console.error(e);
@@ -1298,7 +1370,7 @@ function sensWrap(p, inner, cls = ""){
 window.reportPost = async id => {
   const p = posts.find(x => x.id === id); if (!p) return;
   if ((p.reports || []).includes(me.id)) { toast("Bạn đã báo cáo bài này rồi"); return; }
-  if (!confirm("Báo cáo bài này là nội dung nhạy cảm? Đủ " + REPORT_LIMIT + " báo cáo bài sẽ bị che.")) return;
+  if (!confirm("Báo cáo bài này là nội dung nhạy cảm?")) return;
   try { await updateDoc(doc(db,"posts",id), { reports: arrayUnion(me.id) }); toast("Đã gửi báo cáo 🚩"); }
   catch (e) { console.error(e); toast("Báo cáo thất bại"); }
 };
