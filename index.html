@@ -357,9 +357,9 @@ h2{font-size:20px}
 <section id="friends" class="page">
  <h2>👥 Bạn bè</h2>
  <div class="card" style="margin-top:15px">
-  <p class="muted" style="margin-bottom:12px">Nhập Gmail chính xác của người đã đăng ký NOVA để kết bạn.</p>
+  <p class="muted" style="margin-bottom:12px">Nhập Gmail hoặc UID chính xác của người đã đăng ký NOVA để kết bạn.</p>
   <div class="search-friend">
-   <input id="friendEmail" class="input" placeholder="example@gmail.com" onkeydown="if(event.key==='Enter')findFriend()">
+   <input id="friendEmail" class="input" placeholder="Gmail hoặc UID" onkeydown="if(event.key==='Enter')findFriend()">
    <button class="primary" onclick="findFriend()">Tìm</button>
   </div>
   <div id="friendResult"></div>
@@ -419,7 +419,7 @@ h2{font-size:20px}
   <div id="avatar" class="avatar editable" onclick="document.getElementById('avatarFile').click()">N</div>
   <div class="avatar-hint" onclick="document.getElementById('avatarFile').click()">Đổi ảnh đại diện</div>
   <div id="profileName" class="profile-name" style="margin-top:8px">Nova</div>
-  <div id="profileEmail" class="muted">--</div>
+  <div id="profileEmail" class="muted" style="cursor:pointer;word-break:break-all" title="Bấm để copy UID" onclick="copyUid()">--</div>
  </div>
  <div class="card">
   <div class="setting"><span>📝 Bài viết</span><strong id="postCount">0</strong></div>
@@ -463,7 +463,7 @@ h2{font-size:20px}
  <div class="card profile">
   <div id="upAvatar" class="avatar">N</div>
   <div id="upName" class="profile-name">--</div>
-  <div id="upEmail" class="muted">--</div>
+  <div id="upEmail" class="muted" style="word-break:break-all">--</div>
   <div id="upActions" class="btn-row" style="justify-content:center;margin-top:14px"></div>
  </div>
 
@@ -1003,7 +1003,8 @@ window.searchEverything = () => {
 };
 async function doSearch(){
   if (!me) return;
-  const q = $("searchInput").value.toLowerCase().trim();
+  const rawQ = $("searchInput").value.trim();
+  const q = rawQ.toLowerCase();
   const box = $("searchResults");
   if (!q) { box.innerHTML = ""; return; }
   const foundPosts = posts.filter(p => canViewPost(p) && ((p.text || "").toLowerCase().includes(q) || (p.postCode||"").toLowerCase().includes(q)));
@@ -1017,6 +1018,9 @@ async function doSearch(){
       ]);
       [...a.docs, ...b.docs].forEach(d => found.set(d.id, { id: d.id, ...d.data() }));
     } catch (e) { console.error(e); }
+  }
+  if (rawQ.length >= 20 && !rawQ.includes("/") && !rawQ.includes("@")) {
+    try { const sn = await getDoc(doc(db,"users",rawQ)); if (sn.exists()) found.set(sn.id, { id: sn.id, ...sn.data() }); } catch {}
   }
   if ($("searchInput").value.toLowerCase().trim() !== q) return;
   let html = "";
@@ -1043,16 +1047,23 @@ const pairId = (a,b) => [a,b].sort().join("_");
 const isFriend = uid => friendships.some(f => f.members.includes(uid));
 
 window.findFriend = async () => {
-  const email = $("friendEmail").value.trim().toLowerCase();
+  const raw = $("friendEmail").value.trim();
   const box = $("friendResult");
-  if (!email) { toast("Nhập Gmail"); return; }
+  if (!raw) { toast("Nhập Gmail hoặc UID"); return; }
   try {
-    const s = await getDocs(query(collection(db,"users"), where("emailLower","==",email), limit(1)));
-    if (s.empty) {
-      box.innerHTML = `<div class="item"><div><div class="item-name">Không tìm thấy</div><div class="item-sub">Gmail này chưa đăng ký NOVA.</div></div></div>`;
+    let d = null;
+    if (raw.includes("@")) {
+      const s = await getDocs(query(collection(db,"users"), where("emailLower","==",raw.toLowerCase()), limit(1)));
+      if (!s.empty) d = s.docs[0];
+    } else if (!raw.includes("/")) {
+      const snap = await getDoc(doc(db,"users",raw));
+      if (snap.exists()) d = snap;
+    }
+    if (!d) {
+      box.innerHTML = `<div class="item"><div><div class="item-name">Không tìm thấy</div><div class="item-sub">Gmail hoặc UID này chưa đăng ký NOVA.</div></div></div>`;
       return;
     }
-    const d = s.docs[0]; const u = { id: d.id, ...d.data() }; userCache.set(u.id, u);
+    const u = { id: d.id, ...d.data() }; userCache.set(u.id, u);
     if (u.id === me.id) { toast("Đây là tài khoản của bạn"); return; }
     let action;
     if (isFriend(u.id)) action = `<span class="muted">✓ Đã là bạn bè</span>`;
@@ -1060,7 +1071,7 @@ window.findFriend = async () => {
     else if (incoming.some(r => r.from === u.id)) action = `<span class="muted">Họ đã mời bạn — xem bên dưới</span>`;
     else action = `<button class="primary" onclick="sendFriendRequest('${u.id}')">Kết bạn</button>`;
     box.innerHTML = `<div class="item"><div class="item-left">${avatarHTML(u)}
-      <div><div class="item-name" data-uid="${escapeHTML(u.id)}">${escapeHTML(u.name)}</div><div class="item-sub">${escapeHTML(u.email)}</div></div></div>${action}</div>`;
+      <div><div class="item-name" data-uid="${escapeHTML(u.id)}">${escapeHTML(u.name)}</div><div class="item-sub">UID: ${escapeHTML(u.id)}</div></div></div>${action}</div>`;
   } catch (e) { console.error(e); toast("Tìm kiếm thất bại"); }
 };
 
@@ -1636,13 +1647,16 @@ window.markAllRead = async () => {
 
 function updateProfileView(){
   if (!me) return;
-  $("profileName").textContent = me.name; $("profileEmail").textContent = me.email;
+  $("profileName").textContent = me.name; $("profileEmail").textContent = "UID: " + me.id;
   $("avatar").innerHTML = me.avatar ? `<img src="${escapeHTML(me.avatar)}" alt="">` : escapeHTML(initial(me.name));
   $("postCount").textContent = posts.filter(p => p.userId === me.id && !p.isShared).length;
   $("friendCount").textContent = friendships.length;
   $("groupCount").textContent = chats.filter(c => c.type === "group").length;
   $("shareCount").textContent = myShares.length;
 }
+window.copyUid = async () => {
+  try { await navigator.clipboard.writeText(me.id); toast("Đã copy UID 📋"); } catch { toast("Không copy được"); }
+};
 window.changeName = async () => {
   const name = $("newName").value.trim();
   if (!name) { toast("Nhập tên mới"); return; }
@@ -1805,7 +1819,7 @@ window.openUserProfile = async uid => {
   const u = await getUser(uid);
   if (viewingUid !== uid) return;
   $("upName").textContent = u.name;
-  $("upEmail").textContent = u.email || "";
+  $("upEmail").textContent = "UID: " + uid;
   $("upAvatar").innerHTML = u.avatar ? `<img src="${escapeHTML(u.avatar)}" alt="">` : escapeHTML(initial(u.name));
   renderUPActions(uid);
   renderUserPosts(uid);
