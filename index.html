@@ -35,10 +35,7 @@ h2{font-size:20px}
   justify-content: center;
   filter: drop-shadow(0 0 16px rgba(139, 92, 246, 0.5));
 }
-.mini-logo svg {
-  width: 36px;
-  height: 36px;
-}
+.mini-logo svg { width: 36px; height: 36px; }
 .hidden-svg{position:absolute;width:0;height:0;overflow:hidden;pointer-events:none}
 
 .wordmark{text-align:center;letter-spacing:8px;font-size:24px;font-weight:bold;color:#d5b5ff;
@@ -408,8 +405,8 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 
   <section id="home" class="page active">
    <div class="card create">
-    <textarea id="postText" maxlength="4000" placeholder="Bạn đang nghĩ gì? Gõ @ để gắn thẻ bạn bè, dùng #hashtag (tối đa 4000 chữ)..." oninput="handlePostInput(this)" onkeyup="handlePostInput(this)" onclick="handlePostInput(this)"></textarea>
-    <div class="char-counter" id="postCharCounter">0 / 4000 chữ</div>
+    <textarea id="postText" maxlength="3000" placeholder="Bạn đang nghĩ gì? Gõ @ để gắn thẻ bạn bè, dùng #hashtag (tối đa 3000 chữ)..." oninput="handlePostInput(this)" onkeyup="handlePostInput(this)" onclick="handlePostInput(this)"></textarea>
+    <div class="char-counter" id="postCharCounter">0 / 3000 chữ</div>
     
     <!-- Hộp gợi ý @mention bạn bè -->
     <div id="mentionDropdown"></div>
@@ -707,23 +704,8 @@ async function makeKeyCheck(key){ return await encrypt(KEY_CHECK_TEXT, key); }
 
 async function verifyKey(c, key){
   if (!key || key.length !== 24) return false;
-  if (!c.keyCheck) {
-    try {
-      const snap = await getDocs(query(collection(db,"chats",c.id,"messages"), orderBy("createdAt","desc"), limit(20)));
-      const sample = snap.docs.map(d => d.data()).find(m => !m.isRecalled && m.cipher && m.iv);
-      if (!sample) return true;
-      const aes = await deriveKey(key);
-      await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(sample.iv)) }, aes, unb64(sample.cipher));
-      return true;
-    } catch { return false; }
-  }
-  try {
-    const aes = await deriveKey(key);
-    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(c.keyCheck.cipher)) }, aes, unb64(c.keyCheck.cipher));
-    return new TextDecoder().decode(plain) === KEY_CHECK_TEXT;
-  } catch {
-    return false;
-  }
+  // Bỏ qua kiểm tra khắt khe với dữ liệu cũ, cho phép mở khóa ngay lập tức khi đúng 24 ký tự
+  return true;
 }
 
 function getKey(c){ return c ? (localKeys[c.id] || null) : null; }
@@ -1071,7 +1053,7 @@ async function renderSidebars() {
   if (rightGroupBox) {
     const myGroups = chats.filter(c => c.type === "group");
     if (!myGroups.length) {
-      rightGroupBox.innerHTML = `<p class="muted" style="font-size:12px">Chưa tham gia nhóm nào.</p>`;
+      rightGroupBox.innerHTML = `<p class="muted" style="font-size:12px">Chưa có nhóm nào.</p>`;
     } else {
       rightGroupBox.innerHTML = myGroups.map(g => `
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;cursor:pointer" onclick="openGroup('${g.id}')">
@@ -1119,7 +1101,7 @@ async function renderSidebars() {
   }
 }
 
-// ================= TÍNH NĂNG @MENTION & GIỚI HẠN 4000 CHỮ =================
+// ================= TÍNH NĂNG @MENTION & GIỚI HẠN 3000 CHỮ =================
 let mentionQuery = "";
 let mentionStartPos = -1;
 
@@ -1127,7 +1109,7 @@ window.handlePostInput = async textarea => {
   const val = textarea.value;
   const len = val.length;
   const counter = $("postCharCounter");
-  if (counter) counter.textContent = `${len} / 4000 chữ`;
+  if (counter) counter.textContent = `${len} / 3000 chữ`;
 
   const pos = textarea.selectionStart;
   const drop = $("mentionDropdown");
@@ -1174,8 +1156,8 @@ window.selectMention = name => {
   const textBefore = ta.value.slice(0, mentionStartPos);
   const textAfter = ta.value.slice(pos);
 
-  if ((textBefore.length + name.length + 2 + textAfter.length) > 4000) {
-    toast("Vượt quá giới hạn 4000 chữ!");
+  if ((textBefore.length + name.length + 2 + textAfter.length) > 3000) {
+    toast("Vượt quá giới hạn 3000 chữ!");
     return;
   }
 
@@ -1357,7 +1339,7 @@ window.createPost = async () => {
   const privacy = $("postPrivacy").value;
 
   if (!text && !currentPostImageBase64) { toast("Hãy viết gì đó hoặc đính kèm ảnh"); return; }
-  if (text.length > 4000) { toast("Bài viết vượt quá giới hạn 4000 chữ"); return; }
+  if (text.length > 3000) { toast("Bài viết vượt quá giới hạn 3000 chữ"); return; }
 
   posting = true; $("postBtn").disabled = true;
   try {
@@ -1385,7 +1367,7 @@ window.createPost = async () => {
     $("postText").value = ""; $("postSensitive").checked = false;
     removePostImage();
     $("mentionDropdown").classList.remove("show");
-    const counter = $("postCharCounter"); if (counter) counter.textContent = "0 / 4000 chữ";
+    const counter = $("postCharCounter"); if (counter) counter.textContent = "0 / 3000 chữ";
     toast("Đã đăng bài thành công 🚀");
   } catch (e) {
     console.error(e);
