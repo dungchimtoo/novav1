@@ -115,7 +115,9 @@ h2{font-size:20px}
 .create textarea:focus{border-color:var(--purple)}
 .anonymous{color:#ad70ff;font-size:13px}
 .post-head{display:flex;justify-content:space-between;margin-bottom:6px;gap:8px}
+.user-info-area{display:flex;flex-direction:column}
 .user{color:#bd87ff;font-weight:bold}
+.user-handle{color:var(--muted);font-size:12px;margin-top:1px}
 .time{color:var(--muted);font-size:12px;text-align:right}
 .post-id{font-size:11px;color:var(--muted);margin:2px 0 10px}
 .post-text{line-height:1.6;white-space:pre-wrap;word-break:break-word}
@@ -133,6 +135,20 @@ h2{font-size:20px}
 .comment-box button{background:#7628e8;color:#fff;border:0;border-radius:9px;padding:0 13px}
 .privacy-badge{font-size:11px;padding:2px 6px;border-radius:6px;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);margin-left:6px}
 .anon-tag{font-size:11px;padding:2px 6px;border-radius:6px;background:#9b4dff22;border:1px solid #9b4dff66;color:#c994ff;margin-left:6px;font-weight:normal}
+
+/* FLOATING CHAT BOX (Cửa sổ chat nhỏ góc phải) */
+#floatingChat {
+  position: fixed; bottom: 0; right: 20px; width: 320px; background: var(--card-bg);
+  border: 1px solid var(--border); border-top-left-radius: 14px; border-top-right-radius: 14px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.4); z-index: 200; display: none; flex-direction: column; overflow: hidden;
+}
+#floatingChat.show { display: flex; }
+.float-head { background: var(--input-bg); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+.float-title { font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.float-body { height: 260px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
+.float-input { display: flex; padding: 8px; background: var(--card-bg); border-top: 1px solid var(--border); gap: 6px; }
+.float-input input { flex: 1; background: var(--input-bg); border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 8px; outline: none; font-size: 13px; }
+.float-input button { background: var(--purple); color: #fff; border: 0; padding: 0 12px; border-radius: 8px; font-weight: bold; }
 
 /* LISTS */
 .item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--input-bg);
@@ -354,15 +370,21 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
  </div>
 </header>
 
-<!-- Khung Layout 3 Cột Tổng Thể -->
+<!-- Khung Layout 3 Cột Tổng Thể (Đã đảo vị trí: Trái = Gợi ý, Phải = Bạn bè trực tuyến) -->
 <div class="nova-layout">
 
- <!-- Cột Trái: Bạn bè trực tuyến -->
+ <!-- Cột Trái: Gợi ý kết bạn & Nhóm của bạn -->
  <aside class="left-sidebar">
   <div class="card">
-   <h3>👥 Bạn bè trực tuyến</h3>
-   <div id="onlineFriendsList" style="margin-top:10px">
-    <p class="muted" style="font-size:13px">Đang cập nhật...</p>
+   <h3>✨ Gợi ý kết bạn</h3>
+   <div id="rightFriendSuggestions" style="margin-top:10px">
+    <p class="muted" style="font-size:13px">Đang tải...</p>
+   </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+   <h3>❖ Nhóm của bạn</h3>
+   <div id="rightGroupList" style="margin-top:10px">
+    <p class="muted" style="font-size:13px">Chưa có nhóm nào.</p>
    </div>
   </div>
  </aside>
@@ -547,24 +569,33 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 
  </main>
 
- <!-- Cột Phải: Gợi ý kết bạn & Nhóm của bạn -->
+ <!-- Cột Phải: Bạn bè trực tuyến (Chỉ hiện khi thực sự online trong vòng 5 phút) -->
  <aside class="right-sidebar">
   <div class="card">
-   <h3>✨ Gợi ý kết bạn</h3>
-   <div id="rightFriendSuggestions" style="margin-top:10px">
-    <p class="muted" style="font-size:13px">Đang tải...</p>
-   </div>
-  </div>
-  <div class="card" style="margin-top:14px">
-   <h3>❖ Nhóm của bạn</h3>
-   <div id="rightGroupList" style="margin-top:10px">
-    <p class="muted" style="font-size:13px">Chưa có nhóm nào.</p>
+   <h3>👥 Bạn bè trực tuyến</h3>
+   <div id="onlineFriendsList" style="margin-top:10px">
+    <p class="muted" style="font-size:13px">Đang cập nhật...</p>
    </div>
   </div>
  </aside>
 
 </div>
 </section>
+
+<!-- Cửa sổ Chat nhỏ dạng Floating (Nổi góc dưới bên phải) -->
+<div id="floatingChat">
+  <div class="float-head">
+    <div class="float-title" id="floatTitle">💬 Tin nhắn</div>
+    <button class="danger-btn" style="padding:2px 8px;font-size:11px" onclick="closeFloatingChat()">✕</button>
+  </div>
+  <div class="float-body" id="floatMessages">
+    <div class="empty" style="font-size:12px">Đang tải cuộc trò chuyện...</div>
+  </div>
+  <div class="float-input">
+    <input id="floatMsgInput" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter')sendFloatMessage()">
+    <button onclick="sendFloatMessage()">Gửi</button>
+  </div>
+</div>
 
 <nav class="bottom-nav">
  <button class="nav-btn active" data-page="home" onclick="showPage('home')"><span class="nav-icon">⌂</span>Feed</button>
@@ -629,6 +660,10 @@ let viewingUid = null, prevPage = "home", shareTarget = null;
 let currentPostImageBase64 = null;
 let posting = false;
 
+// Biến lưu trạng thái cửa sổ chat nổi (floating chat)
+let activeFloatChatId = null;
+let floatMsgUnsub = null;
+
 const userCache = new Map();
 const decCache = new Map();
 const openComments = new Set();
@@ -666,7 +701,7 @@ async function verifyKey(c, key){
   }
   try {
     const aes = await deriveKey(key);
-    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(c.keyCheck.iv)) }, aes, unb64(c.keyCheck.cipher));
+    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(c.keyCheck.cipher)) }, aes, unb64(c.keyCheck.cipher));
     return new TextDecoder().decode(plain) === KEY_CHECK_TEXT;
   } catch {
     return false;
@@ -874,15 +909,15 @@ async function ensureUserDoc(user){
   const email = (user.email || "").trim().toLowerCase();
   if (!snap.exists()) {
     const name = user.displayName || email.split("@")[0] || "Nova";
-    await setDoc(ref, { name, nameLower: name.toLowerCase(), email, emailLower: email, createdAt: serverTimestamp() });
+    await setDoc(ref, { name, nameLower: name.toLowerCase(), email, emailLower: email, createdAt: serverTimestamp(), lastSeen: serverTimestamp() });
     return { name, email, emailLower: email };
   }
   const data = snap.data();
-  const patch = {};
+  const patch = { lastSeen: serverTimestamp() };
   if (email && data.email !== email) patch.email = email;
   if (email && data.emailLower !== email) patch.emailLower = email;
   if (data.name && !data.nameLower) patch.nameLower = String(data.name).toLowerCase();
-  if (Object.keys(patch).length) await setDoc(ref, patch, { merge: true });
+  await setDoc(ref, patch, { merge: true });
   return { ...data, ...patch };
 }
 
@@ -901,6 +936,14 @@ onAuthStateChanged(auth, async user => {
       startListeners();
       showPage("home");
       renderSidebars();
+      
+      // Định kỳ cập nhật trạng thái hoạt động (lastSeen) mỗi phút
+      setInterval(async () => {
+        if (me) {
+          try { await updateDoc(doc(db, "users", me.id), { lastSeen: serverTimestamp() }); } catch {}
+        }
+      }, 60000);
+
     } catch (e) {
       console.error(e);
       toast("Không truy cập được Firestore — kiểm tra Rules");
@@ -971,27 +1014,11 @@ function startListeners(){
   });
 }
 
-// Render dữ liệu cho 2 cột hai bên
+// Render dữ liệu 2 cột (Trái = Gợi ý kết bạn, Phải = Bạn bè trực tuyến chỉ hiển thị khi thực sự đang online)
 async function renderSidebars() {
   if (!me) return;
-  const onlineBox = $("onlineFriendsList");
-  if (onlineBox) {
-    if (!friendships.length) {
-      onlineBox.innerHTML = `<p class="muted" style="font-size:12px">Chưa có bạn bè nào.</p>`;
-    } else {
-      const friends = await Promise.all(friendships.map(f => getUser(f.members.find(m => m !== me.id))));
-      onlineBox.innerHTML = friends.map(u => `
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:4px 0;cursor:pointer" onclick="openPrivateChat('${u.id}')">
-          <div style="display:flex;align-items:center;gap:8px;overflow:hidden">
-            ${avatarHTML(u, "mini-avatar sm")}
-            <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHTML(u.name)}</span>
-          </div>
-          <span style="width:8px;height:8px;background:#22c55e;border-radius:50%;flex-shrink:0" title="Trực tuyến"></span>
-        </div>
-      `).join("");
-    }
-  }
-
+  
+  // Cột Trái: Gợi ý kết bạn & Nhóm
   const rightFriendBox = $("rightFriendSuggestions");
   if (rightFriendBox) {
     try {
@@ -1032,7 +1059,114 @@ async function renderSidebars() {
       `).join("");
     }
   }
+
+  // Cột Phải: Bạn bè trực tuyến (Chỉ hiển thị online nếu hoạt động trong vòng 5 phút)
+  const onlineBox = $("onlineFriendsList");
+  if (onlineBox) {
+    if (!friendships.length) {
+      onlineBox.innerHTML = `<p class="muted" style="font-size:12px">Chưa có bạn bè nào.</p>`;
+    } else {
+      const friends = await Promise.all(friendships.map(async f => {
+        const fid = f.members.find(m => m !== me.id);
+        return await getUser(fid);
+      }));
+      
+      const now = Date.now();
+      // Lọc bạn bè hoạt động trong vòng 5 phút (300000 ms)
+      const onlineFriends = friends.filter(u => {
+        if (!u.lastSeen) return false;
+        const lastTime = toDate(u.lastSeen).getTime();
+        return (now - lastTime) < 300000;
+      });
+
+      if (!onlineFriends.length) {
+        onlineBox.innerHTML = `<p class="muted" style="font-size:12px">Không có bạn bè trực tuyến.</p>`;
+      } else {
+        onlineBox.innerHTML = onlineFriends.map(u => `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:4px 0;cursor:pointer" onclick="openFloatingChat('${u.id}','${escapeHTML(u.name)}')">
+            <div style="display:flex;align-items:center;gap:8px;overflow:hidden">
+              ${avatarHTML(u, "mini-avatar sm")}
+              <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHTML(u.name)}</span>
+            </div>
+            <span style="width:8px;height:8px;background:#22c55e;border-radius:50%;flex-shrink:0" title="Trực tuyến"></span>
+          </div>
+        `).join("");
+      }
+    }
+  }
 }
+
+// ================= HÀM QUẢN LÝ CỬA SỔ CHAT NỔI (FLOATING CHAT) =================
+window.openFloatingChat = async (friendId, friendName) => {
+  const id = "private_" + pairId(me.id, friendId);
+  activeFloatChatId = id;
+  $("floatTitleinnerHTML") = `💬 ${friendName}`;
+  $("floatingChat").classList.add("show");
+  
+  // Kiểm tra hoặc tạo phòng chat nếu chưa có
+  try {
+    const ref = doc(db, "chats", id);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      const key = generateChatKey();
+      await setDoc(ref, { type: "private", members: [me.id, friendId].sort(), owner: "", keyCheck: await makeKeyCheck(key), createdAt: serverTimestamp(), lastAt: serverTimestamp() });
+      saveKey(id, key);
+    }
+  } catch (e) { console.error(e); }
+
+  attachFloatMessages(id);
+};
+
+window.closeFloatingChat = () => {
+  $("floatingChat").classList.remove("show");
+  activeFloatChatId = null;
+  if (floatMsgUnsub) { floatMsgUnsub(); floatMsgUnsub = null; }
+};
+
+function attachFloatMessages(chatId) {
+  if (floatMsgUnsub) { floatMsgUnsub(); floatMsgUnsub = null; }
+  const box = $("floatMessages");
+  const c = chats.find(x => x.id === chatId) || { id: chatId };
+  const key = getKey(c);
+
+  if (!key) {
+    box.innerHTML = `<div style="padding:15px;text-align:center;font-size:12px">🔒 Cuộc trò chuyện này chưa có mã khóa trên máy bạn.<br>Hãy vào mục <b>Chat</b> lớn để nhập mã bảo mật một lần.</div>`;
+    return;
+  }
+
+  floatMsgUnsub = onSnapshot(query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"), limit(100)), async s => {
+    const docs = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (!docs.length) {
+      box.innerHTML = `<div class="empty" style="font-size:12px">Chưa có tin nhắn. Gửi lời chào nào!</div>`;
+      return;
+    }
+    const texts = await Promise.all(docs.map(m => decrypt(m, key)));
+    box.innerHTML = docs.map((m, i) => {
+      const mine = m.sender === me.id;
+      return `<div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'};margin-bottom:6px">
+        <div style="background:${mine ? 'var(--bubble-me)' : 'var(--input-bg)'};color:${mine ? '#fff' : 'var(--text)'};padding:7px 10px;border-radius:12px;font-size:13px;max-width:85%;word-break:break-word">${escapeHTML(texts[i])}</div>
+      </div>`;
+    }).join("");
+    const win = $("floatMessages");
+    win.scrollTop = win.scrollHeight;
+  });
+}
+
+window.sendFloatMessage = async () => {
+  if (!activeFloatChatId) return;
+  const input = $("floatMsgInput");
+  const text = input.value.trim();
+  if (!text) return;
+  const c = chats.find(x => x.id === activeFloatChatId);
+  const key = getKey(c);
+  if (!key) { toast("Chưa nhập mã bảo mật cho chat này"); return; }
+  input.value = "";
+  try {
+    const enc = await encrypt(text, key);
+    await addDoc(collection(db, "chats", activeFloatChatId, "messages"), { sender: me.id, cipher: enc.cipher, iv: enc.iv, reactions: {}, isRecalled: false, createdAt: serverTimestamp() });
+    await updateDoc(doc(db, "chats", activeFloatChatId), { lastAt: serverTimestamp() });
+  } catch (e) { console.error(e); toast("Gửi thất bại"); }
+};
 
 window.showPage = page => {
   const changed = currentPage !== page;
@@ -1121,6 +1255,7 @@ window.createPost = async () => {
       postCode: genPostCode(),
       userId: me.id,
       authorName: me.name,
+      authorHandle: me.handle || "user",
       text: text,
       hashtags: hashtags,
       isAnonymous: isAnonymous,
@@ -1204,7 +1339,10 @@ function postHTML(p, withActions = true, ctx = "feed"){
   const privacy = p.privacy || "PUBLIC";
 
   let displayName = isAnon ? "◉ Anonymous" : escapeHTML(p.authorName || "Người dùng NOVA");
-  if (mine) displayName += isAnon ? " (bạn)" : " (chính bạn)";
+  let displayHandle = isAnon ? "@anonymous" : "@" + escapeHTML(p.authorHandle || "user");
+  if (mine) {
+    displayName += isAnon ? " (bạn)" : " (chính bạn)";
+  }
   const anonTag = (mine && isAnon) ? `<span class="anon-tag">[Ẩn danh]</span>` : "";
 
   const privacyMap = { PUBLIC: "🌐 Công khai", FRIENDS: "👥 Bạn bè", ONLY_ME: "🔒 Chỉ mình tôi" };
@@ -1217,7 +1355,10 @@ function postHTML(p, withActions = true, ctx = "feed"){
 
   let html = `<div class="card">
     <div class="post-head">
-      <span class="user" ${(!isAnon && p.userId) ? `data-uid="${escapeHTML(p.userId)}"` : ""}>${displayName}${anonTag}</span>
+      <div class="user-info-area">
+        <span class="user" ${(!isAnon && p.userId) ? `data-uid="${escapeHTML(p.userId)}"` : ""}>${displayName}${anonTag}</span>
+        <span class="user-handle">${displayHandle}</span>
+      </div>
       <span class="time">${ago(ts)} <span class="privacy-badge">${privacyLabel}</span></span>
     </div>
     <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
@@ -1982,7 +2123,7 @@ window.changeName = async () => {
   try {
     await updateProfile(auth.currentUser, { displayName: name });
     await updateDoc(doc(db,"users",me.id), { name, nameLower: name.toLowerCase() });
-    me.name = name; userCache.delete(me.id); updateProfileView(); toast("Đã đổi tên ✓");
+    me.name = name; userCache.delete(me.id); updateProfileView(); toast("Đổi tên thành công ✓");
   } catch (e) { console.error(e); toast("Đổi tên thất bại"); }
 };
 
