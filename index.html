@@ -797,7 +797,6 @@ document.addEventListener("click", e => {
     searchEverything();
   }
 
-  // Bấm vào @mention để tìm bài viết hoặc mở trang cá nhân nếu khớp
   const mentionEl = e.target.closest(".mention-tag");
   if (mentionEl) {
     e.stopPropagation();
@@ -1130,7 +1129,7 @@ window.handlePostInput = async textarea => {
   const drop = $("mentionDropdown");
 
   const textBeforeCursor = val.slice(0, pos);
-  const match = textBeforeCursor.match(/@([^@\s]*)$/);
+  const match = textBeforeCursor.match(/@([^@\n]*)$/);
 
   if (match) {
     mentionQuery = match[1].toLowerCase();
@@ -1191,9 +1190,9 @@ window.openFloatingChat = async (friendId, friendName) => {
     if (!snap.exists()) {
       const key = generateChatKey();
       await setDoc(ref, { type: "private", members: [me.id, friendId].sort(), owner: "", keyCheck: await makeKeyCheck(key), createdAt: serverTimestamp(), lastAt: serverTimestamp() });
+      localStorage.setItem("nova_auto_key_" + id, key);
       saveKey(id, key);
     } else {
-      // Tự động khôi phục / tạo sẵn key mặc định ẩn nếu bạn bè đã kết bạn để không bị lỗi khóa
       if (!getKey({ id })) {
         let existingKey = localStorage.getItem("nova_auto_key_" + id);
         if (!existingKey) {
@@ -1221,8 +1220,13 @@ function attachFloatMessages(chatId) {
   let key = getKey(c);
 
   if (!key) {
-    key = generateChatKey();
-    saveKey(chatId, key);
+    let existingKey = localStorage.getItem("nova_auto_key_" + chatId);
+    if (!existingKey) {
+      existingKey = generateChatKey();
+      localStorage.setItem("nova_auto_key_" + chatId, existingKey);
+    }
+    saveKey(chatId, existingKey);
+    key = existingKey;
   }
 
   floatMsgUnsub = onSnapshot(query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"), limit(100)), async s => {
@@ -1329,11 +1333,11 @@ function extractHashtags(text) {
   return matches ? [...new Set(matches.map(tag => tag.toLowerCase()))] : [];
 }
 
-// Format hiển thị @mention thành dạng thẻ bấm được để tìm kiếm/xem bài viết
+// Bắt chính xác tên có dấu hoặc khoảng trắng cho @mention
 function formatPostText(text) {
   const safe = escapeHTML(text);
   let formatted = safe.replace(/#[a-zA-Z0-9_À-ỹ]+/g, match => `<span class="hashtag" data-tag="${match}">${match}</span>`);
-  formatted = formatted.replace(/@([a-zA-Z0-9_À-ỹ\s]+)(?=\s|$|[.,!?-])/g, (match, name) => `<span class="mention-tag" data-name="${name.trim()}">${match}</span>`);
+  formatted = formatted.replace(/@([a-zA-Z0-9_À-ỹ]+(?:\s+[a-zA-Z0-9_À-ỹ]+)*)/g, (match, name) => `<span class="mention-tag" data-name="${name.trim()}">${match}</span>`);
   return formatted;
 }
 
@@ -2210,7 +2214,7 @@ function renderNotifications(){
 }
 window.markAllRead = async () => {
   const unread = notifs.filter(n => !n.read); if (!unread.length) return;
-  try { const b = writeBatch(db); unread.forEach(n => b.update(doc(db,"notifications",n.id), { read: true })); await b.commit(); } catch { toast("Lỗi"); }
+  try { const b = writeBatch(db); unread.forEach(n => b.update(doc(doc(db,"notifications",n.id), { read: true })); await b.commit(); } catch { toast("Lỗi"); }
 };
 
 function updateProfileView(){
