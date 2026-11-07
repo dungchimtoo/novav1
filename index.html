@@ -570,6 +570,15 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
     <div class="setting"><span>🌌 Giao diện</span><button class="secondary" onclick="toggleTheme()" id="themeBtn">Chuyển Sáng</button></div>
     <div class="setting"><span>🔐 Tin nhắn mã hóa</span><span style="color:#bd7fff">AES-GCM</span></div>
     <div class="setting"><span>🔑 Băm mật khẩu</span><span style="color:#bd7fff">PBKDF2-SHA256</span></div>
+    
+    <div class="setting" style="flex-direction:column;align-items:stretch;border-top:1px solid var(--border);margin-top:10px;padding-top:15px">
+     <span style="color:var(--danger);font-weight:bold">⚠️ Xóa tài khoản vĩnh viễn</span>
+     <p class="muted" style="font-size:12px;margin:4px 0 8px">Thao tác này sẽ xóa vĩnh viễn thông tin và tài khoản của bạn. Nhập mật khẩu hiện tại để xác nhận:</p>
+     <input id="delAccountPw" class="input" type="password" placeholder="Mật khẩu hiện tại để xác nhận xóa" autocomplete="current-password">
+     <div id="delAccErr" class="err"></div>
+     <button class="danger-btn" style="padding:10px;font-weight:bold;font-size:13px;width:100%" onclick="deleteMyAccount()">Xóa tài khoản của tôi</button>
+    </div>
+
     <div class="setting"><span class="danger">Đăng xuất</span><button class="secondary" onclick="logout()">Thoát</button></div>
    </div>
   </section>
@@ -654,7 +663,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import {
   getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged,
   GoogleAuthProvider, signInWithPopup, updateProfile, sendPasswordResetEmail,
-  EmailAuthProvider, reauthenticateWithCredential, updatePassword
+  EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, query, where, orderBy, limit,
@@ -759,7 +768,6 @@ async function verifyKey(c, key){
 function getKey(c){ 
   if (!c) return null;
   if (localKeys[c.id]) return localKeys[c.id];
-  // Tự động khôi phục key vĩnh viễn từ localStorage nếu chưa có trong session nhưng đã từng lưu
   const perm = localStorage.getItem("nova_key_permanent_" + c.id);
   if (perm) {
     localKeys[c.id] = perm;
@@ -910,7 +918,6 @@ window.resetPassword = async () => {
 
 window.logout = async () => { try { await signOut(auth); } catch { toast("Lỗi đăng xuất"); } };
 
-// ĐỔI MẬT KHẨU QUA MẬT KHẨU HIỆN TẠI VÀ MẬT KHẨU MỚI
 window.changePassword = async () => {
   const errBox = $("pwErr"); errBox.textContent = "";
   const user = auth.currentUser;
@@ -937,6 +944,47 @@ window.changePassword = async () => {
       ? "Mật khẩu hiện tại không đúng"
       : authErr(e.code);
   } finally { $("pwBtn").disabled = false; }
+};
+
+window.deleteMyAccount = async () => {
+  const errBox = $("delAccErr"); errBox.textContent = "";
+  const user = auth.currentUser;
+  if (!user || !me) return;
+  
+  if (!user.providerData.some(p => p.providerId === "password")) {
+    errBox.textContent = "Tính năng này chỉ áp dụng cho tài khoản đăng nhập bằng mật khẩu.";
+    return;
+  }
+  
+  const curPw = $("delAccountPw").value;
+  if (!curPw) {
+    errBox.textContent = "Vui lòng nhập mật khẩu hiện tại để xác nhận xóa tài khoản.";
+    return;
+  }
+
+  if (!confirm("Hành động này KHÔNG THỂ HOÀN TÁC! Toàn bộ tài khoản của bạn sẽ bị xóa vĩnh viễn. Bạn có chắc chắn muốn tiếp tục?")) {
+    return;
+  }
+
+  try {
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, curPw));
+    
+    // Xóa dữ liệu user trên Firestore trước khi xóa auth
+    try {
+      await deleteDoc(doc(db, "users", me.id));
+      await deleteDoc(doc(db, "passwordHashes", me.id));
+    } catch (e) {
+      console.warn("Không xóa được dữ liệu Firestore phụ", e);
+    }
+
+    await deleteUser(user);
+    toast("Tài khoản đã được xóa vĩnh viễn.");
+  } catch (e) {
+    console.error(e);
+    errBox.textContent = (e.code === "auth/invalid-credential" || e.code === "auth/wrong-password")
+      ? "Mật khẩu hiện tại không đúng"
+      : authErr(e.code);
+  }
 };
 
 window.refreshFeed = async () => {
@@ -1981,7 +2029,7 @@ window.submitDirectUnlock = async () => {
 window.lockChat = () => {
   const c = curChat(); if (!c) return;
   renderToken++;
-  forgetKey(c.id); // Xóa vĩnh viễn key lưu trong bộ nhớ và localStorage
+  forgetKey(c.id);
   const box = $("messages");
   const composer = document.querySelector("#chat .chat-input");
   if (box) box.innerHTML = "";
@@ -2413,7 +2461,7 @@ window.closeModal = () => $("modal").classList.remove("show");
 window.shareToProfile = async id => {
   closeModal();
   const sid = me.id + "_" + id;
-  if (myShares.some(s => s.id === sid)) { toast("Bạn đã chia sẻ bài này rồi"); return; }
+  if (myShares.some(s => s.id === sid)) { toast("Bạn đã chia sẻ bài viết này rồi"); return; }
   try {
     await setDoc(doc(db,"shares",sid), { userId: me.id, postId: id, isShared: true, createdAt: serverTimestamp() });
     toast("Đã chia sẻ lên trang cá nhân ↗");
