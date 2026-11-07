@@ -370,7 +370,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 <!-- ================= APP ================= -->
 <section id="app">
 <header class="topbar">
- <div class="mini-logo">
+ <div class="mini-logo" style="cursor:pointer" title="Bấm để tải lại bảng tin" onclick="refreshFeed()">
    <svg viewBox="0 0 100 100" width="34" height="34">
      <use href="#novaSvgLogo"/>
    </svg>
@@ -559,6 +559,15 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
      </div>
      <div class="muted" id="myNidLine"></div>
     </div>
+    <div class="setting" style="flex-direction:column;align-items:stretch">
+     <span>🔑 Đổi mật khẩu</span>
+     <input id="curPw" class="input" type="password" style="margin-top:8px" placeholder="Mật khẩu hiện tại" autocomplete="current-password">
+     <input id="newPw" class="input" type="password" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)" autocomplete="new-password">
+     <input id="newPw2" class="input" type="password" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" onkeydown="if(event.key==='Enter')changePassword()">
+     <div id="pwErr" class="err"></div>
+     <button class="primary" id="pwBtn" onclick="changePassword()">Đổi mật khẩu</button>
+     <div class="muted" style="margin-top:8px">Quên mật khẩu hiện tại? Đăng xuất rồi bấm "Quên mật khẩu?" ở màn hình đăng nhập để nhận email đặt lại.</div>
+    </div>
     <div class="setting"><span>🌌 Giao diện</span><button class="secondary" onclick="toggleTheme()" id="themeBtn">Chuyển Sáng</button></div>
     <div class="setting"><span>🔐 Tin nhắn mã hóa</span><span style="color:#bd7fff">AES-GCM</span></div>
     <div class="setting"><span>🔑 Băm mật khẩu</span><span style="color:#bd7fff">PBKDF2-SHA256</span></div>
@@ -614,7 +623,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 </div>
 
 <nav class="bottom-nav">
- <button class="nav-btn active" data-page="home" onclick="showPage('home')"><span class="nav-icon">⌂</span>Feed</button>
+ <button class="nav-btn active" data-page="home" onclick="refreshFeed()"><span class="nav-icon">⌂</span>Feed</button>
  <button class="nav-btn" data-page="search" onclick="showPage('search')"><span class="nav-icon">⌕</span>Search</button>
  <button class="nav-btn" data-page="friends" onclick="showPage('friends')"><span class="nav-icon">♧</span>Friends<span id="friendDot" class="dot"></span></button>
  <button class="nav-btn" data-page="chat" onclick="showPage('chat')"><span class="nav-icon">◌</span>Chat</button>
@@ -645,7 +654,8 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import {
   getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged,
-  GoogleAuthProvider, signInWithPopup, updateProfile, sendPasswordResetEmail
+  GoogleAuthProvider, signInWithPopup, updateProfile, sendPasswordResetEmail,
+  EmailAuthProvider, reauthenticateWithCredential, updatePassword
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, query, where, orderBy, limit,
@@ -885,6 +895,50 @@ window.resetPassword = async () => {
 };
 
 window.logout = async () => { try { await signOut(auth); } catch { toast("Lỗi đăng xuất"); } };
+
+// ================= ĐỔI MẬT KHẨU TRONG CÀI ĐẶT =================
+window.changePassword = async () => {
+  const errBox = $("pwErr"); errBox.textContent = "";
+  const user = auth.currentUser;
+  if (!user || !me) return;
+  if (!user.providerData.some(p => p.providerId === "password")) {
+    errBox.textContent = "Tài khoản này đăng nhập bằng Google nên không có mật khẩu NOVA để đổi.";
+    return;
+  }
+  const cur = $("curPw").value, np = $("newPw").value, np2 = $("newPw2").value;
+  if (!cur || !np || !np2) { errBox.textContent = "Nhập đầy đủ 3 ô mật khẩu"; return; }
+  if (np.length < 6) { errBox.textContent = "Mật khẩu mới tối thiểu 6 ký tự"; return; }
+  if (np !== np2) { errBox.textContent = "Mật khẩu nhập lại không khớp"; return; }
+  if (np === cur) { errBox.textContent = "Mật khẩu mới phải khác mật khẩu hiện tại"; return; }
+
+  $("pwBtn").disabled = true;
+  try {
+    // Firebase yêu cầu xác thực lại trước khi đổi mật khẩu
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, cur));
+    await updatePassword(user, np);
+    await syncPasswordHash(user.uid, np); // cập nhật hash mới lên Firestore
+    $("curPw").value = ""; $("newPw").value = ""; $("newPw2").value = "";
+    toast("Đổi mật khẩu thành công ✓");
+  } catch (e) {
+    console.error(e);
+    errBox.textContent = (e.code === "auth/invalid-credential" || e.code === "auth/wrong-password")
+      ? "Mật khẩu hiện tại không đúng"
+      : (e.code === "auth/requires-recent-login" ? "Phiên đăng nhập đã cũ, hãy đăng xuất và đăng nhập lại rồi thử lại" : authErr(e.code));
+  } finally { $("pwBtn").disabled = false; }
+};
+
+// ================= TẢI LẠI BẢNG TIN (bấm logo hoặc nút Feed) =================
+window.refreshFeed = async () => {
+  if (!me) return;
+  showPage("home");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  try {
+    const s = await getDocs(query(collection(db,"posts"), orderBy("createdAt","desc"), limit(100)));
+    posts = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderFeed(); updateProfileView();
+    toast("🔄 Đã tải bài viết mới nhất");
+  } catch (e) { console.error(e); toast("Không tải lại được bảng tin"); }
+};
 
 const NID_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 function genNid(){
