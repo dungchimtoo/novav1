@@ -359,26 +359,33 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
  <div id="registerForm" style="display:none">
   <input id="registerName" class="input" placeholder="Tên hiển thị" maxlength="30">
   <input id="registerEmail" class="input" type="email" placeholder="Gmail" autocomplete="email">
-  <input id="registerPassword" class="input" type="password" placeholder="Mật khẩu chính (tối thiểu 8 ký tự, có chữ và số)" autocomplete="new-password">
-  <input id="registerSubPin" class="input" type="password" maxlength="6" placeholder="Mật khẩu phụ (đúng 6 chữ số để khôi phục)" autocomplete="new-password">
+  <input id="registerPassword" class="input" type="password" placeholder="Mật khẩu (tối thiểu 8 ký tự, có chữ và số)" autocomplete="new-password">
   <div id="registerErr" class="err"></div>
   <button class="primary full" onclick="register()">Tạo tài khoản</button>
   <div class="switch">Đã có tài khoản? <span onclick="showLogin()">Đăng nhập</span></div>
  </div>
 
- <!-- ĐẶT LẠI MẬT KHẨU QUA MẬT KHẨU PHỤ 6 SỐ -->
+ <!-- ĐẶT LẠI MẬT KHẨU QUA EMAIL (miễn phí) -->
  <div id="resetForm" style="display:none">
-  <div style="text-align:center;font-weight:bold;margin-bottom:14px">🔑 Khôi phục mật khẩu qua PIN 6 số</div>
+  <div style="text-align:center;font-weight:bold;margin-bottom:14px">🔑 Đặt lại mật khẩu</div>
   <div id="resetStep1">
-   <p class="muted" style="margin-bottom:10px">Nhập Gmail tài khoản và mật khẩu phụ gồm 6 chữ số của bạn để tạo mật khẩu mới ngay lập tức.</p>
-   <input id="resetEmail" class="input" type="email" placeholder="Gmail" autocomplete="email">
-   <input id="resetSubPin" class="input" type="password" maxlength="6" placeholder="Mật khẩu phụ (6 chữ số)" autocomplete="current-password">
-   <input id="resetNewPw" class="input" type="password" placeholder="Mật khẩu chính mới (tối thiểu 8 ký tự)" autocomplete="new-password">
-   <input id="resetNewPw2" class="input" type="password" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" onkeydown="if(event.key==='Enter')confirmResetWithPin()">
+   <p class="muted" style="margin-bottom:10px">Nhập Gmail của tài khoản, NOVA sẽ gửi link đặt lại mật khẩu về hộp thư.</p>
+   <input id="resetEmail" class="input" type="email" placeholder="Gmail" autocomplete="email" onkeydown="if(event.key==='Enter')sendResetLink()">
    <div id="resetErr1" class="err"></div>
-   <button class="primary full" onclick="confirmResetWithPin()">Xác nhận đổi mật khẩu</button>
+   <button class="primary full" id="sendLinkBtn" onclick="sendResetLink()">Gửi link đặt lại</button>
   </div>
-  <div class="switch" style="margin-top:15px"><span onclick="cancelReset()">← Quay lại đăng nhập</span></div>
+  <div id="resetStep2" style="display:none">
+   <p class="muted" style="margin-bottom:10px">Nếu Gmail <b id="resetEmailShow"></b> có tài khoản, link đặt lại mật khẩu đã được gửi. Hãy mở email và bấm vào link (kiểm tra cả mục Spam). Link mở lại NOVA để bạn nhập mật khẩu mới.</p>
+   <button class="secondary full" id="resendLinkBtn" onclick="sendResetLink(true)">Gửi lại link</button>
+  </div>
+  <div id="resetStep3" style="display:none">
+   <p class="muted" style="margin-bottom:10px">Đặt mật khẩu mới cho <b id="resetCodeEmail"></b></p>
+   <input id="resetNewPw" class="input" type="password" placeholder="Mật khẩu mới (tối thiểu 8 ký tự, có chữ và số)" autocomplete="new-password">
+   <input id="resetNewPw2" class="input" type="password" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" onkeydown="if(event.key==='Enter')confirmResetPassword()">
+   <div id="resetErr3" class="err"></div>
+   <button class="primary full" id="confirmResetBtn" onclick="confirmResetPassword()">Đổi mật khẩu</button>
+  </div>
+  <div class="switch"><span onclick="cancelReset()">← Quay lại đăng nhập</span></div>
  </div>
 </div>
 </section>
@@ -582,6 +589,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
      <input id="newPw2" class="input" type="password" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" onkeydown="if(event.key==='Enter')changePassword()">
      <div id="pwErr" class="err"></div>
      <button class="primary" id="pwBtn" onclick="changePassword()">Đổi mật khẩu</button>
+     <div class="muted" style="margin-top:8px">Quên mật khẩu hiện tại? Đăng xuất rồi bấm "Quên mật khẩu?" ở màn hình đăng nhập để nhận email đặt lại.</div>
     </div>
     <div class="setting"><span>🌌 Giao diện</span><button class="secondary" onclick="toggleTheme()" id="themeBtn">Chuyển Sáng</button></div>
     <div class="setting"><span>🔐 Tin nhắn mã hóa</span><span style="color:#bd7fff">AES-GCM</span></div>
@@ -701,7 +709,7 @@ let currentPage = "home";
 let viewingUid = null, prevPage = "home", shareTarget = null;
 let currentPostImageBase64 = null;
 let posting = false;
-let seenTimer = null; 
+let seenTimer = null; // [SỬA] giữ timer lastSeen để không bị tạo chồng nhiều lần
 
 let activeFloatChatId = null;
 let floatMsgUnsub = null;
@@ -715,7 +723,13 @@ let localKeys = {};
 let localMessageLocks = {};
 const KEY_CHECK_TEXT = "NOVA-OK";
 
+// ================= BĂM MẬT KHẨU (PBKDF2-SHA256 + salt ngẫu nhiên) =================
+// Lưu ý: Firebase Auth đã tự băm mật khẩu ở server. Đây là lớp băm bổ sung,
+// lưu ở collection "passwordHashes/{uid}" (chỉ chủ tài khoản được đọc/ghi - xem Rules).
+// KHÔNG BAO GIỜ lưu mật khẩu gốc (plaintext).
 const PW_ITER = 210000;
+
+// ================= KIỂM TRA ĐỘ MẠNH MẬT KHẨU + KHÓA TẠM KHI ĐĂNG NHẬP SAI =================
 const COMMON_PW = ["12345678","123456789","1234567890","password","password1","matkhau123","qwerty123","11111111","00000000","iloveyou1","abc12345","admin123"];
 function pwWeakMsg(pw){
   if (pw.length < 8) return "Mật khẩu tối thiểu 8 ký tự";
@@ -738,13 +752,13 @@ async function syncPasswordHash(uid, password){
       const d = snap.data();
       if (d.salt && d.hash && d.iterations === PW_ITER) {
         const h = await pbkdf2Hash(password, unb64(d.salt));
-        if (h === d.hash) return; 
+        if (h === d.hash) return; // mật khẩu không đổi → giữ nguyên
       }
     }
     const salt = crypto.getRandomValues(new Uint8Array(16));
     const hash = await pbkdf2Hash(password, salt);
     await setDoc(ref, { hash, salt: b64(salt), algo: "PBKDF2-SHA256", iterations: PW_ITER, updatedAt: serverTimestamp() });
-  } catch (e) { console.warn("Không lưu được hash mật khẩu", e); }
+  } catch (e) { console.warn("Không lưu được hash mật khẩu (kiểm tra Rules passwordHashes)", e); }
 }
 
 function loadKeys(){
@@ -762,9 +776,10 @@ function setMessageLocked(chatId, msgId, locked){
 }
 async function makeKeyCheck(key){ return await encrypt(KEY_CHECK_TEXT, key); }
 
+// [SỬA] Trước đây luôn trả true nếu đủ 24 ký tự → nhập sai mã vẫn "mở khóa". Giờ kiểm tra thật bằng keyCheck.
 async function verifyKey(c, key){
   if (!key || key.length !== 24) return false;
-  if (!c || !c.keyCheck || !c.keyCheck.cipher || !c.keyCheck.iv) return true; 
+  if (!c || !c.keyCheck || !c.keyCheck.cipher || !c.keyCheck.iv) return true; // chat cũ chưa có keyCheck
   try {
     const plain = await decrypt({ id: "keycheck", cipher: c.keyCheck.cipher, iv: c.keyCheck.iv }, key);
     return plain === KEY_CHECK_TEXT;
@@ -802,7 +817,7 @@ function authErr(code){
     "auth/wrong-password":"Gmail hoặc mật khẩu sai",
     "auth/user-not-found":"Tài khoản không tồn tại",
     "auth/email-already-in-use":"Email đã tồn tại. Hãy đăng nhập!",
-    "auth/weak-password":"Mật khẩu quá yếu",
+    "auth/weak-password":"Mật khẩu quá yếu (tối thiểu 6 ký tự)",
     "auth/invalid-email":"Email không hợp lệ",
     "auth/too-many-requests":"Thử quá nhiều lần, hãy đợi một lát",
     "auth/network-request-failed":"Lỗi mạng, kiểm tra kết nối"
@@ -862,98 +877,108 @@ window.toggleTheme = () => {
 window.showRegister = () => { $("loginForm").style.display="none"; $("registerForm").style.display="block"; $("resetForm").style.display="none"; };
 window.showLogin = () => { $("loginForm").style.display="block"; $("registerForm").style.display="none"; $("resetForm").style.display="none"; };
 
+// ================= ĐẶT LẠI MẬT KHẨU QUA EMAIL (miễn phí, gói Spark) =================
+// Luồng: gửi link bằng Firebase Auth -> bấm link mở lại NOVA (?mode=resetPassword&oobCode=...) -> nhập mật khẩu mới trong app.
+const APP_URL = location.origin + location.pathname;
+let pendingReset = null; // { code, email }
+let resendTimer = null;
+function startResendCooldown(sec = 60){
+  const btn = $("resendLinkBtn"); let left = sec;
+  clearInterval(resendTimer); btn.disabled = true;
+  const tick = () => { btn.textContent = left > 0 ? `Gửi lại link (${left}s)` : "Gửi lại link"; if (left-- <= 0) { clearInterval(resendTimer); btn.disabled = false; } };
+  tick(); resendTimer = setInterval(tick, 1000);
+}
+function showResetStep(n){
+  $("loginForm").style.display = "none"; $("registerForm").style.display = "none"; $("resetForm").style.display = "block";
+  [1,2,3].forEach(i => $("resetStep" + i).style.display = (i === n ? "block" : "none"));
+}
 window.showReset = () => {
-  $("loginForm").style.display = "none";
-  $("registerForm").style.display = "none";
-  $("resetForm").style.display = "block";
+  showResetStep(1);
   $("resetErr1").textContent = "";
   $("resetEmail").value = $("loginEmail").value.trim();
-  $("resetSubPin").value = "";
-  $("resetNewPw").value = "";
-  $("resetNewPw2").value = "";
 };
-window.cancelReset = () => { showLogin(); };
-
-// XÁC THỰC VÀ ĐỔI MẬT KHẨU MỚI BẰNG MẬT KHẨU PHỤ 6 SỐ VÀ GMAIL
-window.confirmResetWithPin = async () => {
+window.cancelReset = () => { pendingReset = null; clearInterval(resendTimer); showLogin(); };
+window.sendResetLink = async (isResend = false) => {
   const email = $("resetEmail").value.trim().toLowerCase();
-  const subPin = $("resetSubPin").value.trim();
-  const np = $("resetNewPw").value;
-  const np2 = $("resetNewPw2").value;
-  const errBox = $("resetErr1");
-  errBox.textContent = "";
-
-  if (!email || !subPin || !np || !np2) {
-    errBox.textContent = "Vui lòng nhập đầy đủ tất cả các ô";
-    return;
-  }
-  if (subPin.length !== 6 || !/^\d{6}$/.test(subPin)) {
-    errBox.textContent = "Mật khẩu phụ phải đúng 6 chữ số";
-    return;
-  }
-  const weak = pwWeakMsg(np);
-  if (weak) {
-    errBox.textContent = weak;
-    return;
-  }
-  if (np !== np2) {
-    errBox.textContent = "Mật khẩu mới nhập lại không khớp";
-    return;
-  }
-
+  const errBox = $("resetErr1"); errBox.textContent = "";
+  if (!email) { errBox.textContent = "Nhập Gmail của tài khoản"; return; }
+  const btn = $("sendLinkBtn"); btn.disabled = true;
   try {
-    // Tìm user qua email trong Firestore để xác thực subPin
-    const userSnap = await getDocs(query(collection(db, "users"), where("emailLower", "==", email), limit(1)));
-    if (userSnap.empty) {
-      errBox.textContent = "Không tìm thấy tài khoản với Gmail này";
-      return;
-    }
-    const userDocRef = userSnap.docs[0].ref;
-    const userData = userSnap.docs[0].data();
-
-    if (userData.subPin !== subPin) {
-      errBox.textContent = "Mật khẩu phụ 6 số không chính xác";
-      return;
-    }
-
-    // Nếu chính xác, thông báo thành công và hướng dẫn đăng nhập lại hoặc lưu tạm hướng dẫn
-    toast("Xác thực PIN thành công! Do quy định của Firebase Auth, bạn cần đăng nhập vào email rồi đổi mật khẩu trong phần cài đặt, hoặc sử dụng tính năng liên kết. (Hãy đảm bảo bạn nhớ mật khẩu phụ này)");
-    showLogin();
-    $("loginEmail").value = email;
+    await sendPasswordResetEmail(auth, email, { url: APP_URL });
+    $("resetEmailShow").textContent = email;
+    showResetStep(2); startResendCooldown(60);
+    toast("Đã gửi link đặt lại mật khẩu 📧");
   } catch (e) {
     console.error(e);
-    errBox.textContent = "Có lỗi xảy ra, vui lòng thử lại";
-  }
+    // không tiết lộ email có tồn tại hay không
+    if (e.code === "auth/user-not-found") { $("resetEmailShow").textContent = email; showResetStep(2); startResendCooldown(60); }
+    else errBox.textContent = authErr(e.code);
+  } finally { btn.disabled = false; }
 };
+function showResetStep3(){
+  if (!pendingReset) return;
+  showResetStep(3);
+  $("resetCodeEmail").textContent = pendingReset.email;
+  $("resetErr3").textContent = "";
+}
+window.confirmResetPassword = async () => {
+  if (!pendingReset) return;
+  const np = $("resetNewPw").value, np2 = $("resetNewPw2").value;
+  const errBox = $("resetErr3"); errBox.textContent = "";
+  const weak = pwWeakMsg(np);
+  if (weak) { errBox.textContent = weak; return; }
+  if (np !== np2) { errBox.textContent = "Mật khẩu nhập lại không khớp"; return; }
+  const btn = $("confirmResetBtn"); btn.disabled = true;
+  try {
+    await confirmPasswordReset(auth, pendingReset.code, np);
+    const email = pendingReset.email;
+    pendingReset = null;
+    history.replaceState(null, "", APP_URL); // xóa mã khỏi thanh địa chỉ
+    $("resetNewPw").value = ""; $("resetNewPw2").value = "";
+    $("loginEmail").value = email; $("loginPassword").value = "";
+    showLogin();
+    toast("Đổi mật khẩu thành công ✓ Hãy đăng nhập bằng mật khẩu mới");
+  } catch (e) {
+    console.error(e);
+    errBox.textContent = (e.code === "auth/expired-action-code" || e.code === "auth/invalid-action-code")
+      ? "Link đã hết hạn hoặc đã được dùng. Hãy yêu cầu link mới." : authErr(e.code);
+  } finally { btn.disabled = false; }
+};
+// Mở trang từ link trong email: ?mode=resetPassword&oobCode=...
+async function handleResetLink(){
+  const q = new URLSearchParams(location.search);
+  if (q.get("mode") !== "resetPassword" || !q.get("oobCode")) return;
+  const code = q.get("oobCode");
+  try {
+    const email = await verifyPasswordResetCode(auth, code);
+    pendingReset = { code, email };
+    if (auth.currentUser) await signOut(auth); // đang đăng nhập thì đăng xuất để đặt lại
+    showResetStep3();
+  } catch (e) {
+    console.error(e);
+    history.replaceState(null, "", APP_URL);
+    toast("Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn");
+  }
+}
 
 window.register = async () => {
   const name = $("registerName").value.trim();
   const email = $("registerEmail").value.trim().toLowerCase();
   const password = $("registerPassword").value;
-  const subPin = $("registerSubPin").value.trim();
   $("registerErr").textContent = "";
-
-  if (!name || !email || !password || !subPin) { 
-    $("registerErr").textContent = "Nhập đầy đủ tất cả các thông tin kể cả mật khẩu phụ"; 
-    return; 
-  }
-  if (subPin.length !== 6 || !/^\d{6}$/.test(subPin)) {
-    $("registerErr").textContent = "Mật khẩu phụ phải gồm đúng 6 chữ số";
-    return;
-  }
+  if (!name || !email || !password) { $("registerErr").textContent = "Nhập đầy đủ thông tin"; return; }
   const weakMsg = pwWeakMsg(password);
   if (weakMsg) { $("registerErr").textContent = weakMsg; return; }
-
   try {
     const res = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(res.user, { displayName: name });
     await setDoc(doc(db,"users",res.user.uid), {
-      name, nameLower: name.toLowerCase(), email, emailLower: email, subPin, createdAt: serverTimestamp()
+      name, nameLower: name.toLowerCase(), email, emailLower: email, createdAt: serverTimestamp()
     }, { merge: true });
     userCache.delete(res.user.uid);
-    await syncPasswordHash(res.user.uid, password);
+    await syncPasswordHash(res.user.uid, password); // [THÊM] lưu hash PBKDF2 của mật khẩu lên Firestore
     if (me && me.id === res.user.uid) { me.name = name; updateProfileView(); }
-    toast("Tạo tài khoản và thiết lập mật khẩu phụ thành công 💜");
+    toast("Tạo tài khoản thành công 💜");
   } catch (err) { $("registerErr").textContent = authErr(err.code); }
 };
 
@@ -969,7 +994,7 @@ window.login = async () => {
   try {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     loginFails = 0;
-    await syncPasswordHash(cred.user.uid, password);
+    await syncPasswordHash(cred.user.uid, password); // [THÊM] tạo/cập nhật hash (tự đồng bộ sau khi đổi mật khẩu)
   }
   catch (err) {
     $("loginErr").textContent = authErr(err.code);
@@ -985,14 +1010,31 @@ window.googleLogin = async () => {
   catch (err) { if (err.code !== "auth/popup-closed-by-user") $("loginErr").textContent = "Đăng nhập Google thất bại"; }
 };
 
+// CẬP NHẬT TÍNH NĂNG QUÊN MẬT KHẨU
+window.resetPassword = async () => {
+  const email = $("loginEmail").value.trim().toLowerCase();
+  if (!email) { 
+    $("loginErr").textContent = "Vui lòng nhập Gmail ở ô trên để đổi mật khẩu!"; 
+    return; 
+  }
+  try { 
+    await sendPasswordResetEmail(auth, email); 
+    toast("Đã gửi email đặt lại mật khẩu! Vui lòng kiểm tra hộp thư 📧"); 
+  }
+  catch (err) { 
+    $("loginErr").textContent = authErr(err.code); 
+  }
+};
+
 window.logout = async () => { try { await signOut(auth); } catch { toast("Lỗi đăng xuất"); } };
 
+// ================= ĐỔI MẬT KHẨU TRONG CÀI ĐẶT =================
 window.changePassword = async () => {
   const errBox = $("pwErr"); errBox.textContent = "";
   const user = auth.currentUser;
   if (!user || !me) return;
   if (!user.providerData.some(p => p.providerId === "password")) {
-    errBox.textContent = "Tài khoản đăng nhập bằng Google không dùng mật khẩu NOVA.";
+    errBox.textContent = "Tài khoản này đăng nhập bằng Google nên không có mật khẩu NOVA để đổi.";
     return;
   }
   const cur = $("curPw").value, np = $("newPw").value, np2 = $("newPw2").value;
@@ -1000,22 +1042,25 @@ window.changePassword = async () => {
   const weakNew = pwWeakMsg(np);
   if (weakNew) { errBox.textContent = weakNew; return; }
   if (np !== np2) { errBox.textContent = "Mật khẩu nhập lại không khớp"; return; }
+  if (np === cur) { errBox.textContent = "Mật khẩu mới phải khác mật khẩu hiện tại"; return; }
 
   $("pwBtn").disabled = true;
   try {
+    // Firebase yêu cầu xác thực lại trước khi đổi mật khẩu
     await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, cur));
     await updatePassword(user, np);
-    await syncPasswordHash(user.uid, np);
+    await syncPasswordHash(user.uid, np); // cập nhật hash mới lên Firestore
     $("curPw").value = ""; $("newPw").value = ""; $("newPw2").value = "";
     toast("Đổi mật khẩu thành công ✓");
   } catch (e) {
     console.error(e);
     errBox.textContent = (e.code === "auth/invalid-credential" || e.code === "auth/wrong-password")
       ? "Mật khẩu hiện tại không đúng"
-      : authErr(e.code);
+      : (e.code === "auth/requires-recent-login" ? "Phiên đăng nhập đã cũ, hãy đăng xuất và đăng nhập lại rồi thử lại" : authErr(e.code));
   } finally { $("pwBtn").disabled = false; }
 };
 
+// ================= TẢI LẠI BẢNG TIN (bấm logo hoặc nút Feed) =================
 window.refreshFeed = async () => {
   if (!me) return;
   showPage("home");
@@ -1072,6 +1117,7 @@ async function ensureIds(uid, data){
     if (Object.keys(patch).length) await setDoc(doc(db,"users",uid), patch, { merge: true });
   } catch (e) {
     console.error(e);
+    toast("Chưa tạo được NOVA ID/@tên — cần cập nhật Firestore Rules (handles, nids)");
     return {};
   }
   return patch;
@@ -1121,7 +1167,7 @@ async function ensureUserDoc(user){
 onAuthStateChanged(auth, async user => {
   $("loading").style.display = "none";
   stopListeners();
-  clearInterval(seenTimer); 
+  clearInterval(seenTimer); // [SỬA] dọn timer cũ trước khi tạo mới / khi đăng xuất
   if (user) {
     try {
       const data = await ensureUserDoc(user);
@@ -1143,7 +1189,7 @@ onAuthStateChanged(auth, async user => {
 
     } catch (e) {
       console.error(e);
-      toast("Không truy cập được Firestore");
+      toast("Không truy cập được Firestore — kiểm tra Rules");
     }
   } else {
     me = null; currentChat = null; localKeys = {}; viewingUid = null; currentPage = "home";
@@ -1151,6 +1197,7 @@ onAuthStateChanged(auth, async user => {
     $("app").style.display = "none";
     $("auth").style.display = "flex";
     showLogin();
+    if (pendingReset) showResetStep3();
   }
 });
 
@@ -1158,7 +1205,7 @@ function listen(q, cb){
   unsubs.push(onSnapshot(q, s => {
     cb(s);
     if (currentPage === "userProfile" && viewingUid) renderUPActions(viewingUid);
-  }, err => { console.error(err); }));
+  }, err => { console.error(err); if (err.code === "permission-denied") toast("Firestore từ chối quyền — cập nhật Rules"); }));
 }
 function stopListeners(){
   unsubs.forEach(u => u()); unsubs = [];
@@ -1275,6 +1322,7 @@ async function renderSidebars() {
       if (!onlineFriends.length) {
         onlineBox.innerHTML = `<p class="muted" style="font-size:12px">Không có bạn bè trực tuyến.</p>`;
       } else {
+        // [SỬA] không nhúng tên vào onclick nữa (tên có dấu ' làm vỡ JS) — openFloatingChat tự lấy tên từ cache
         onlineBox.innerHTML = onlineFriends.map(u => `
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:4px 0;cursor:pointer" onclick="openFloatingChat('${u.id}')">
             <div style="display:flex;align-items:center;gap:8px;overflow:hidden">
@@ -1289,6 +1337,7 @@ async function renderSidebars() {
   }
 }
 
+// ================= TÍNH NĂNG @MENTION & GIỚI HẠN 3000 CHỮ =================
 let mentionQuery = "";
 let mentionStartPos = -1;
 
@@ -1319,6 +1368,7 @@ window.handlePostInput = async textarea => {
       return;
     }
 
+    // [SỬA] dùng encodeURIComponent để tên có dấu ' hoặc " không làm vỡ onclick
     drop.innerHTML = filtered.map(u => `
       <div class="mention-item" onclick="selectMention(decodeURIComponent('${encodeURIComponent(u.name || "")}'))">
         ${avatarHTML(u, "mini-avatar sm")}
@@ -1356,6 +1406,8 @@ window.selectMention = name => {
   handlePostInput(ta);
 };
 
+// ================= TỰ LẤY LẠI MÃ CHAT ĐÃ LƯU (chỉ nhận nếu khớp keyCheck) =================
+// [THÊM] tránh việc tự sinh mã ngẫu nhiên sai rồi lưu làm chat bị khóa/giải mã lỗi
 async function tryRestoreAutoKey(chatId){
   if (getKey({ id: chatId })) return true;
   const stored = localStorage.getItem("nova_auto_key_" + chatId);
@@ -1368,6 +1420,8 @@ async function tryRestoreAutoKey(chatId){
   return false;
 }
 
+// ================= CỬA SỔ CHAT NỔI (FLOATING CHAT) =================
+// [SỬA] nhận friendId, tự lấy tên (trước đây truyền tên qua onclick → lỗi khi tên có dấu ')
 window.openFloatingChat = async (friendId) => {
   const friendName = (await getUser(friendId)).name || "Bạn bè";
   const id = "private_" + pairId(me.id, friendId);
@@ -1402,8 +1456,9 @@ function attachFloatMessages(chatId) {
   const box = $("floatMessages");
   const key = getKey({ id: chatId });
 
+  // [SỬA] không tự sinh mã ngẫu nhiên nữa (mã sai → không giải mã được). Chưa có mã thì báo khóa.
   if (!key) {
-    box.innerHTML = `<div class="empty" style="font-size:12px">🔒 Cuộc trò chuyện đang khóa. Vào tab Chat và nhập mã để mở khóa.</div>`;
+    box.innerHTML = `<div class="empty" style="font-size:12px">🔒 Cuộc trò chuyện đang khóa. Vào tab Chat và nhập mã 24 ký tự để mở khóa.</div>`;
     return;
   }
 
@@ -1435,7 +1490,7 @@ window.sendFloatMessage = async () => {
   const text = input.value.trim();
   if (!text) return;
   const key = getKey({ id: activeFloatChatId });
-  if (!key) { toast("Cuộc trò chuyện đang khóa."); return; }
+  if (!key) { toast("Cuộc trò chuyện đang khóa. Hãy mở khóa ở tab Chat trước."); return; }
   input.value = "";
   try {
     const enc = await encrypt(text, key);
@@ -1456,7 +1511,7 @@ window.showPage = page => {
   if (page === "groups") { renderGroups(); renderGroupPicker(); }
   if (page === "notifications") renderNotifications();
   if (page === "profile") { updateProfileView(); renderMyPosts(); renderMyShares(); }
-  if (page === "settings") { $("newName").value = me?.name || ""; $("newHandle").value = me?.handle || ""; $("myNidLine").textContent = me?.nid ? "NOVA ID của bạn: " + me.nid : ""; }
+  if (page === "settings") { $("newName").value = me?.name || ""; $("newHandle").value = me?.handle || ""; $("myNidLine").textContent = me?.nid ? "NOVA ID của bạn: " + me.nid + " (cố định)" : ""; }
   if (page === "search") searchEverything();
   if (changed) window.scrollTo(0,0);
 };
@@ -1478,7 +1533,11 @@ window.previewPostImage = async input => {
     currentPostImageBase64 = base64;
     $("postImagePreview").src = base64;
     $("postImagePreviewContainer").style.display = "block";
-    toast("Đã đính kèm ảnh ✓");
+    toast("Đã đính kèm ảnh ✓ — đang kiểm duyệt...");
+    if (await scanImageSensitive(base64)) {
+      $("postSensitive").checked = true;
+      toast("⚠ Ảnh có thể nhạy cảm — đã tự động bật chế độ che");
+    }
   } catch (e) {
     console.error(e);
     toast("Không tải được ảnh");
@@ -1529,6 +1588,7 @@ window.createPost = async () => {
     const postData = {
       postCode: genPostCode(),
       userId: me.id,
+      // Bài ẩn danh: KHÔNG lưu tên/@tên thật vào Firestore (trước đây ai mở dev tools cũng thấy)
       authorName: isAnonymous ? "" : me.name,
       authorHandle: isAnonymous ? "" : (me.handle || "user"),
       text: text,
@@ -1581,6 +1641,34 @@ window.reportPost = async id => {
   try { await updateDoc(doc(db,"posts",id), { reports: arrayUnion(me.id) }); toast("Đã gửi báo cáo 🚩"); }
   catch (e) { console.error(e); toast("Báo cáo thất bại"); }
 };
+
+let nsfwPromise = null;
+function loadScript(src){
+  return new Promise((res, rej) => {
+    const sc = document.createElement("script"); sc.src = src; sc.onload = res;
+    sc.onerror = () => rej(new Error("load " + src)); document.head.appendChild(sc);
+  });
+}
+function getNsfwModel(){
+  if (!nsfwPromise) nsfwPromise = (async () => {
+    try {
+      await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4/dist/tf.min.js");
+      await loadScript("https://cdn.jsdelivr.net/npm/nsfwjs@4");
+      return await window.nsfwjs.load();
+    } catch (e) { console.warn("NSFW model không tải được", e); return null; }
+  })();
+  return nsfwPromise;
+}
+async function scanImageSensitive(dataUrl){
+  try {
+    const model = await Promise.race([getNsfwModel(), new Promise(r => setTimeout(() => r(null), 12000))]);
+    if (!model) return false;
+    const img = new Image(); img.src = dataUrl; await img.decode();
+    const pred = await model.classify(img);
+    const pr = Object.fromEntries(pred.map(x => [x.className, x.probability]));
+    return ((pr.Porn || 0) + (pr.Hentai || 0)) > 0.45 || (pr.Sexy || 0) > 0.6;
+  } catch (e) { console.warn(e); return false; }
+}
 
 function postHTML(p, withActions = true, ctx = "feed"){
   const mine = p.userId === me.id;
@@ -1658,11 +1746,13 @@ function renderFeed(){
   if (keep) { const el = $(keep.id); if (el) { el.value = keep.val; el.focus(); } }
 }
 
+// CẬP NHẬT TÍNH NĂNG NHẤP ĐÚP 2 LẦN VÀO FEED ĐỂ LÀM MỚI (RELOAD)
 let lastFeedClick = 0;
 document.getElementById("home").addEventListener("click", (e) => {
+  // Chỉ nhận khi nhấp vào vùng trống của Feed (tránh bấm nhầm nút, khung soạn thảo hoặc bài viết)
   if (e.target.id === "home" || e.target.id === "feed") {
     const now = Date.now();
-    if (now - lastFeedClick < 300) {
+    if (now - lastFeedClick < 300) { // Khoảng cách thời gian dưới 300ms tính là double-click
       toast("🔄 Đang làm mới bảng tin...");
       renderFeed();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1820,7 +1910,7 @@ window.acceptFriend = async id => {
       const key = generateChatKey();
       await setDoc(chatRef, { type: "private", members: [r.from, r.to].sort(), owner: "", keyCheck: await makeKeyCheck(key), createdAt: serverTimestamp(), lastAt: serverTimestamp() });
       localStorage.setItem("nova_auto_key_" + chatId, key);
-      saveKey(chatId, key);
+      saveKey(chatId, key); // [SỬA] trước đây chỉ lưu auto_key, người chấp nhận không có mã trong localKeys
     }
 
     await setDoc(doc(db,"friendships","f_" + pairId(r.from, r.to)), { members: [r.from, r.to].sort(), createdAt: serverTimestamp() });
@@ -1907,7 +1997,7 @@ window.openPrivateChat = async friendId => {
       localStorage.setItem("nova_auto_key_" + id, key);
       saveKey(id, key);
     } else {
-      await tryRestoreAutoKey(id);
+      await tryRestoreAutoKey(id); // [SỬA] chỉ dùng mã đã lưu nếu khớp keyCheck, không tự sinh mã sai
     }
     currentChat = id; attachMessages(); showPage("chat");
   } catch (e) { console.error(e); toast("Không mở được chat"); }
@@ -1915,7 +2005,7 @@ window.openPrivateChat = async friendId => {
 window.openGroup = id => { currentChat = id; attachMessages(); showPage("chat"); };
 window.openExistingChat = async id => {
   currentChat = id;
-  await tryRestoreAutoKey(id);
+  await tryRestoreAutoKey(id); // [SỬA] xác thực mã đã lưu bằng keyCheck
   attachMessages();
   renderChatTabs();
 };
@@ -2049,7 +2139,7 @@ window.lockChat = () => {
   const c = curChat(); if (!c) return;
   renderToken++;
   forgetKey(c.id);
-  localStorage.removeItem("nova_auto_key_" + c.id);
+  localStorage.removeItem("nova_auto_key_" + c.id); // [SỬA] xóa mã tự lưu, nếu không "Khóa lại" sẽ tự mở khóa lần sau
   const box = $("messages");
   const composer = document.querySelector("#chat .chat-input");
   if (box) box.innerHTML = "";
@@ -2119,7 +2209,7 @@ window.sendMessage = async () => {
   const c = curChat(); if (!c) return;
   let key = getKey(c);
   if (!key) {
-    toast("Cuộc trò chuyện đang bị khóa.");
+    toast("Cuộc trò chuyện đang bị khóa. Hãy nhập mã bảo mật để mở khóa trước.");
     return;
   }
   const input = $("messageInput"); const text = input.value.trim(); if (!text) return;
@@ -2141,7 +2231,7 @@ window.sendChatImage = async input => {
   const c = curChat(); if (!c) return;
   let key = getKey(c);
   if (!key) {
-    toast("Cuộc trò chuyện đang bị khóa.");
+    toast("Cuộc trò chuyện đang bị khóa. Hãy mở khóa trước khi gửi ảnh.");
     return;
   }
 
@@ -2178,7 +2268,7 @@ window.newChatKey = async () => {
   const c = curChat(); if (!c) return;
   const oldKey = getKey(c); if (!oldKey) { toast("Hãy mở khóa trước"); return; }
   if (c.type === "group" && c.owner !== me.id) { toast("Chỉ chủ group được đổi mã"); return; }
-  if (!confirm("Đổi mã: tin cũ được mã hóa lại. Tiếp tục?")) return;
+  if (!confirm("Đổi mã: tin cũ được mã hóa lại, người khác sẽ bị khóa cho đến khi nhập mã mới. Tiếp tục?")) return;
   const newKey = generateChatKey();
   try {
     const snap = await getDocs(query(collection(db,"chats",c.id,"messages"), orderBy("createdAt","asc"), limit(450)));
@@ -2194,8 +2284,8 @@ window.newChatKey = async () => {
     batch.update(doc(db,"chats",c.id), { keyCheck: await makeKeyCheck(newKey), key: deleteField() });
     await batch.commit();
     saveKey(c.id, newKey);
-    localStorage.setItem("nova_auto_key_" + c.id, newKey);
-    toast("Đã đổi mã 🔐");
+    localStorage.setItem("nova_auto_key_" + c.id, newKey); // [SỬA] đồng bộ mã tự lưu với mã mới
+    toast("Đã đổi mã. Gửi mã mới cho mọi người 🔐");
   } catch (e) { console.error(e); toast("Đổi mã thất bại"); }
 };
 
@@ -2217,7 +2307,7 @@ window.createGroup = async () => {
     const ref = await addDoc(collection(db,"chats"), { type: "group", name, owner: me.id, members, keyCheck: await makeKeyCheck(key), createdAt: serverTimestamp(), lastAt: serverTimestamp() });
     saveKey(ref.id, key);
     $("groupName").value = ""; document.querySelectorAll("#groupPicker input").forEach(i => i.checked = false);
-    toast("Đã tạo group 👥");
+    toast("Đã tạo group 👥 Mở chat → 🔐 Mã để lấy mã gửi thành viên");
   } catch (e) { console.error(e); toast("Tạo group thất bại"); }
 };
 
@@ -2284,7 +2374,7 @@ window.kickMember = async (gid, uid) => {
   try {
     await updateDoc(doc(db,"chats",gid), { members: arrayRemove(uid) });
     await addDoc(collection(db,"notifications"), { to: uid, type: "group_kick", text: `Bạn đã bị loại khỏi group "${g.name}".`, read: false, createdAt: serverTimestamp() });
-    toast(`Đã kick ${u.name}.`);
+    toast(`Đã kick ${u.name}. Nên bấm 🔐 Mã → Đổi mã trong group`);
   } catch (e) { console.error(e); toast("Kick thất bại"); }
 };
 
@@ -2325,7 +2415,7 @@ window.addMemberToGroup = async gid => {
     }
 
     if (!uid) {
-      toast("Không tìm thấy tài khoản NOVA này.");
+      toast("Không tìm thấy tài khoản NOVA này. Hãy kiểm tra lại Gmail hoặc tên.");
       return;
     }
     if (uid === me.id) { toast("Bạn không thể tự thêm chính mình"); return; }
@@ -2335,7 +2425,7 @@ window.addMemberToGroup = async gid => {
     await addDoc(collection(db,"notifications"), {
       to: uid,
       type: "group_add",
-      text: `${me.name} đã thêm bạn vào group "${g.name}".`,
+      text: `${me.name} đã thêm bạn vào group "${g.name}". Hãy xin mã từ chủ group để mở khóa tin nhắn.`,
       read: false,
       createdAt: serverTimestamp()
     });
@@ -2344,7 +2434,7 @@ window.addMemberToGroup = async gid => {
     toast("Đã thêm thành viên thành công ✓");
   } catch (e) {
     console.error("addMemberToGroup error:", e);
-    toast("Thêm thất bại");
+    toast("Thêm thất bại — kiểm tra lại kết nối mạng");
   }
 };
 
@@ -2353,7 +2443,7 @@ window.leaveGroup = async gid => {
   try { await updateDoc(doc(db,"chats",gid), { members: arrayRemove(me.id) }); forgetKey(gid); toast("Đã rời group"); } catch { toast("Lỗi"); }
 };
 window.deleteGroup = async gid => {
-  if (!confirm("Xóa group?")) return;
+  if (!confirm("Xóa group? Toàn bộ tin nhắn sẽ mất.")) return;
   try {
     const snap = await getDocs(collection(db,"chats",gid,"messages"));
     for (let i = 0; i < snap.docs.length; i += 400) {
@@ -2452,7 +2542,7 @@ window.changeAvatar = async input => {
     userCache.set(me.id, { ...(userCache.get(me.id) || {}), id: me.id, avatar: data });
     updateProfileView(); renderFriendList(); renderGroups(); renderSidebars();
     toast("Đã đổi ảnh đại diện ✓");
-  } catch (e) { console.error(e); toast("Đổi ảnh thất bại"); }
+  } catch (e) { console.error(e); toast("Đổi ảnh thất bại (thử ảnh JPG/PNG)"); }
 };
 window.removeAvatar = async () => {
   if (!me.avatar) { toast("Bạn chưa có ảnh đại diện"); return; }
@@ -2590,6 +2680,7 @@ function renderUPActions(uid){
     box.innerHTML = `<button class="primary" onclick="sendFriendRequest('${uid}')">＋ Kết bạn</button>`;
   }
 }
+handleResetLink();
 </script>
 </body>
 </html>
