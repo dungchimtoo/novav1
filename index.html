@@ -437,6 +437,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
   flex-direction: column;
   gap: 10px;
 }
+.name-tag{font-size:11px;padding:2px 6px;border-radius:6px;background:#22c55e22;border:1px solid #22c55e66;color:#4ade80;margin-left:6px;font-weight:normal}
 /* XEM BÀI GỐC */
 #pvModal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-start;justify-content:center;z-index:140;padding:20px;overflow-y:auto}
 #pvModal.show{display:flex}
@@ -1886,7 +1887,7 @@ function postHTML(p, withActions = true, ctx = "feed"){
   let displayName = isAnon ? "◉ Anonymous" : escapeHTML(p.authorName || "Người dùng NOVA");
   let displayHandle = isAnon ? "@anonymous" : "@" + escapeHTML(p.authorHandle || "user");
   if (mine) { displayName += isAnon ? " (bạn)" : " (chính bạn)"; }
-  const anonTag = (mine && isAnon) ? `<span class="anon-tag">[Ẩn danh]</span>` : "";
+  const anonTag = mine ? (isAnon ? `<span class="anon-tag">[Ẩn danh]</span>` : `<span class="name-tag">[Hiện tên]</span>`) : "";
 
   const privacyMap = { PUBLIC: "🌐 Công khai", FRIENDS: "👥 Bạn bè", ONLY_ME: "🔒 Chỉ mình tôi" };
   const privacyLabel = privacyMap[privacy] || "🌐 Công khai";
@@ -1963,7 +1964,7 @@ function renderCommentItem(c, postId, ctx) {
 
   return `<div class="comment-item">
     <div style="display:flex;justify-content:space-between;align-items:center">
-      <b>${cmtAuthor}${cmtAuthorTag}:</b>
+      <b>${cmtAuthor}${cmtAuthorTag}:</b>${isMine ? (isCmtAnon ? `<span class="anon-tag">[Ẩn danh]</span>` : `<span class="name-tag">[Hiện tên]</span>`) : ""}
       <span class="muted" style="font-size:11px">${ago(c.createdAt)}</span>
     </div>
     <div style="margin-top:4px">${escapeHTML(c.text)}</div>
@@ -1985,7 +1986,7 @@ function renderCommentItem(c, postId, ctx) {
       const repAuthor = isRepAnon ? "◉ Anonymous" : escapeHTML(r.authorName || "Người dùng");
       return `<div class="reply-item">
         <div style="display:flex;justify-content:space-between">
-          <b>${repAuthor}${isRepMine && isRepAnon ? " (bạn)" : ""}:</b>
+          <b>${repAuthor}${isRepMine && isRepAnon ? " (bạn)" : ""}:</b>${isRepMine ? (isRepAnon ? `<span class="anon-tag">[Ẩn danh]</span>` : `<span class="name-tag">[Hiện tên]</span>`) : ""}
           <span class="muted" style="font-size:10px">${ago(r.createdAt)}${(isRepMine || postOwner) ? ` · <span style="cursor:pointer;color:var(--danger)" onclick="deleteReply('${postId}','${c.id}','${r.id}')">🗑 Gỡ</span>` : ""}</span>
         </div>
         <div style="margin-top:2px">${escapeHTML(r.text)}</div>
@@ -2178,6 +2179,10 @@ function renderMyComments() {
 
   box.innerHTML = myCommentList.map(item => `
     <div class="shared-card clickable" style="margin-bottom: 10px;" title="Bấm để xem bài đăng gốc" onclick="openPostView('${item.post.id}')">
+      <div style="margin-bottom:6px">
+        ${(item.comment.isAnonymous ?? true) ? `<span class="anon-tag" style="margin-left:0">💬 Bình luận ẩn danh</span>` : `<span class="name-tag" style="margin-left:0">💬 Bình luận hiện tên</span>`}
+        ${(item.post.isAnonymous ?? true) ? `<span class="anon-tag">📄 Bài ẩn danh</span>` : `<span class="name-tag">📄 Bài hiện tên</span>`}
+      </div>
       <div class="muted" style="font-size:11px; margin-bottom:4px;">Đã bình luận trong bài viết của: <b>${escapeHTML(((item.post.isAnonymous ?? true) && item.post.userId !== me.id) ? "Anonymous" : item.post.authorName)}</b></div>
       <div style="font-size:13px; font-weight:500;">"${escapeHTML(item.comment.text)}"</div>
       ${(item.post.text && !isFlagged(item.post)) ? `<div class="muted" style="font-size:12px;margin-top:8px;padding:8px;border-left:2px solid var(--purple);background:var(--card-bg);border-radius:6px">📄 ${escapeHTML(item.post.text.length > 90 ? item.post.text.slice(0, 90) + "…" : item.post.text)}</div>` : ""}
@@ -3147,7 +3152,7 @@ async function renderShareList(box, shares, mine){
         else if (imgs.length >= 3) gridStyle = "grid-template-columns: repeat(2, 1fr);";
         imgHtml = sensWrap(p, `<div style="display:grid; ${gridStyle} gap:6px; margin-top:8px;">${imgs.map(imgSrc => `<div style="position:relative;overflow:hidden;border-radius:8px;max-height:200px;"><img src="${escapeHTML(imgSrc)}" alt="Ảnh" data-zoom="1" style="width:100%;height:100%;object-fit:cover;cursor:pointer"></div>`).join("")}</div>`);
       }
-      body = `<div class="muted" style="margin-top:6px">Tác giả: ${author}</div>
+      body = `<div class="muted" style="margin-top:6px">Tác giả: ${author} ${anon ? `<span class="anon-tag">Bài ẩn danh</span>` : `<span class="name-tag">Bài hiện tên</span>`}</div>
              <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
              ${p.text ? sensWrap(p, `<div class="post-text">${formatPostText(p.text)}</div>`, "txt") : ""}
              ${imgHtml}
