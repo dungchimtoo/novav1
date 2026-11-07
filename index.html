@@ -857,7 +857,7 @@ function saveKey(chatId, key){
 function forgetKey(chatId){ 
   delete localKeys[chatId]; 
   persistKeys(); 
-  // KHÔNG xóa vĩnh viễn khỏi localStorage_permanent để có thể khôi phục lại khi bấm mở khóa
+  // CHỈ xóa khỏi bộ nhớ tạm nhưng giữ lại trong localStorage_permanent để mở khóa lại vẫn đọc được
 }
 
 function isMessageLocked(chatId, msgId){ return !!localMessageLocks[chatId + ":" + msgId]; }
@@ -1269,7 +1269,7 @@ function startListeners(){
   listen(query(collection(db,"posts"), orderBy("createdAt","desc"), limit(100)), s => {
     posts = s.docs.map(d => ({ id: d.id, ...d.data() }));
     renderFeed(); updateProfileView();
-    if (currentPage === "profile") { renderMyPosts(); renderMyComments(); }
+    if (currentPage === "profile") { renderMyPosts(); renderMyShares(); renderMyComments(); }
     if (currentPage === "userProfile" && viewingUid) renderUserPosts(viewingUid);
     if (currentPage === "search") searchEverything();
   });
@@ -2012,7 +2012,6 @@ function renderMyComments() {
   `).join("");
 }
 
-// Hàm hỗ trợ chuyển về Feed và mở ngay khung bình luận của bài viết đó
 window.jumpToPostFromComment = (postId) => {
   showPage("home");
   openComments.add("feed:" + postId);
@@ -2887,7 +2886,7 @@ async function renderShareList(box, shares, mine){
     else if (unavailable) body = `<div class="muted" style="margin-top:8px">Bài viết này không khả dụng với bạn.</div>`;
     else {
       const anon = p.isAnonymous ?? true;
-      const author = anon ? (p.userId === me.id ? "◉ Anonymous (bạn)" : "◉ Anonymous") : escapeHTML(p.authorName || "Người dùng NOVA");
+      const author = anon ? (p.userId === me.id ? "◉ Anonymous (bạn)" : "◉ Anonymous") : `<span style="cursor:pointer; color:var(--purple); font-weight:bold;" data-uid="${escapeHTML(p.userId)}">${escapeHTML(p.authorName || "Người dùng NOVA")}</span>`;
       const imgs = p.images || (p.image ? [p.image] : []);
       let imgHtml = "";
       if (imgs.length > 0) {
