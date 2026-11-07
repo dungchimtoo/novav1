@@ -2141,7 +2141,11 @@ function renderMyComments() {
     <div class="shared-card clickable" style="margin-bottom: 10px;" title="Bấm để xem bài đăng gốc" onclick="openPostView('${item.post.id}')">
       <div class="muted" style="font-size:11px; margin-bottom:4px;">Đã bình luận trong bài viết của: <b>${escapeHTML(((item.post.isAnonymous ?? true) && item.post.userId !== me.id) ? "Anonymous" : item.post.authorName)}</b></div>
       <div style="font-size:13px; font-weight:500;">"${escapeHTML(item.comment.text)}"</div>
-      <div class="muted" style="font-size:10px; margin-top:6px;">${ago(item.comment.createdAt)}</div>
+      ${(item.post.text && !isFlagged(item.post)) ? `<div class="muted" style="font-size:12px;margin-top:8px;padding:8px;border-left:2px solid var(--purple);background:var(--card-bg);border-radius:6px">📄 ${escapeHTML(item.post.text.length > 90 ? item.post.text.slice(0, 90) + "…" : item.post.text)}</div>` : ""}
+      <div class="row" style="margin-top:8px">
+        <span class="muted" style="font-size:10px;">${ago(item.comment.createdAt)}</span>
+        <button class="secondary" style="padding:6px 12px;font-size:12px" onclick="event.stopPropagation();openPostView('${item.post.id}')">📄 Xem bài đăng</button>
+      </div>
     </div>
   `).join("");
 }
@@ -3092,7 +3096,8 @@ async function renderShareList(box, shares, mine){
              <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
              ${p.text ? sensWrap(p, `<div class="post-text">${formatPostText(p.text)}</div>`, "txt") : ""}
              ${imgHtml}
-             <div class="muted" style="margin-top:8px">♥ ${(p.likes || []).length} · 💬 ${(p.comments || []).length}</div>`;
+             <div class="muted" style="margin-top:8px">♥ ${(p.likes || []).length} · 💬 ${(p.comments || []).length}</div>
+             <button class="secondary" style="margin-top:10px;padding:7px 12px;font-size:13px" onclick="event.stopPropagation();openPostView('${p.id}')">📄 Xem bài đăng</button>`;
     }
     const open = p && !unavailable;
     return `<div class="shared-card ${open ? "clickable" : ""}" ${open ? `title="Bấm để xem bài đăng gốc" onclick="openPostView('${p.id}')"` : ""}>
