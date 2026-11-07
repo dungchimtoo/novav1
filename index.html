@@ -2006,7 +2006,13 @@ function renderCommentItem(c, postId, ctx) {
 
 window.toggleReplyBox = (commentId) => {
   const box = $("reply-box-" + commentId);
-  if (box) box.style.display = box.style.display === "none" ? "flex" : "none";
+  if (box) {
+    box.style.display = box.style.display === "none" ? "flex" : "none";
+    if (box.style.display === "flex") {
+      const input = box.querySelector("input");
+      if (input) input.focus();
+    }
+  }
 };
 
 window.likeComment = async (postId, commentId, ctx) => {
