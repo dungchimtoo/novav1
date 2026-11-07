@@ -255,7 +255,7 @@ h2{font-size:20px}
 .float-title { font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; }
 .float-body { height: 260px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 6px; }
 .float-input { display: flex; padding: 8px; background: var(--card-bg); border-top: 1px solid var(--border); gap: 6px; }
-.float-input input { flex: 1; background: var(--input-bg); border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 8px; outline: none; font-size: 13px; }
+.float-input input { flex: 1; background: var(--input-bg); border: 1px solid var(--border); color: var(--text); padding: 8px; border-radius: 8px; outline: none; font-size: 13px; min-width:0; }
 .float-input button { background: var(--purple); color: #fff; border: 0; padding: 0 12px; border-radius: 8px; font-weight: bold; }
 
 /* LISTS */
@@ -306,7 +306,8 @@ h2{font-size:20px}
 .msg-line .bubble-wrap{max-width:78%}
 .msg-tools{display:none;gap:4px}
 .message-wrapper:hover .msg-tools,.message-wrapper.open .msg-tools{display:flex}
-.tool-btn{background:var(--card-bg);border:1px solid var(--border);color:var(--muted);border-radius:50%;width:26px;height:26px;font-size:12px}
+@media (hover:none){.msg-tools{display:flex}}
+.tool-btn{background:var(--card-bg);border:1px solid var(--border);color:var(--muted);border-radius:50%;width:26px;height:26px;font-size:12px;flex-shrink:0}
 .msg-time{font-size:10px;color:var(--muted);margin:2px 6px 0}
 .reaction-picker{display:none;gap:6px;background:var(--card-bg);border:1px solid var(--border);padding:5px 10px;
  border-radius:20px;margin-top:4px;font-size:18px;box-shadow:0 4px 12px rgba(0,0,0,.3);z-index:10}
@@ -320,7 +321,13 @@ h2{font-size:20px}
  border-radius:12px;padding:12px;outline:none;min-width:0}
 .chat-input input:focus{border-color:var(--purple)}
 .chat-input input:disabled{opacity:.5}
-.chat-input button{background:#7b2cff;color:#fff;border:0;border-radius:12px;padding:0 18px}
+.chat-input button.send{background:#7b2cff;color:#fff;border:0;border-radius:12px;padding:0 18px}
+
+/* EMOJI PANEL */
+.emoji-panel{display:none;flex-wrap:wrap;gap:2px;padding:8px;background:var(--card-bg);border-top:1px solid var(--border);max-height:150px;overflow-y:auto}
+.emoji-panel.show{display:flex}
+.emoji-panel span{font-size:22px;padding:4px;cursor:pointer;border-radius:8px}
+.emoji-panel span:hover{background:var(--input-bg)}
 
 /* PROFILE / SETTINGS */
 .profile{text-align:center}
@@ -621,10 +628,12 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 
     <div class="chat-window" id="chatWindow"><div id="messages"></div></div>
 
+    <div id="emojiPanelMain" class="emoji-panel"></div>
     <div class="chat-input">
+     <button class="secondary" style="padding:0 10px;font-size:16px" onclick="toggleEmoji('Main')" title="Emoji">😊</button>
      <button class="secondary" style="padding:0 10px;font-size:16px" onclick="document.getElementById('chatImageFile').click()" title="Gửi ảnh">📷</button>
      <input id="messageInput" placeholder="Nhập tin nhắn..." autocomplete="off" onkeydown="if(event.key==='Enter')sendMessage()">
-     <button onclick="sendMessage()">Gửi</button>
+     <button class="send" onclick="sendMessage()">Gửi</button>
     </div>
    </div>
   </section>
@@ -782,7 +791,10 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
   <div class="float-body" id="floatMessages">
     <div class="empty" style="font-size:12px">Đang tải cuộc trò chuyện...</div>
   </div>
+  <div id="emojiPanelFloat" class="emoji-panel"></div>
   <div class="float-input">
+    <button style="background:var(--input-bg);color:var(--text);border:1px solid var(--border);padding:0 8px" onclick="document.getElementById('floatImageFile').click()" title="Gửi ảnh">📷</button>
+    <button style="background:var(--input-bg);color:var(--text);border:1px solid var(--border);padding:0 8px" onclick="toggleEmoji('Float')" title="Emoji">😊</button>
     <input id="floatMsgInput" placeholder="Nhập tin nhắn..." onkeydown="if(event.key==='Enter')sendFloatMessage()">
     <button onclick="sendFloatMessage()">Gửi</button>
   </div>
@@ -812,6 +824,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 
 <input id="avatarFile" type="file" accept="image/*" style="display:none" onchange="changeAvatar(this)">
 <input id="chatImageFile" type="file" accept="image/*" style="display:none" onchange="sendChatImage(this)">
+<input id="floatImageFile" type="file" accept="image/*" style="display:none" onchange="sendFloatImage(this)">
 <input id="postImageFile" type="file" accept="image/*" multiple style="display:none" onchange="previewPostImage(this)">
 
 <div id="toast"></div>
@@ -857,11 +870,53 @@ let seenTimer = null;
 
 let activeFloatChatId = null;
 let floatMsgUnsub = null;
+let floatDocs = [], floatTexts = [];
+const floatOpen = new Set();
 
 const userCache = new Map();
 const decCache = new Map();
 const openComments = new Set();
 const EMOJIS = ["❤️","👍","😂","😢","🔥","🎉"];
+
+/* ---- Bài chia sẻ: lưu bản sao bài gốc (kể cả bài cũ ngoài 100 bài mới nhất) ---- */
+const extraPosts = new Map();
+const findPost = id => posts.find(x => x.id === id) || extraPosts.get(id);
+function refreshShared(id){
+  if (posts.some(x => x.id === id)) return; // listener bài viết đã tự cập nhật
+  if (currentPage === "profile") renderMyShares();
+  if (currentPage === "userProfile" && viewingUid) renderUserShares(viewingUid);
+}
+
+/* ---- Kho mã cũ: để khoá/mở khoá/đặt lại mã vẫn xem lại được tin nhắn cũ ---- */
+function vaultGet(id){ try { return JSON.parse(localStorage.getItem("nova_key_vault_" + id) || "[]"); } catch { return []; } }
+function vaultAdd(id, key){
+  if (!key) return;
+  const v = vaultGet(id);
+  if (!v.includes(key)) v.push(key);
+  localStorage.setItem("nova_key_vault_" + id, JSON.stringify(v));
+}
+
+/* ---- Emoji cho ô nhập tin nhắn (chat chính + chat nhỏ) ---- */
+const EMOJI_LIST = ["😀","😁","😂","🤣","😊","😍","😘","😎","🤔","😢","😭","😡","😴","🥳","🤯","😱","👍","👎","👏","🙏","💪","🙌","👀","💜","❤️","💔","🔥","🎉","✨","💯","🚀","🌙"];
+function fmtMsg(t){
+  const s = String(t ?? "");
+  if (s && s.length <= 12 && /^(?:\p{Extended_Pictographic}|\p{Emoji_Modifier}|[\u200d\ufe0f\s])+$/u.test(s))
+    return `<span style="font-size:30px;line-height:1.2">${escapeHTML(s)}</span>`;
+  return escapeHTML(s);
+}
+function fillEmojiPanels(){
+  ["Main","Float"].forEach(k => {
+    const el = $("emojiPanel" + k);
+    if (el) el.innerHTML = EMOJI_LIST.map(e => `<span onclick="insertEmoji('${k}','${e}')">${e}</span>`).join("");
+  });
+}
+window.toggleEmoji = k => $("emojiPanel" + k).classList.toggle("show");
+window.insertEmoji = (k, e) => {
+  const inp = $(k === "Main" ? "messageInput" : "floatMsgInput");
+  const s = inp.selectionStart ?? inp.value.length, en = inp.selectionEnd ?? s;
+  inp.value = inp.value.slice(0, s) + e + inp.value.slice(en);
+  const p = s + e.length; inp.focus(); inp.setSelectionRange(p, p);
+};
 
 let localKeys = {};
 let localMessageLocks = {};
@@ -896,15 +951,18 @@ function loadKeys(){
 }
 function persistKeys(){ localStorage.setItem("nova_keys_" + me.id, JSON.stringify(localKeys)); }
 
-function saveKey(chatId, key){ 
-  localKeys[chatId] = key; 
-  persistKeys(); 
-  localStorage.setItem("nova_key_permanent_" + chatId, key); 
+function saveKey(chatId, key){
+  const prev = localKeys[chatId] || localStorage.getItem("nova_key_permanent_" + chatId);
+  if (prev && prev !== key) vaultAdd(chatId, prev); // giữ mã cũ để đọc lại tin cũ
+  localKeys[chatId] = key;
+  persistKeys();
+  localStorage.setItem("nova_key_permanent_" + chatId, key);
 }
-function forgetKey(chatId){ 
-  delete localKeys[chatId]; 
-  persistKeys(); 
-  localStorage.removeItem("nova_key_permanent_" + chatId); 
+function forgetKey(chatId){
+  delete localKeys[chatId];
+  persistKeys();
+  localStorage.removeItem("nova_key_permanent_" + chatId);
+  localStorage.removeItem("nova_key_vault_" + chatId);
 }
 
 function isMessageLocked(chatId, msgId){ return !!localMessageLocks[chatId + ":" + msgId]; }
@@ -917,14 +975,9 @@ async function makeKeyCheck(key){ return await encrypt(KEY_CHECK_TEXT, key); }
 
 function getAllKeys(c){
   if (!c) return [];
-  let keys = [];
-  const currentKey = localKeys[c.id] || localStorage.getItem("nova_key_permanent_" + c.id);
-  if (currentKey) keys.push(currentKey);
-  
-  if (c.oldKeys && Array.isArray(c.oldKeys)) {
-    c.oldKeys.forEach(k => { if (!keys.includes(k)) keys.push(k); });
-  }
-  return keys;
+  const cur = getKey(c);
+  if (!cur) return []; // đang khoá thì không giải mã (chat nhỏ cũng bị khoá theo)
+  return [...new Set([cur, ...vaultGet(c.id), ...(Array.isArray(c.oldKeys) ? c.oldKeys : [])])];
 }
 
 async function verifyKey(c, key){
@@ -1294,7 +1347,7 @@ onAuthStateChanged(auth, async user => {
     }
   } else {
     me = null; currentChat = null; localKeys = {}; viewingUid = null; currentPage = "home";
-    userCache.clear(); decCache.clear(); openComments.clear();
+    userCache.clear(); decCache.clear(); openComments.clear(); extraPosts.clear();
     $("app").style.display = "none";
     $("auth").style.display = "flex";
     showLogin();
@@ -1505,6 +1558,7 @@ window.openFloatingChat = async (friendId) => {
   const friendName = (await getUser(friendId)).name || "Bạn bè";
   const id = "private_" + pairId(me.id, friendId);
   activeFloatChatId = id;
+  floatDocs = []; floatTexts = []; floatOpen.clear();
   $("floatTitle").textContent = `💬 ${friendName}`;
   $("floatingChat").classList.add("show");
   
@@ -1523,36 +1577,61 @@ window.openFloatingChat = async (friendId) => {
 
 window.closeFloatingChat = () => {
   $("floatingChat").classList.remove("show");
-  activeFloatChatId = null;
+  $("emojiPanelFloat").classList.remove("show");
+  activeFloatChatId = null; floatDocs = []; floatTexts = []; floatOpen.clear();
   if (floatMsgUnsub) { floatMsgUnsub(); floatMsgUnsub = null; }
 };
 
 function attachFloatMessages(chatId) {
   if (floatMsgUnsub) { floatMsgUnsub(); floatMsgUnsub = null; }
-  const box = $("floatMessages");
   const chatObj = chats.find(x => x.id === chatId) || { id: chatId };
 
   floatMsgUnsub = onSnapshot(query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"), limit(100)), async s => {
-    const docs = s.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (!docs.length) {
-      box.innerHTML = `<div class="empty" style="font-size:12px">Chưa có tin nhắn. Gửi lời chào nào!</div>`;
-      return;
-    }
-    const texts = await Promise.all(docs.map(m => decrypt(m, chatObj)));
-    box.innerHTML = docs.map((m, i) => {
-      const mine = m.sender === me.id;
-      const t = texts[i];
-      const body = (t && t.startsWith("data:image/"))
-        ? `<img src="${escapeHTML(t)}" alt="Ảnh" data-zoom="1" style="max-width:100%;border-radius:8px;display:block;cursor:pointer">`
-        : escapeHTML(t);
-      return `<div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'};margin-bottom:6px">
-        <div style="background:${mine ? 'var(--bubble-me)' : 'var(--input-bg)'};color:${mine ? '#fff' : 'var(--text)'};padding:7px 10px;border-radius:12px;font-size:13px;max-width:85%;word-break:break-word">${body}</div>
-      </div>`;
-    }).join("");
-    const win = $("floatMessages");
-    win.scrollTop = win.scrollHeight;
+    floatDocs = s.docs.map(d => ({ id: d.id, ...d.data() }));
+    floatTexts = await Promise.all(floatDocs.map(m => decrypt(m, chatObj)));
+    renderFloat(true);
   }, err => { console.error(err); toast("Không tải được tin nhắn"); });
 }
+
+function renderFloat(stick){
+  const box = $("floatMessages");
+  if (!floatDocs.length) {
+    box.innerHTML = `<div class="empty" style="font-size:12px">Chưa có tin nhắn. Gửi lời chào nào!</div>`;
+    return;
+  }
+  box.innerHTML = floatDocs.map((m, i) => {
+    const mine = m.sender === me.id, t = floatTexts[i];
+    const body = (t && t.startsWith("data:image/"))
+      ? `<img src="${escapeHTML(t)}" alt="Ảnh" data-zoom="1" style="max-width:100%;border-radius:8px;display:block;cursor:pointer">`
+      : fmtMsg(t);
+    const rx = m.reactions || {}, counts = {};
+    Object.values(rx).forEach(e => counts[e] = (counts[e] || 0) + 1);
+    const chips = Object.entries(counts).map(([e, n]) =>
+      `<span class="chip ${rx[me.id] === e ? "mine" : ""}" onclick="reactFloat('${m.id}','${e}')">${e}${n > 1 ? " " + n : ""}</span>`).join("");
+    return `<div style="display:flex;flex-direction:column;align-items:${mine ? "flex-end" : "flex-start"};margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:4px;flex-direction:${mine ? "row-reverse" : "row"};max-width:100%">
+        <div style="background:${mine ? "var(--bubble-me)" : "var(--input-bg)"};color:${mine ? "#fff" : "var(--text)"};padding:7px 10px;border-radius:12px;font-size:13px;max-width:85%;word-break:break-word">${body}</div>
+        ${m.isRecalled ? "" : `<button class="tool-btn" onclick="toggleFloatPicker('${m.id}')">☺</button>`}
+      </div>
+      ${floatOpen.has(m.id) ? `<div class="reaction-picker" style="display:flex;margin-top:3px">${EMOJIS.map(e => `<span onclick="reactFloat('${m.id}','${e}')">${e}</span>`).join("")}</div>` : ""}
+      ${chips ? `<div class="reactions">${chips}</div>` : ""}
+    </div>`;
+  }).join("");
+  if (stick) box.scrollTop = box.scrollHeight;
+}
+
+window.toggleFloatPicker = id => {
+  floatOpen.has(id) ? floatOpen.delete(id) : floatOpen.add(id);
+  renderFloat(false);
+};
+
+window.reactFloat = async (msgId, emoji) => {
+  const m = floatDocs.find(x => x.id === msgId);
+  if (!m || m.isRecalled || !activeFloatChatId) return;
+  const same = m.reactions?.[me.id] === emoji;
+  try { await updateDoc(doc(db, "chats", activeFloatChatId, "messages", msgId), { [`reactions.${me.id}`]: same ? deleteField() : emoji }); }
+  catch (e) { console.error(e); toast("Lỗi reaction"); }
+};
 
 window.sendFloatMessage = async () => {
   if (!activeFloatChatId) return;
@@ -1568,6 +1647,23 @@ window.sendFloatMessage = async () => {
     await addDoc(collection(db, "chats", activeFloatChatId, "messages"), { sender: me.id, cipher: enc.cipher, iv: enc.iv, reactions: {}, isRecalled: false, createdAt: serverTimestamp() });
     await updateDoc(doc(db, "chats", activeFloatChatId), { lastAt: serverTimestamp() });
   } catch (e) { console.error(e); input.value = text; toast("Gửi thất bại"); }
+};
+
+window.sendFloatImage = async input => {
+  const file = input.files?.[0]; input.value = "";
+  if (!file) return;
+  if (!file.type.startsWith("image/")) { toast("Vui lòng chọn file ảnh hợp lệ"); return; }
+  if (!activeFloatChatId) return;
+  const chatObj = chats.find(x => x.id === activeFloatChatId) || { id: activeFloatChatId };
+  const key = getKey(chatObj);
+  if (!key) { toast("Cuộc trò chuyện đang khóa. Hãy mở khóa ở tab Chat trước."); return; }
+  toast("Đang xử lý ảnh...");
+  try {
+    const enc = await encrypt(await resizeImage(file, 640, false), key);
+    await addDoc(collection(db, "chats", activeFloatChatId, "messages"), { sender: me.id, cipher: enc.cipher, iv: enc.iv, reactions: {}, isRecalled: false, createdAt: serverTimestamp() });
+    await updateDoc(doc(db, "chats", activeFloatChatId), { lastAt: serverTimestamp() });
+    toast("Đã gửi ảnh 📷");
+  } catch (e) { console.error(e); toast("Gửi ảnh thất bại"); }
 };
 
 window.showPage = page => {
@@ -1727,10 +1823,10 @@ function sensWrap(p, inner, cls = ""){
     <div class="sens-note"><div style="font-size:22px">⚠️</div><div>Nội dung nhạy cảm</div><div style="font-size:12px;font-weight:normal">Bấm để xem</div></div></div>`;
 }
 window.reportPost = async id => {
-  const p = posts.find(x => x.id === id); if (!p) return;
+  const p = findPost(id); if (!p) return;
   if ((p.reports || []).includes(me.id)) { toast("Bạn đã báo cáo bài này rồi"); return; }
   if (!confirm("Báo cáo bài này là nội dung nhạy cảm?")) return;
-  try { await updateDoc(doc(db,"posts",id), { reports: arrayUnion(me.id) }); toast("Đã gửi báo cáo 🚩"); }
+  try { await updateDoc(doc(db,"posts",id), { reports: arrayUnion(me.id) }); toast("Đã gửi báo cáo 🚩"); refreshShared(id); }
   catch (e) { console.error(e); toast("Báo cáo thất bại"); }
 };
 
@@ -1886,7 +1982,7 @@ window.toggleReplyBox = (commentId) => {
 };
 
 window.likeComment = async (postId, commentId, ctx) => {
-  const p = posts.find(x => x.id === postId);
+  const p = findPost(postId);
   if (!p) return;
   try {
     const comments = [...(p.comments || [])];
@@ -1901,6 +1997,7 @@ window.likeComment = async (postId, commentId, ctx) => {
       targetCmt.likes.push(me.id);
     }
     await updateDoc(doc(db, "posts", postId), { comments });
+    refreshShared(postId);
   } catch (e) {
     console.error(e);
     toast("Không thực hiện được thao tác");
@@ -1930,6 +2027,7 @@ window.addComment = async (id, ctx = "feed") => {
     };
     await updateDoc(doc(db,"posts",id), { comments: arrayUnion(newComment) });
     input.value = "";
+    refreshShared(id);
   } catch (e) {
     console.error(e);
     toast("Bình luận thất bại");
@@ -1945,7 +2043,7 @@ window.sendReply = async (postId, commentId, ctx) => {
 
   const isAnonymous = anonCheckbox ? anonCheckbox.checked : true;
 
-  const p = posts.find(x => x.id === postId);
+  const p = findPost(postId);
   if (!p) return;
 
   try {
@@ -1966,6 +2064,7 @@ window.sendReply = async (postId, commentId, ctx) => {
     await updateDoc(doc(db, "posts", postId), { comments });
     input.value = "";
     toast("Đã gửi phản hồi ✓");
+    refreshShared(postId);
   } catch (e) {
     console.error(e);
     toast("Phản hồi thất bại");
@@ -2002,39 +2101,30 @@ function renderMyPosts(){
   box.innerHTML = myPostList.map(p => postHTML(p, true, "me")).join("");
 }
 
+/* Tab Bình luận: hiện lại cả bài gốc, tương tác được như bài đăng */
+const mcSeen = new Set();
 function renderMyComments() {
   const box = $("myComments");
   if (!box || !me) return;
-
-  let myCommentList = [];
-  posts.forEach(p => {
-    if (p.comments && Array.isArray(p.comments)) {
-      p.comments.forEach(c => {
-        if (c.userId === me.id) {
-          myCommentList.push({ post: p, comment: c });
-        }
-      });
-    }
-  });
-
-  if (!myCommentList.length) {
+  const list = posts.filter(p => canViewPost(p) && (p.comments || []).some(c => c.userId === me.id));
+  if (!list.length) {
     box.innerHTML = `<p class="muted" style="margin-top:10px">Bạn chưa có bình luận nào.</p>`;
     return;
   }
-
-  box.innerHTML = myCommentList.map(item => `
-    <div class="shared-card" style="margin-bottom: 10px;">
-      <div class="muted" style="font-size:11px; margin-bottom:4px;">Đã bình luận trong bài viết của: <b>${escapeHTML(item.post.authorName)}</b></div>
-      <div style="font-size:13px; font-weight:500;">"${escapeHTML(item.comment.text)}"</div>
-      <div class="muted" style="font-size:10px; margin-top:6px;">${ago(item.comment.createdAt)}</div>
-    </div>
-  `).join("");
+  box.innerHTML = list.map(p => {
+    const n = p.comments.filter(c => c.userId === me.id).length;
+    if (!mcSeen.has(p.id)) { mcSeen.add(p.id); openComments.add("mc:" + p.id); }
+    return `<div class="muted" style="margin:12px 0 -6px">💬 Bạn đã bình luận ${n} lần trong bài này</div>` + postHTML(p, true, "mc");
+  }).join("");
 }
 
 window.likePost = async id => {
-  const p = posts.find(x => x.id === id); if (!p) return;
+  const p = findPost(id); if (!p) return;
   const liked = (p.likes || []).includes(me.id);
-  try { await updateDoc(doc(db,"posts",id), { likes: liked ? arrayRemove(me.id) : arrayUnion(me.id) }); } catch { toast("Lỗi"); }
+  try {
+    await updateDoc(doc(db,"posts",id), { likes: liked ? arrayRemove(me.id) : arrayUnion(me.id) });
+    refreshShared(id);
+  } catch { toast("Lỗi"); }
 };
 window.toggleComments = (id, ctx = "feed") => {
   const el = $("comments-" + ctx + "-" + id); if (!el) return;
@@ -2044,7 +2134,7 @@ window.toggleComments = (id, ctx = "feed") => {
 };
 window.deletePost = async id => {
   if (!confirm("Xóa bài viết này?")) return;
-  try { await deleteDoc(doc(db,"posts",id)); toast("Đã xóa bài"); } catch { toast("Không xóa được"); }
+  try { await deleteDoc(doc(db,"posts",id)); extraPosts.delete(id); toast("Đã xóa bài"); refreshShared(id); } catch { toast("Không xóa được"); }
 };
 
 let searchTimer = null;
@@ -2304,7 +2394,7 @@ async function renderMessages(stick){
     box.innerHTML = `<div class="chat-locked-container">
       <div class="chat-locked-icon">🔐</div>
       <div class="chat-locked-title">Cuộc trò chuyện này đang bị khóa</div>
-      <div class="chat-locked-desc">Nhập mã bảo mật 24 ký tự hoặc đặt lại bằng mật khẩu tài khoản của bạn để khôi phục:</div>
+      <div class="chat-locked-desc">Nhập mã bảo mật 24 ký tự hoặc đặt lại bằng mật khẩu tài khoản của bạn để khôi phục (tin nhắn cũ sẽ được giữ lại):</div>
       <div class="chat-locked-form">
         <input id="directUnlockInput" class="input" placeholder="Nhập mã bảo mật 24 ký tự..." maxlength="24" style="margin-bottom:0">
         <button class="primary full" onclick="submitDirectUnlock()">Mở bằng mã</button>
@@ -2314,6 +2404,7 @@ async function renderMessages(stick){
       </div>
     </div>`;
     if (composer) composer.style.display = "none";
+    $("emojiPanelMain").classList.remove("show");
     $("chatKey").textContent = "🔒 Chưa mở khóa";
     $("keyActions").style.display = "none";
     return;
@@ -2359,7 +2450,7 @@ async function renderMessages(stick){
       if (plainText && plainText.startsWith("data:image/")) {
         contentHtml = `<img src="${escapeHTML(plainText)}" alt="Ảnh chat" data-zoom="1" style="max-width:100%;max-height:250px;border-radius:10px;display:block;cursor:pointer;">`;
       } else {
-        contentHtml = escapeHTML(plainText);
+        contentHtml = fmtMsg(plainText);
       }
     }
 
@@ -2407,15 +2498,22 @@ window.resetChatKeyWithPassword = async () => {
   const user = auth.currentUser;
   if (!user || !user.email) { toast("Lỗi xác thực người dùng"); return; }
 
+  // Gom các mã cũ để vẫn đọc lại được tin nhắn đã gửi trước đó
+  const prevKeys = [...new Set([...(c.oldKeys || []), ...vaultGet(c.id)])];
+  if (!prevKeys.length && msgDocs.length &&
+      !confirm("Máy này không còn mã cũ nên tin nhắn cũ sẽ KHÔNG đọc lại được. Vẫn đặt lại mã?")) return;
+
   try {
     toast("Đang xác thực mật khẩu...");
     await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
 
     const newKey = generateChatKey();
-    await updateDoc(doc(db, "chats", c.id), { keyCheck: await makeKeyCheck(newKey) });
+    const upd = { keyCheck: await makeKeyCheck(newKey) };
+    if (prevKeys.length) upd.oldKeys = prevKeys;
+    await updateDoc(doc(db, "chats", c.id), upd);
     saveKey(c.id, newKey);
 
-    toast("Đã đặt lại mã mới thành công! Bạn có thể chat tiếp 🔓");
+    toast("Đã đặt lại mã mới, tin nhắn cũ vẫn xem được 🔓");
     renderChatTabs();
     renderMessages(true);
   } catch (e) {
@@ -2426,12 +2524,15 @@ window.resetChatKeyWithPassword = async () => {
 
 window.lockChat = () => {
   const c = curChat(); if (!c) return;
+  const k = getKey(c);
   renderToken++;
   forgetKey(c.id);
+  vaultAdd(c.id, k); // giữ mã để mở khóa xong vẫn xem lại được toàn bộ tin nhắn
   const box = $("messages");
   const composer = document.querySelector("#chat .chat-input");
   if (box) box.innerHTML = "";
   if (composer) composer.style.display = "none";
+  $("emojiPanelMain").classList.remove("show");
   $("chatKey").textContent = "🔒 Chưa mở khóa";
   $("keyActions").style.display = "none";
   toast("Đã khóa cuộc trò chuyện 🔒");
@@ -2560,7 +2661,7 @@ window.newChatKey = async () => {
   
   const newKey = generateChatKey();
   try {
-    const existingOldKeys = c.oldKeys || [];
+    const existingOldKeys = [...new Set([...(c.oldKeys || []), ...vaultGet(c.id)])];
     if (!existingOldKeys.includes(oldKey)) {
       existingOldKeys.push(oldKey);
     }
@@ -2848,7 +2949,7 @@ window.removeAvatar = async () => {
 };
 
 window.openShare = id => {
-  const p = posts.find(x => x.id === id); if (!p) return;
+  const p = findPost(id); if (!p) return;
   shareTarget = id;
   const sid = me.id + "_" + id;
   const shared = myShares.some(s => s.id === sid);
@@ -2875,40 +2976,30 @@ window.unshare = async sid => {
   catch (e) { console.error(e); toast("Lỗi"); }
 };
 window.copyPost = async () => {
-  const p = posts.find(x => x.id === shareTarget); if (!p) return;
+  const p = findPost(shareTarget); if (!p) return;
   closeModal();
   const text = `NOVA\nPost ID: ${p.postCode}\n\n${p.text || ""}`;
   if (navigator.share) { try { await navigator.share({ title: "NOVA", text }); } catch {} }
   else { try { await navigator.clipboard.writeText(text); toast("Đã copy bài viết 📋"); } catch { toast("Không copy được"); } }
 };
 
+/* Bài chia sẻ: hiển thị đầy đủ như bài đăng (like, cmt, reply, share, báo cáo) */
+const shareTok = {};
 async function renderShareList(box, shares, mine){
   if (!box) return;
   if (!shares.length) { box.innerHTML = `<p class="muted" style="margin-top:10px">Chưa chia sẻ bài viết nào.</p>`; return; }
+  const tok = shareTok[box.id] = (shareTok[box.id] || 0) + 1;
+  const ctx = mine ? "sh" : "ush";
   const snaps = await Promise.all(shares.map(s => getDoc(doc(db,"posts",s.postId)).catch(() => null)));
-  box.innerHTML = shares.map((s,i) => {
+  if (tok !== shareTok[box.id]) return;
+  box.innerHTML = shares.map((s, i) => {
     const p = snaps[i]?.exists() ? { id: snaps[i].id, ...snaps[i].data() } : null;
-    if (!p) {
-      return `<div class="shared-card">
-        <div class="row"><span class="muted">↗ Đã chia sẻ · ${ago(s.createdAt)}</span>
-          ${mine ? `<button class="danger-btn" onclick="unshare('${s.id}')">Gỡ</button>` : ""}</div>
-        <div class="muted" style="margin-top:8px">Bài viết gốc đã bị xóa.</div>
-      </div>`;
-    }
-    if (!canViewPost(p)) {
-      return `<div class="shared-card">
-        <div class="row"><span class="muted">↗ Đã chia sẻ · ${ago(s.createdAt)}</span>
-          ${mine ? `<button class="danger-btn" onclick="unshare('${s.id}')">Gỡ</button>` : ""}</div>
-        <div class="muted" style="margin-top:8px">Bài viết này không khả dụng với bạn.</div>
-      </div>`;
-    }
-    // Sử dụng chung hàm postHTML để giao diện và tính năng tương tự như Bài đăng và Bình luận
-    return `<div style="position:relative; margin-bottom:12px;">
-      <div style="display:flex; justify-content:flex-end; margin-bottom:-10px; position:relative; z-index:5; padding-right:10px;">
-        ${mine ? `<button class="danger-btn" onclick="unshare('${s.id}')">Gỡ chia sẻ</button>` : ""}
-      </div>
-      ${postHTML(p, true, mine ? "myshare" : "upshare")}
-    </div>`;
+    const head = `<div class="row" style="margin:12px 0 -6px"><span class="muted">↗ Đã chia sẻ · ${ago(s.createdAt)}</span>
+      ${mine ? `<button class="danger-btn" onclick="unshare('${s.id}')">Gỡ</button>` : ""}</div>`;
+    if (!p) return `<div class="shared-card">${head}<div class="muted" style="margin-top:8px">Bài viết gốc đã bị xóa.</div></div>`;
+    if (!canViewPost(p)) return `<div class="shared-card">${head}<div class="muted" style="margin-top:8px">Bài viết này không khả dụng với bạn.</div></div>`;
+    extraPosts.set(p.id, p);
+    return head + postHTML(p, true, ctx);
   }).join("");
 }
 
@@ -2984,6 +3075,8 @@ function renderUPActions(uid){
     box.innerHTML = `<button class="primary" onclick="sendFriendRequest('${uid}')">＋ Kết bạn</button>`;
   }
 }
+
+fillEmojiPanels();
 </script>
 </body>
 </html>
