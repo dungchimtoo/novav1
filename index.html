@@ -437,6 +437,12 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
   flex-direction: column;
   gap: 10px;
 }
+/* XEM BÀI GỐC */
+#pvModal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-start;justify-content:center;z-index:140;padding:20px;overflow-y:auto}
+#pvModal.show{display:flex}
+#pvBox{width:100%;max-width:640px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:14px;margin:auto}
+.shared-card.clickable{cursor:pointer}
+.shared-card.clickable:hover{border-color:var(--purple)}
 </style>
 </head>
 
@@ -821,6 +827,13 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
  </div>
 </div>
 
+<div id="pvModal" onclick="if(event.target===this)closePostView()">
+ <div id="pvBox">
+  <div class="row" style="margin-bottom:10px"><strong>📄 Bài đăng gốc</strong><button class="secondary" style="padding:6px 12px" onclick="closePostView()">✕ Đóng</button></div>
+  <div id="pvBody"></div>
+ </div>
+</div>
+
 <div id="lightbox" onclick="closeImage()"><img id="lightboxImg" alt=""></div>
 
 <input id="avatarFile" type="file" accept="image/*" style="display:none" onchange="changeAvatar(this)">
@@ -883,6 +896,7 @@ const EMOJIS = ["❤️","👍","😂","😢","🔥","🎉"];
 const extraPosts = new Map();
 const findPost = id => posts.find(x => x.id === id) || extraPosts.get(id);
 function refreshShared(id){
+  if (pvPostId === id) refetchPostView();
   if (posts.some(x => x.id === id)) return; // listener bài viết đã tự cập nhật
   if (currentPage === "profile") renderMyShares();
   if (currentPage === "userProfile" && viewingUid) renderUserShares(viewingUid);
@@ -1370,6 +1384,7 @@ function startListeners(){
   listen(query(collection(db,"posts"), orderBy("createdAt","desc"), limit(100)), s => {
     posts = s.docs.map(d => ({ id: d.id, ...d.data() }));
     renderFeed(); updateProfileView();
+    if (pvPostId) renderPostView();
     if (currentPage === "profile") { renderMyPosts(); renderMyComments(); renderMyShares(); }
     if (currentPage === "userProfile" && viewingUid) { renderUserPosts(viewingUid); renderUserShares(viewingUid); }
     if (currentPage === "search") searchEverything();
@@ -2123,8 +2138,8 @@ function renderMyComments() {
   }
 
   box.innerHTML = myCommentList.map(item => `
-    <div class="shared-card" style="margin-bottom: 10px;">
-      <div class="muted" style="font-size:11px; margin-bottom:4px;">Đã bình luận trong bài viết của: <b>${escapeHTML(item.post.authorName)}</b></div>
+    <div class="shared-card clickable" style="margin-bottom: 10px;" title="Bấm để xem bài đăng gốc" onclick="openPostView('${item.post.id}')">
+      <div class="muted" style="font-size:11px; margin-bottom:4px;">Đã bình luận trong bài viết của: <b>${escapeHTML(((item.post.isAnonymous ?? true) && item.post.userId !== me.id) ? "Anonymous" : item.post.authorName)}</b></div>
       <div style="font-size:13px; font-weight:500;">"${escapeHTML(item.comment.text)}"</div>
       <div class="muted" style="font-size:10px; margin-top:6px;">${ago(item.comment.createdAt)}</div>
     </div>
@@ -2681,6 +2696,36 @@ window.addOldKey = async () => {
   toast("Đã thêm mã cũ ✓ tin nhắn cũ sẽ hiện lại");
   renderMessages(true);
 };
+let pvPostId = null;
+window.openPostView = async id => {
+  pvPostId = id;
+  openComments.add("pv:" + id);
+  $("pvBody").innerHTML = `<div class="card empty">Đang tải bài đăng...</div>`;
+  $("pvModal").classList.add("show");
+  await refetchPostView();
+};
+async function refetchPostView(){
+  const id = pvPostId; if (!id) return;
+  try {
+    const sn = await getDoc(doc(db,"posts",id));
+    if (pvPostId !== id) return;
+    if (!sn.exists()) { $("pvBody").innerHTML = `<div class="card empty">Bài viết gốc đã bị xóa.</div>`; return; }
+    const p = { id: sn.id, ...sn.data() };
+    if (!canViewPost(p)) { $("pvBody").innerHTML = `<div class="card empty">Bài viết này không khả dụng với bạn.</div>`; return; }
+    extraPosts.set(id, p);
+    renderPostView();
+  } catch (e) { console.error(e); if (pvPostId === id) $("pvBody").innerHTML = `<div class="card empty">Không tải được bài viết.</div>`; }
+}
+function renderPostView(){
+  if (!pvPostId) return;
+  const p = findPost(pvPostId); if (!p) return;
+  const fid = document.activeElement?.id || "";
+  const keep = fid.startsWith("comment-input-pv-") ? { id: fid, val: document.activeElement.value } : null;
+  $("pvBody").innerHTML = postHTML(p, true, "pv");
+  if (keep) { const el = $(keep.id); if (el) { el.value = keep.val; el.focus(); } }
+}
+window.closePostView = () => { $("pvModal").classList.remove("show"); pvPostId = null; $("pvBody").innerHTML = ""; };
+
 window.toggleKeyPanel = () => $("keyPanel").classList.toggle("open");
 window.copyChatKey = async () => {
   const key = getKey(curChat()); if (!key) return;
@@ -3017,23 +3062,44 @@ window.copyPost = async () => {
   else { try { await navigator.clipboard.writeText(text); toast("Đã copy bài viết 📋"); } catch { toast("Không copy được"); } }
 };
 
-/* Bài chia sẻ: hiển thị đầy đủ như bài đăng (like, cmt, reply, share, báo cáo) */
+/* Bài chia sẻ: thẻ gọn, bấm vào để mở bài đăng gốc và tương tác */
 const shareTok = {};
 async function renderShareList(box, shares, mine){
   if (!box) return;
   if (!shares.length) { box.innerHTML = `<p class="muted" style="margin-top:10px">Chưa chia sẻ bài viết nào.</p>`; return; }
   const tok = shareTok[box.id] = (shareTok[box.id] || 0) + 1;
-  const ctx = mine ? "sh" : "ush";
   const snaps = await Promise.all(shares.map(s => getDoc(doc(db,"posts",s.postId)).catch(() => null)));
   if (tok !== shareTok[box.id]) return;
-  box.innerHTML = shares.map((s, i) => {
+  box.innerHTML = shares.map((s,i) => {
     const p = snaps[i]?.exists() ? { id: snaps[i].id, ...snaps[i].data() } : null;
-    const head = `<div class="row" style="margin:12px 0 -6px"><span class="muted">↗ Đã chia sẻ · ${ago(s.createdAt)}</span>
-      ${mine ? `<button class="danger-btn" onclick="unshare('${s.id}')">Gỡ</button>` : ""}</div>`;
-    if (!p) return `<div class="shared-card">${head}<div class="muted" style="margin-top:8px">Bài viết gốc đã bị xóa.</div></div>`;
-    if (!canViewPost(p)) return `<div class="shared-card">${head}<div class="muted" style="margin-top:8px">Bài viết này không khả dụng với bạn.</div></div>`;
-    extraPosts.set(p.id, p);
-    return head + postHTML(p, true, ctx);
+    const unavailable = p && !canViewPost(p);
+    let body;
+    if (!p) body = `<div class="muted" style="margin-top:8px">Bài viết gốc đã bị xóa.</div>`;
+    else if (unavailable) body = `<div class="muted" style="margin-top:8px">Bài viết này không khả dụng với bạn.</div>`;
+    else {
+      extraPosts.set(p.id, p);
+      const anon = p.isAnonymous ?? true;
+      const author = anon ? (p.userId === me.id ? "◉ Anonymous (bạn)" : "◉ Anonymous") : escapeHTML(p.authorName || "Người dùng NOVA");
+      const imgs = p.images || (p.image ? [p.image] : []);
+      let imgHtml = "";
+      if (imgs.length > 0) {
+        let gridStyle = "grid-template-columns: 1fr;";
+        if (imgs.length === 2) gridStyle = "grid-template-columns: 1fr 1fr;";
+        else if (imgs.length >= 3) gridStyle = "grid-template-columns: repeat(2, 1fr);";
+        imgHtml = sensWrap(p, `<div style="display:grid; ${gridStyle} gap:6px; margin-top:8px;">${imgs.map(imgSrc => `<div style="position:relative;overflow:hidden;border-radius:8px;max-height:200px;"><img src="${escapeHTML(imgSrc)}" alt="Ảnh" data-zoom="1" style="width:100%;height:100%;object-fit:cover;cursor:pointer"></div>`).join("")}</div>`);
+      }
+      body = `<div class="muted" style="margin-top:6px">Tác giả: ${author}</div>
+             <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
+             ${p.text ? sensWrap(p, `<div class="post-text">${formatPostText(p.text)}</div>`, "txt") : ""}
+             ${imgHtml}
+             <div class="muted" style="margin-top:8px">♥ ${(p.likes || []).length} · 💬 ${(p.comments || []).length}</div>`;
+    }
+    const open = p && !unavailable;
+    return `<div class="shared-card ${open ? "clickable" : ""}" ${open ? `title="Bấm để xem bài đăng gốc" onclick="openPostView('${p.id}')"` : ""}>
+      <div class="row"><span class="muted">↗ Đã chia sẻ · ${ago(s.createdAt)}</span>
+        ${mine ? `<button class="danger-btn" onclick="event.stopPropagation();unshare('${s.id}')">Gỡ</button>` : ""}</div>
+      ${body}
+    </div>`;
   }).join("");
 }
 
