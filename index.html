@@ -2186,24 +2186,92 @@ function renderMyComments() {
   }
 
   box.innerHTML = myCommentList.map(item => `
-    <div class="shared-card clickable" style="margin-bottom: 10px;" title="Bấm để xem bài đăng gốc" onclick="openPostView('${item.post.id}')">
+    <div class="shared-card" style="margin-bottom: 12px;">
       <div style="margin-bottom:6px">
         ${(item.comment.isAnonymous ?? true) ? `<span class="anon-tag" style="margin-left:0">💬 Bình luận ẩn danh</span>` : `<span class="name-tag" style="margin-left:0">💬 Bình luận hiện tên</span>`}
         ${(item.post.isAnonymous ?? true) ? `<span class="anon-tag">📄 Bài ẩn danh</span>` : `<span class="name-tag">📄 Bài hiện tên</span>`}
       </div>
       <div class="muted" style="font-size:11px; margin-bottom:4px;">Đã bình luận trong bài viết của: <b>${escapeHTML(((item.post.isAnonymous ?? true) && item.post.userId !== me.id) ? "Anonymous" : item.post.authorName)}</b></div>
-      <div style="font-size:13px; font-weight:500;">"${escapeHTML(item.comment.text)}"</div>
-      ${(item.post.text && !isFlagged(item.post)) ? `<div class="muted" style="font-size:12px;margin-top:8px;padding:8px;border-left:2px solid var(--purple);background:var(--card-bg);border-radius:6px">📄 ${escapeHTML(item.post.text.length > 90 ? item.post.text.slice(0, 90) + "…" : item.post.text)}</div>` : ""}
-      <div class="row" style="margin-top:8px">
+      
+      <!-- Nội dung bình luận của bạn -->
+      <div style="font-size:13px; font-weight:500; background:var(--input-bg); padding:8px; border-radius:8px; border:1px solid var(--border)">
+        "${escapeHTML(item.comment.text)}"
+      </div>
+
+      <!-- Các phản hồi (replies) nếu có -->
+      ${item.comment.replies && item.comment.replies.length ? `<div class="comment-replies">${item.comment.replies.map(r => {
+        const isRepAnon = r.isAnonymous ?? true;
+        const isRepMine = r.userId === me.id;
+        const repAuthor = isRepAnon ? "◉ Anonymous" : escapeHTML(r.authorName || "Người dùng");
+        return `<div class="reply-item">
+          <div style="display:flex;justify-content:space-between">
+            <b>${repAuthor}${isRepMine && isRepAnon ? " (bạn)" : ""}:</b>${isRepMine ? (isRepAnon ? `<span class="anon-tag">[Ẩn danh]</span>` : `<span class="name-tag">[Hiện tên]</span>`) : ""}
+            <span class="muted" style="font-size:10px">${ago(r.createdAt)}</span>
+          </div>
+          <div style="margin-top:2px">${escapeHTML(r.text)}</div>
+        </div>`;
+      }).join("")}</div>` : ""}
+
+      <!-- Nút mở khung trả lời nhanh -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px">
         <span class="muted" style="font-size:10px;">${ago(item.comment.createdAt)}</span>
-        <span style="display:flex;gap:6px">
-          <button class="secondary" style="padding:6px 12px;font-size:12px" onclick="event.stopPropagation();openPostView('${item.post.id}')">📄 Xem bài đăng</button>
-          <button class="danger-btn" style="padding:6px 12px;font-size:12px" onclick="event.stopPropagation();deleteComment('${item.post.id}','${item.comment.id}')">🗑 Gỡ bình luận</button>
+        <span style="display:flex;gap:8px;align-items:center">
+          <span class="muted" style="cursor:pointer;font-size:11px;color:var(--purple);font-weight:bold" onclick="toggleReplyBox('profile-${item.comment.id}')">↩ Trả lời</span>
+          <button class="secondary" style="padding:5px 10px;font-size:11px" onclick="openPostView('${item.post.id}')">📄 Xem bài gốc</button>
+          <button class="danger-btn" style="padding:5px 10px;font-size:11px" onclick="deleteComment('${item.post.id}','${item.comment.id}')">🗑 Gỡ</button>
         </span>
       </div>
+
+      <!-- Ô nhập phản hồi ẩn trong trang cá nhân -->
+      <div id="reply-box-profile-${item.comment.id}" class="comment-input-row" style="display:none;margin-top:8px">
+        <input maxlength="200" placeholder="Viết phản hồi..." onkeydown="if(event.key==='Enter')sendReplyProfile('${item.post.id}','${item.comment.id}')">
+        <label class="comment-anon-toggle">
+          <input type="checkbox" checked> Ẩn danh
+        </label>
+        <button onclick="sendReplyProfile('${item.post.id}','${item.comment.id}')">Gửi</button>
+      </div>
+
     </div>
   `).join("");
 }
+
+window.sendReplyProfile = async (postId, commentId) => {
+  const box = $("reply-box-profile-" + commentId);
+  if (!box) return;
+  const input = box.querySelector("input");
+  const anonCheckbox = box.querySelector("input[type='checkbox']");
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+
+  const isAnonymous = anonCheckbox ? anonCheckbox.checked : true;
+  const p = findPost(postId);
+  if (!p) return;
+
+  try {
+    const comments = [...(p.comments || [])];
+    const targetCmt = comments.find(c => c.id === commentId);
+    if (!targetCmt) return;
+
+    if (!targetCmt.replies) targetCmt.replies = [];
+    targetCmt.replies.push({
+      id: crypto.randomUUID(),
+      userId: me.id,
+      authorName: me.name,
+      text,
+      isAnonymous,
+      createdAt: Date.now()
+    });
+
+    await updateDoc(doc(db, "posts", postId), { comments });
+    input.value = "";
+    toast("Đã gửi phản hồi ✓");
+    renderMyComments();
+  } catch (e) {
+    console.error(e);
+    toast("Phản hồi thất bại");
+  }
+};
 
 window.likePost = async id => {
   const p = findPost(id); if (!p) return;
