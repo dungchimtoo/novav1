@@ -622,13 +622,14 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
     <div class="setting"><span>↗ Đã chia sẻ</span><strong id="shareCount">0</strong></div>
    </div>
 
-   <!-- Thanh chuyển đổi tab trang cá nhân -->
+   <!-- Thanh chuyển đổi tab trang cá nhân (Đã cập nhật thêm tab Bình luận) -->
    <div class="profile-tabs">
     <button class="profile-tab-btn active" onclick="switchProfileTab('posts', this)">📝 Bài đăng</button>
     <button class="profile-tab-btn" onclick="switchProfileTab('shares', this)">↗ Bài đã chia sẻ</button>
+    <button class="profile-tab-btn" onclick="switchProfileTab('comments', this)">💬 Bình luận</button>
    </div>
 
-   <!-- Layout 2 cột trái/phải cho Trang cá nhân -->
+   <!-- Layout 2 cột trái/phải cho Trang cá nhân (Đã cập nhật thêm cột Bình luận) -->
    <div class="profile-content-columns">
     <div class="profile-column" id="profileColPosts">
      <h3>📝 Bài viết của tôi</h3>
@@ -637,6 +638,10 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
     <div class="profile-column" id="profileColShares" style="display:none">
      <h3>↗ Bài viết đã chia sẻ</h3>
      <div id="myShares" style="margin-top:10px"></div>
+    </div>
+    <div class="profile-column" id="profileColComments" style="display:none">
+     <h3>💬 Bình luận của tôi</h3>
+     <div id="myComments" style="margin-top:10px"></div>
     </div>
    </div>
   </section>
@@ -1264,7 +1269,7 @@ function startListeners(){
   listen(query(collection(db,"posts"), orderBy("createdAt","desc"), limit(100)), s => {
     posts = s.docs.map(d => ({ id: d.id, ...d.data() }));
     renderFeed(); updateProfileView();
-    if (currentPage === "profile") renderMyPosts();
+    if (currentPage === "profile") { renderMyPosts(); renderMyComments(); }
     if (currentPage === "userProfile" && viewingUid) renderUserPosts(viewingUid);
     if (currentPage === "search") searchEverything();
   });
@@ -1528,7 +1533,7 @@ window.showPage = page => {
   if (page === "chat") { renderChatTabs(); renderMessages(); }
   if (page === "groups") { renderGroups(); renderGroupPicker(); }
   if (page === "notifications") renderNotifications();
-  if (page === "profile") { updateProfileView(); renderMyPosts(); renderMyShares(); }
+  if (page === "profile") { updateProfileView(); renderMyPosts(); renderMyShares(); renderMyComments(); }
   if (page === "settings") { $("newName").value = me?.name || ""; $("newHandle").value = me?.handle || ""; $("myNidLine").textContent = me?.nid ? "NOVA ID của bạn: " + me.nid + " (cố định)" : ""; }
   if (page === "search") searchEverything();
   if (changed) window.scrollTo(0,0);
@@ -1712,13 +1717,12 @@ async function scanImageSensitive(dataUrl){
 window.switchProfileTab = (tab, btn) => {
   document.querySelectorAll(".profile-tab-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
-  if (tab === "posts") {
-    $("profileColPosts").style.display = "block";
-    $("profileColShares").style.display = "none";
-  } else {
-    $("profileColPosts").style.display = "none";
-    $("profileColShares").style.display = "block";
-  }
+  
+  $("profileColPosts").style.display = tab === "posts" ? "block" : "none";
+  $("profileColShares").style.display = tab === "shares" ? "block" : "none";
+  $("profileColComments").style.display = tab === "comments" ? "block" : "none";
+  
+  if (tab === "comments") renderMyComments();
 };
 
 function postHTML(p, withActions = true, ctx = "feed"){
@@ -1974,6 +1978,35 @@ function renderMyPosts(){
   const myPostList = posts.filter(p => p.userId === me.id && !p.isShared);
   if (!myPostList.length) { box.innerHTML = `<p class="muted" style="margin-top:10px">Bạn chưa đăng bài viết nào.</p>`; return; }
   box.innerHTML = myPostList.map(p => postHTML(p, true, "me")).join("");
+}
+
+function renderMyComments() {
+  const box = $("myComments");
+  if (!box || !me) return;
+
+  let myCommentList = [];
+  posts.forEach(p => {
+    if (p.comments && Array.isArray(p.comments)) {
+      p.comments.forEach(c => {
+        if (c.userId === me.id) {
+          myCommentList.push({ post: p, comment: c });
+        }
+      });
+    }
+  });
+
+  if (!myCommentList.length) {
+    box.innerHTML = `<p class="muted" style="margin-top:10px">Bạn chưa có bình luận nào.</p>`;
+    return;
+  }
+
+  box.innerHTML = myCommentList.map(item => `
+    <div class="shared-card" style="margin-bottom: 10px;">
+      <div class="muted" style="font-size:11px; margin-bottom:4px;">Đã bình luận trong bài viết của: <b>${escapeHTML(item.post.authorName)}</b></div>
+      <div style="font-size:13px; font-weight:500;">"${escapeHTML(item.comment.text)}"</div>
+      <div class="muted" style="font-size:10px; margin-top:6px;">${ago(item.comment.createdAt)}</div>
+    </div>
+  `).join("");
 }
 
 window.likePost = async id => {
