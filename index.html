@@ -1958,6 +1958,8 @@ function renderCommentItem(c, postId, ctx) {
   const commentLikes = c.likes || [];
   const likedByMe = commentLikes.includes(me.id);
   const replies = c.replies || [];
+  const postOwner = findPost(postId)?.userId === me.id;
+  const canDelCmt = isMine || postOwner;
 
   return `<div class="comment-item">
     <div style="display:flex;justify-content:space-between;align-items:center">
@@ -1970,7 +1972,10 @@ function renderCommentItem(c, postId, ctx) {
       <button class="action ${likedByMe ? "liked" : ""}" style="padding:2px 8px;font-size:11px;flex:unset" onclick="likeComment('${postId}', '${c.id}', '${ctx}')">
         ♥ ${commentLikes.length}
       </button>
-      <span class="muted" style="cursor:pointer;font-size:11px" onclick="toggleReplyBox('${c.id}')">↩ Trả lời</span>
+      <span style="display:flex;gap:12px;align-items:center">
+        ${canDelCmt ? `<span class="muted" style="cursor:pointer;font-size:11px;color:var(--danger)" onclick="deleteComment('${postId}','${c.id}')">🗑 Gỡ</span>` : ""}
+        <span class="muted" style="cursor:pointer;font-size:11px" onclick="toggleReplyBox('${c.id}')">↩ Trả lời</span>
+      </span>
     </div>
 
     <!-- Danh sách Reply -->
@@ -1981,7 +1986,7 @@ function renderCommentItem(c, postId, ctx) {
       return `<div class="reply-item">
         <div style="display:flex;justify-content:space-between">
           <b>${repAuthor}${isRepMine && isRepAnon ? " (bạn)" : ""}:</b>
-          <span class="muted" style="font-size:10px">${ago(r.createdAt)}</span>
+          <span class="muted" style="font-size:10px">${ago(r.createdAt)}${(isRepMine || postOwner) ? ` · <span style="cursor:pointer;color:var(--danger)" onclick="deleteReply('${postId}','${c.id}','${r.id}')">🗑 Gỡ</span>` : ""}</span>
         </div>
         <div style="margin-top:2px">${escapeHTML(r.text)}</div>
       </div>`;
@@ -2024,6 +2029,34 @@ window.likeComment = async (postId, commentId, ctx) => {
     console.error(e);
     toast("Không thực hiện được thao tác");
   }
+};
+
+window.deleteComment = async (postId, commentId) => {
+  const p = findPost(postId); if (!p) { toast("Không tìm thấy bài viết"); return; }
+  const c = (p.comments || []).find(x => x.id === commentId);
+  if (!c) { toast("Bình luận không còn tồn tại"); return; }
+  if (c.userId !== me.id && p.userId !== me.id) { toast("Bạn không có quyền gỡ bình luận này"); return; }
+  if (!confirm("Gỡ bình luận này? Các phản hồi bên dưới cũng sẽ bị xóa.")) return;
+  try {
+    await updateDoc(doc(db, "posts", postId), { comments: (p.comments || []).filter(x => x.id !== commentId) });
+    toast("Đã gỡ bình luận 🗑");
+    refreshShared(postId);
+  } catch (e) { console.error(e); toast("Gỡ bình luận thất bại"); }
+};
+
+window.deleteReply = async (postId, commentId, replyId) => {
+  const p = findPost(postId); if (!p) return;
+  const comments = (p.comments || []).map(x => ({ ...x }));
+  const c = comments.find(x => x.id === commentId); if (!c) return;
+  const r = (c.replies || []).find(x => x.id === replyId); if (!r) return;
+  if (r.userId !== me.id && p.userId !== me.id) { toast("Bạn không có quyền gỡ phản hồi này"); return; }
+  if (!confirm("Gỡ phản hồi này?")) return;
+  c.replies = c.replies.filter(x => x.id !== replyId);
+  try {
+    await updateDoc(doc(db, "posts", postId), { comments });
+    toast("Đã gỡ phản hồi 🗑");
+    refreshShared(postId);
+  } catch (e) { console.error(e); toast("Gỡ phản hồi thất bại"); }
 };
 
 window.addComment = async (id, ctx = "feed") => {
@@ -2150,7 +2183,10 @@ function renderMyComments() {
       ${(item.post.text && !isFlagged(item.post)) ? `<div class="muted" style="font-size:12px;margin-top:8px;padding:8px;border-left:2px solid var(--purple);background:var(--card-bg);border-radius:6px">📄 ${escapeHTML(item.post.text.length > 90 ? item.post.text.slice(0, 90) + "…" : item.post.text)}</div>` : ""}
       <div class="row" style="margin-top:8px">
         <span class="muted" style="font-size:10px;">${ago(item.comment.createdAt)}</span>
-        <button class="secondary" style="padding:6px 12px;font-size:12px" onclick="event.stopPropagation();openPostView('${item.post.id}')">📄 Xem bài đăng</button>
+        <span style="display:flex;gap:6px">
+          <button class="secondary" style="padding:6px 12px;font-size:12px" onclick="event.stopPropagation();openPostView('${item.post.id}')">📄 Xem bài đăng</button>
+          <button class="danger-btn" style="padding:6px 12px;font-size:12px" onclick="event.stopPropagation();deleteComment('${item.post.id}','${item.comment.id}')">🗑 Gỡ bình luận</button>
+        </span>
       </div>
     </div>
   `).join("");
