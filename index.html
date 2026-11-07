@@ -736,7 +736,6 @@ function loadKeys(){
 }
 function persistKeys(){ localStorage.setItem("nova_keys_" + me.id, JSON.stringify(localKeys)); }
 
-// LƯU KEY VĨNH VIỄN - Không bao giờ tự động xóa trừ khi người dùng bấm nút Khóa lại
 function saveKey(chatId, key){ 
   localKeys[chatId] = key; 
   persistKeys(); 
@@ -768,7 +767,6 @@ async function verifyKey(c, key){
 function getKey(c){ 
   if (!c) return null;
   if (localKeys[c.id]) return localKeys[c.id];
-  // Tự động khôi phục key vĩnh viễn từ localStorage nếu đã từng lưu trên máy này
   const perm = localStorage.getItem("nova_key_permanent_" + c.id);
   if (perm) {
     localKeys[c.id] = perm;
@@ -1935,10 +1933,13 @@ async function renderMessages(stick){
   if (!key) {
     box.innerHTML = `<div class="card" style="text-align:center;padding:25px">
       <h3>🔒 Cuộc trò chuyện này đang bị khóa</h3>
-      <p class="muted" style="margin:8px 0 14px">Nhập mã bảo mật 24 ký tự để mở khóa hoặc nhập nhanh nếu máy đã lưu:</p>
-      <div style="display:flex;gap:8px;max-width:320px;margin:0 auto">
+      <p class="muted" style="margin:8px 0 14px">Nhập mã bảo mật 24 ký tự hoặc dùng mật khẩu tài khoản để khôi phục:</p>
+      <div style="display:flex;gap:8px;max-width:320px;margin:0 auto;flex-direction:column">
         <input id="directUnlockInput" class="input" placeholder="Nhập mã 24 ký tự..." maxlength="24" style="margin-bottom:0">
-        <button class="primary" onclick="submitDirectUnlock()">Mở</button>
+        <button class="primary full" onclick="submitDirectUnlock()">Mở bằng mã</button>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">Hoặc nếu quên mã, bạn có thể thiết lập mã mới bằng mật khẩu tài khoản:</div>
+        <input id="forgotKeyPwInput" class="input" type="password" placeholder="Mật khẩu tài khoản của bạn" style="margin-bottom:0">
+        <button class="secondary full" onclick="resetChatKeyWithPassword()">Quên mã? Đặt lại mã mới bằng mật khẩu</button>
       </div>
     </div>`;
     if (composer) composer.style.display = "none";
@@ -2025,7 +2026,33 @@ window.submitDirectUnlock = async () => {
   renderMessages(true);
 };
 
-// CHỈ KHÓA LẠI KHI NGƯỜI DÙNG CHỦ ĐỘNG BẤM NÚT KHÓA
+window.resetChatKeyWithPassword = async () => {
+  const c = curChat(); if (!c) return;
+  const pwInput = $("forgotKeyPwInput");
+  if (!pwInput) return;
+  const password = pwInput.value;
+  if (!password) { toast("Vui lòng nhập mật khẩu tài khoản của bạn"); return; }
+
+  const user = auth.currentUser;
+  if (!user || !user.email) { toast("Lỗi xác thực người dùng"); return; }
+
+  try {
+    toast("Đang xác thực mật khẩu...");
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+
+    const newKey = generateChatKey();
+    await updateDoc(doc(db, "chats", c.id), { keyCheck: await makeKeyCheck(newKey) });
+    saveKey(c.id, newKey);
+
+    toast("Đã đặt lại mã mới thành công! Bạn có thể chat tiếp 🔓");
+    renderChatTabs();
+    renderMessages(true);
+  } catch (e) {
+    console.error(e);
+    toast("Mật khẩu tài khoản không đúng hoặc có lỗi xảy ra ❌");
+  }
+};
+
 window.lockChat = () => {
   const c = curChat(); if (!c) return;
   renderToken++;
