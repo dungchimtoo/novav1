@@ -102,7 +102,7 @@ h2{font-size:20px}
 
 .page{display:none}.page.active{display:block}
 .card{background:var(--card-bg);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px}
-.row{display:flex;align-items:center;justify-content:between;gap:10px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .muted{color:var(--muted);font-size:13px}
 .empty{text-align:center;color:var(--muted);padding:22px}
 
@@ -191,6 +191,7 @@ h2{font-size:20px}
 .chat-title{font-weight:bold}
 .chat-window{height:calc(100vh - 370px);height:calc(100dvh - 370px);min-height:300px;padding:13px;overflow-y:auto}
 .chat-key{background:var(--card-bg);border-bottom:1px solid #713bc0;padding:11px 14px;display:none}
+.chat-key.open{display:block}
 .key-title{font-size:11px;color:var(--muted)}
 .key-value{color:#c994ff;font-weight:bold;letter-spacing:2px;word-break:break-all;margin-top:5px;font-size:13px}
 .key-actions{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}
@@ -296,17 +297,6 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 .sens-wrap.revealed img{filter:none;transform:none}
 .sens-wrap.revealed.txt .post-text{filter:none;user-select:auto}
 .sens-wrap.revealed .sens-note{display:none}
-
-/* PROFILE 2 COLUMNS LAYOUT */
-.profile-columns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    align-items: start;
-}
-@media(max-width: 900px) {
-    .profile-columns { grid-template-columns: 1fr; }
-}
 </style>
 </head>
 
@@ -537,18 +527,12 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
     <div class="setting"><span>↗ Đã chia sẻ</span><strong id="shareCount">0</strong></div>
    </div>
 
-   <!-- CHIA TRANG CÁ NHÂN THÀNH 2 CỘT -->
-   <div class="profile-columns">
-     <div class="card" style="margin-bottom:0">
-       <h3>📝 Bài viết của tôi</h3>
-       <div id="myPosts"></div>
-     </div>
-     <div class="card" style="margin-bottom:0">
-       <h3>↗ Đã chia sẻ</h3>
-       <div id="myShares"></div>
-     </div>
+   <div class="card">
+    <h3>📝 Bài viết của tôi</h3>
+    <div id="myPosts"></div>
    </div>
 
+   <div class="card"><h3>↗ Bài viết đã chia sẻ</h3><div id="myShares"></div></div>
   </section>
 
   <section id="settings" class="page">
@@ -608,17 +592,12 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
     <div id="upActions" class="btn-row" style="justify-content:center;margin-top:14px"></div>
    </div>
 
-   <!-- TRANG CÁ NHÂN CỦA NGƯỜI KHÁC CŨNG CHIA 2 CỘT -->
-   <div class="profile-columns">
-     <div class="card" style="margin-bottom:0">
-       <h3>📝 Bài viết công khai</h3>
-       <div id="upPosts"></div>
-     </div>
-     <div class="card" style="margin-bottom:0">
-       <h3>↗ Bài viết đã chia sẻ</h3>
-       <div id="upShares"></div>
-     </div>
+   <div class="card">
+    <h3>📝 Bài viết công khai</h3>
+    <div id="upPosts"></div>
    </div>
+
+   <div class="card"><h3>↗ Bài viết đã chia sẻ</h3><div id="upShares"></div></div>
   </section>
 
  </main>
@@ -776,13 +755,32 @@ function setMessageLocked(chatId, msgId, locked){
 }
 async function makeKeyCheck(key){ return await encrypt(KEY_CHECK_TEXT, key); }
 
+// Lấy danh sách tất cả các key từng dùng cho chat này (key hiện tại + các key cũ)
+function getAllKeys(c){
+  if (!c) return [];
+  let keys = [];
+  const currentKey = localKeys[c.id] || localStorage.getItem("nova_key_permanent_" + c.id);
+  if (currentKey) keys.push(currentKey);
+  
+  if (c.oldKeys && Array.isArray(c.oldKeys)) {
+    c.oldKeys.forEach(k => { if (!keys.includes(k)) keys.push(k); });
+  }
+  return keys;
+}
+
 async function verifyKey(c, key){
   if (!key || key.length !== 24) return false;
   if (!c || !c.keyCheck || !c.keyCheck.cipher || !c.keyCheck.iv) return true;
   try {
-    const plain = await decrypt({ id: "keycheck", cipher: c.keyCheck.cipher, iv: c.keyCheck.iv }, key);
+    const plain = await decryptKeyCheck({ id: "keycheck", cipher: c.keyCheck.cipher, iv: c.keyCheck.iv }, key);
     return plain === KEY_CHECK_TEXT;
   } catch { return false; }
+}
+
+async function decryptKeyCheck(msg, key){
+  const aes = await deriveKey(key);
+  const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(msg.iv)) }, aes, unb64(msg.cipher));
+  return new TextDecoder().decode(plain);
 }
 
 function getKey(c){ 
@@ -1372,12 +1370,7 @@ window.closeFloatingChat = () => {
 function attachFloatMessages(chatId) {
   if (floatMsgUnsub) { floatMsgUnsub(); floatMsgUnsub = null; }
   const box = $("floatMessages");
-  const key = getKey({ id: chatId });
-
-  if (!key) {
-    box.innerHTML = `<div class="empty" style="font-size:12px">🔒 Cuộc trò chuyện đang khóa. Vào tab Chat và nhập mã 24 ký tự để mở khóa.</div>`;
-    return;
-  }
+  const chatObj = chats.find(x => x.id === chatId) || { id: chatId };
 
   floatMsgUnsub = onSnapshot(query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"), limit(100)), async s => {
     const docs = s.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1385,7 +1378,7 @@ function attachFloatMessages(chatId) {
       box.innerHTML = `<div class="empty" style="font-size:12px">Chưa có tin nhắn. Gửi lời chào nào!</div>`;
       return;
     }
-    const texts = await Promise.all(docs.map(m => decrypt(m, key)));
+    const texts = await Promise.all(docs.map(m => decrypt(m, chatObj)));
     box.innerHTML = docs.map((m, i) => {
       const mine = m.sender === me.id;
       const t = texts[i];
@@ -1406,7 +1399,8 @@ window.sendFloatMessage = async () => {
   const input = $("floatMsgInput");
   const text = input.value.trim();
   if (!text) return;
-  const key = getKey({ id: activeFloatChatId });
+  const chatObj = chats.find(x => x.id === activeFloatChatId) || { id: activeFloatChatId };
+  const key = getKey(chatObj);
   if (!key) { toast("Cuộc trò chuyện đang khóa. Hãy mở khóa ở tab Chat trước."); return; }
   input.value = "";
   try {
@@ -1869,18 +1863,26 @@ async function encrypt(text, key){
   const enc = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, aes, new TextEncoder().encode(text));
   return { cipher: b64(enc), iv: b64(iv) };
 }
-async function decrypt(msg, key){
+
+async function decrypt(msg, c){
   if (msg.isRecalled) return "Tin nhắn đã được thu hồi.";
   if (!msg.cipher || !msg.iv) return "🔒 Không thể giải mã";
-  const ck = msg.id + "|" + key + "|" + msg.cipher.length + "|" + msg.cipher.slice(0, 24) + msg.cipher.slice(-24);
-  if (decCache.has(ck)) return decCache.get(ck);
-  let out;
-  try {
-    const aes = await deriveKey(key);
-    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(msg.iv)) }, aes, unb64(msg.cipher));
-    out = new TextDecoder().decode(plain);
-  } catch { out = "🔒 Không thể giải mã"; }
-  decCache.set(ck, out); return out;
+  
+  const keys = getAllKeys(c);
+  if (!keys.length) return "🔒 Không thể giải mã";
+
+  for (let key of keys) {
+    const ck = msg.id + "|" + key + "|" + msg.cipher.length;
+    if (decCache.has(ck)) return decCache.get(ck);
+    try {
+      const aes = await deriveKey(key);
+      const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(msg.iv)) }, aes, unb64(msg.cipher));
+      const out = new TextDecoder().decode(plain);
+      decCache.set(ck, out);
+      return out;
+    } catch {}
+  }
+  return "🔒 Không thể giải mã";
 }
 
 const curChat = () => chats.find(c => c.id === currentChat);
@@ -1977,7 +1979,7 @@ async function renderMessages(stick){
   const open = new Set([...box.querySelectorAll(".message-wrapper.open")].map(e => e.dataset.id));
   const senders = await Promise.all([...new Set(msgDocs.map(m => m.sender))].map(getUser));
   const nameOf = Object.fromEntries(senders.map(u => [u.id, u.name]));
-  const texts = await Promise.all(msgDocs.map(m => decrypt(m, key)));
+  const texts = await Promise.all(msgDocs.map(m => decrypt(m, c)));
   if (token !== renderToken) return;
 
   if (!msgDocs.length) { box.innerHTML = `<div class="empty">Chưa có tin nhắn. Hãy nói xin chào 👋</div>`; return; }
@@ -2206,24 +2208,29 @@ window.newChatKey = async () => {
   const c = curChat(); if (!c) return;
   const oldKey = getKey(c); if (!oldKey) { toast("Hãy mở khóa trước"); return; }
   if (c.type === "group" && c.owner !== me.id) { toast("Chỉ chủ group được đổi mã"); return; }
-  if (!confirm("Đổi mã: tin cũ được mã hóa lại, người khác sẽ bị khóa cho đến khi nhập mã mới. Tiếp tục?")) return;
+  if (!confirm("Bạn có chắc muốn đổi mã mới? Các tin nhắn cũ vẫn sẽ đọc được bằng lịch sử mã.")) return;
+  
   const newKey = generateChatKey();
   try {
-    const snap = await getDocs(query(collection(db,"chats",c.id,"messages"), orderBy("createdAt","asc"), limit(450)));
-    const batch = writeBatch(db);
-    for (const d of snap.docs) {
-      const data = d.data();
-      if (data.isRecalled) continue;
-      const plain = await decrypt({ id: d.id, ...data }, oldKey);
-      if (plain.startsWith("🔒")) continue;
-      const enc = await encrypt(plain, newKey);
-      batch.update(d.ref, { cipher: enc.cipher, iv: enc.iv });
+    const existingOldKeys = c.oldKeys || [];
+    if (!existingOldKeys.includes(oldKey)) {
+      existingOldKeys.push(oldKey);
     }
-    batch.update(doc(db,"chats",c.id), { keyCheck: await makeKeyCheck(newKey), key: deleteField() });
-    await batch.commit();
+
+    await updateDoc(doc(db, "chats", c.id), { 
+      keyCheck: await makeKeyCheck(newKey), 
+      oldKeys: existingOldKeys,
+      key: deleteField() 
+    });
+    
     saveKey(c.id, newKey);
-    toast("Đã đổi mã. Gửi mã mới cho mọi người 🔐");
-  } catch (e) { console.error(e); toast("Đổi mã thất bại"); }
+    toast("Đã đổi mã mới thành công! Tin nhắn cũ vẫn được giữ nguyên an toàn 🔐");
+    renderChatTabs();
+    renderMessages(true);
+  } catch (e) { 
+    console.error(e); 
+    toast("Đổi mã thất bại"); 
+  }
 };
 
 async function renderGroupPicker(){
