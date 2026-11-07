@@ -102,7 +102,7 @@ h2{font-size:20px}
 
 .page{display:none}.page.active{display:block}
 .card{background:var(--card-bg);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px}
-.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.row{display:flex;align-items:center;justify-content:between;gap:10px}
 .muted{color:var(--muted);font-size:13px}
 .empty{text-align:center;color:var(--muted);padding:22px}
 
@@ -191,7 +191,6 @@ h2{font-size:20px}
 .chat-title{font-weight:bold}
 .chat-window{height:calc(100vh - 370px);height:calc(100dvh - 370px);min-height:300px;padding:13px;overflow-y:auto}
 .chat-key{background:var(--card-bg);border-bottom:1px solid #713bc0;padding:11px 14px;display:none}
-.chat-key.open{display:block}
 .key-title{font-size:11px;color:var(--muted)}
 .key-value{color:#c994ff;font-weight:bold;letter-spacing:2px;word-break:break-all;margin-top:5px;font-size:13px}
 .key-actions{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}
@@ -297,6 +296,17 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 .sens-wrap.revealed img{filter:none;transform:none}
 .sens-wrap.revealed.txt .post-text{filter:none;user-select:auto}
 .sens-wrap.revealed .sens-note{display:none}
+
+/* PROFILE 2 COLUMNS LAYOUT */
+.profile-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    align-items: start;
+}
+@media(max-width: 900px) {
+    .profile-columns { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 
@@ -527,12 +537,18 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
     <div class="setting"><span>↗ Đã chia sẻ</span><strong id="shareCount">0</strong></div>
    </div>
 
-   <div class="card">
-    <h3>📝 Bài viết của tôi</h3>
-    <div id="myPosts"></div>
+   <!-- CHIA TRANG CÁ NHÂN THÀNH 2 CỘT -->
+   <div class="profile-columns">
+     <div class="card" style="margin-bottom:0">
+       <h3>📝 Bài viết của tôi</h3>
+       <div id="myPosts"></div>
+     </div>
+     <div class="card" style="margin-bottom:0">
+       <h3>↗ Đã chia sẻ</h3>
+       <div id="myShares"></div>
+     </div>
    </div>
 
-   <div class="card"><h3>↗ Bài viết đã chia sẻ</h3><div id="myShares"></div></div>
   </section>
 
   <section id="settings" class="page">
@@ -592,12 +608,17 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
     <div id="upActions" class="btn-row" style="justify-content:center;margin-top:14px"></div>
    </div>
 
-   <div class="card">
-    <h3>📝 Bài viết công khai</h3>
-    <div id="upPosts"></div>
+   <!-- TRANG CÁ NHÂN CỦA NGƯỜI KHÁC CŨNG CHIA 2 CỘT -->
+   <div class="profile-columns">
+     <div class="card" style="margin-bottom:0">
+       <h3>📝 Bài viết công khai</h3>
+       <div id="upPosts"></div>
+     </div>
+     <div class="card" style="margin-bottom:0">
+       <h3>↗ Bài viết đã chia sẻ</h3>
+       <div id="upShares"></div>
+     </div>
    </div>
-
-   <div class="card"><h3>↗ Bài viết đã chia sẻ</h3><div id="upShares"></div></div>
   </section>
 
  </main>
