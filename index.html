@@ -393,6 +393,43 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 .sens-wrap.revealed img{filter:none;transform:none}
 .sens-wrap.revealed.txt .post-text{filter:none;user-select:auto}
 .sens-wrap.revealed .sens-note{display:none}
+
+/* GIAO DIỆN KHÓA / MỞ KHÓA CHAT CHUYÊN NGHIỆP */
+.chat-locked-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  text-align: center;
+  background: var(--input-bg);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  margin: 20px auto;
+  max-width: 400px;
+}
+.chat-locked-icon {
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+.chat-locked-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.chat-locked-desc {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+.chat-locked-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 </style>
 </head>
 
@@ -629,17 +666,17 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
     <button class="profile-tab-btn" onclick="switchProfileTab('comments', this)">💬 Bình luận</button>
    </div>
 
-   <!-- Layout 2 cột trái/phải cho Trang cá nhân -->
+   <!-- Layout nội dung Trang cá nhân -->
    <div class="profile-content-columns">
-    <div class="profile-column" id="profileColPosts">
+    <div class="profile-column" id="profileColPosts" style="grid-column: span 2">
      <h3>📝 Bài viết của tôi</h3>
      <div id="myPosts" style="margin-top:10px"></div>
     </div>
-    <div class="profile-column" id="profileColShares" style="display:none">
+    <div class="profile-column" id="profileColShares" style="display:none; grid-column: span 2">
      <h3>↗ Bài viết đã chia sẻ</h3>
      <div id="myShares" style="margin-top:10px"></div>
     </div>
-    <div class="profile-column" id="profileColComments" style="display:none">
+    <div class="profile-column" id="profileColComments" style="display:none; grid-column: span 2">
      <h3>💬 Bình luận của tôi</h3>
      <div id="myComments" style="margin-top:10px"></div>
     </div>
@@ -703,12 +740,22 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
     <div id="upActions" class="btn-row" style="justify-content:center;margin-top:14px"></div>
    </div>
 
-   <div class="card">
-    <h3>📝 Bài viết công khai</h3>
-    <div id="upPosts"></div>
+   <!-- Tab cho trang cá nhân người khác -->
+   <div class="profile-tabs">
+    <button class="profile-tab-btn active" onclick="switchUPTab('posts', this)">📝 Bài đăng</button>
+    <button class="profile-tab-btn" onclick="switchUPTab('shares', this)">↗ Bài đã chia sẻ</button>
    </div>
 
-   <div class="card"><h3>↗ Bài viết đã chia sẻ</h3><div id="upShares"></div></div>
+   <div class="profile-content-columns">
+    <div class="profile-column" id="upColPosts" style="grid-column: span 2">
+     <h3>📝 Bài viết công khai</h3>
+     <div id="upPosts" style="margin-top:10px"></div>
+    </div>
+    <div class="profile-column" id="upColShares" style="display:none; grid-column: span 2">
+     <h3>↗ Bài viết đã chia sẻ</h3>
+     <div id="upShares" style="margin-top:10px"></div>
+    </div>
+   </div>
   </section>
 
  </main>
@@ -803,7 +850,7 @@ let currentTheme = localStorage.getItem("nova_theme") || "dark";
 let currentPage = "home";
 let viewingUid = null, prevPage = "home", shareTarget = null;
 
-let currentPostImages = []; // Mảng chứa tối đa 8 ảnh bài đăng
+let currentPostImages = []; 
 
 let posting = false;
 let seenTimer = null;
@@ -857,7 +904,7 @@ function saveKey(chatId, key){
 function forgetKey(chatId){ 
   delete localKeys[chatId]; 
   persistKeys(); 
-  // CHỈ xóa khỏi bộ nhớ tạm nhưng giữ lại trong localStorage_permanent để mở khóa lại vẫn đọc được
+  localStorage.removeItem("nova_key_permanent_" + chatId); 
 }
 
 function isMessageLocked(chatId, msgId){ return !!localMessageLocks[chatId + ":" + msgId]; }
@@ -1269,8 +1316,8 @@ function startListeners(){
   listen(query(collection(db,"posts"), orderBy("createdAt","desc"), limit(100)), s => {
     posts = s.docs.map(d => ({ id: d.id, ...d.data() }));
     renderFeed(); updateProfileView();
-    if (currentPage === "profile") { renderMyPosts(); renderMyShares(); renderMyComments(); }
-    if (currentPage === "userProfile" && viewingUid) renderUserPosts(viewingUid);
+    if (currentPage === "profile") { renderMyPosts(); renderMyComments(); renderMyShares(); }
+    if (currentPage === "userProfile" && viewingUid) { renderUserPosts(viewingUid); renderUserShares(viewingUid); }
     if (currentPage === "search") searchEverything();
   });
   listen(query(collection(db,"friendRequests"), where("to","==",me.id)), s => {
@@ -1285,7 +1332,7 @@ function startListeners(){
     friendships = s.docs.map(d => ({ id: d.id, ...d.data() }));
     renderFriendList(); renderGroupPicker(); renderGroups(); updateProfileView(); renderSidebars();
     if (currentPage === "home") renderFeed();
-    if (currentPage === "userProfile" && viewingUid) renderUserPosts(viewingUid);
+    if (currentPage === "userProfile" && viewingUid) { renderUserPosts(viewingUid); renderUserShares(viewingUid); }
   });
   listen(query(collection(db,"chats"), where("members","array-contains",me.id)), async s => {
     chats = s.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1298,6 +1345,7 @@ function startListeners(){
     myShares = s.docs.map(d => ({ id: d.id, ...d.data() }));
     myShares.sort((a,b) => sortKey(b.createdAt) - sortKey(a.createdAt));
     renderMyShares(); updateProfileView();
+    if (currentPage === "profile") renderMyShares();
   });
   listen(query(collection(db,"notifications"), where("to","==",me.id)), s => {
     notifs = s.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1686,43 +1734,30 @@ window.reportPost = async id => {
   catch (e) { console.error(e); toast("Báo cáo thất bại"); }
 };
 
-let nsfwPromise = null;
-function loadScript(src){
-  return new Promise((res, rej) => {
-    const sc = document.createElement("script"); sc.src = src; sc.onload = res;
-    sc.onerror = () => rej(new Error("load " + src)); document.head.appendChild(sc);
-  });
-}
-function getNsfwModel(){
-  if (!nsfwPromise) nsfwPromise = (async () => {
-    try {
-      await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4/dist/tf.min.js");
-      await loadScript("https://cdn.jsdelivr.net/npm/nsfwjs@4");
-      return await window.nsfwjs.load();
-    } catch (e) { console.warn("NSFW model không tải được", e); return null; }
-  })();
-  return nsfwPromise;
-}
-async function scanImageSensitive(dataUrl){
-  try {
-    const model = await Promise.race([getNsfwModel(), new Promise(r => setTimeout(() => r(null), 12000))]);
-    if (!model) return false;
-    const img = new Image(); img.src = dataUrl; await img.decode();
-    const pred = await model.classify(img);
-    const pr = Object.fromEntries(pred.map(x => [x.className, x.probability]));
-    return ((pr.Porn || 0) + (pr.Hentai || 0)) > 0.45 || (pr.Sexy || 0) > 0.6;
-  } catch (e) { console.warn(e); return false; }
-}
-
 window.switchProfileTab = (tab, btn) => {
-  document.querySelectorAll(".profile-tab-btn").forEach(b => b.classList.remove("active"));
+  document.querySelectorAll("#profile .profile-tab-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
   
   $("profileColPosts").style.display = tab === "posts" ? "block" : "none";
   $("profileColShares").style.display = tab === "shares" ? "block" : "none";
   $("profileColComments").style.display = tab === "comments" ? "block" : "none";
   
+  if (tab === "posts") renderMyPosts();
+  if (tab === "shares") renderMyShares();
   if (tab === "comments") renderMyComments();
+};
+
+window.switchUPTab = (tab, btn) => {
+  document.querySelectorAll("#userProfile .profile-tab-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+
+  $("upColPosts").style.display = tab === "posts" ? "block" : "none";
+  $("upColShares").style.display = tab === "shares" ? "block" : "none";
+
+  if (viewingUid) {
+    if (tab === "posts") renderUserPosts(viewingUid);
+    if (tab === "shares") renderUserShares(viewingUid);
+  }
 };
 
 function postHTML(p, withActions = true, ctx = "feed"){
@@ -1743,7 +1778,7 @@ function postHTML(p, withActions = true, ctx = "feed"){
   const ts = p.createdAt || new Date();
   const cKey = ctx + ":" + p.id;
 
-  let html = `<div class="card" id="post-card-${p.id}">
+  let html = `<div class="card">
     <div class="post-head">
       <div class="user-info-area">
         <span class="user" ${(!isAnon && p.userId) ? `data-uid="${escapeHTML(p.userId)}"` : ""}>${displayName}${anonTag}</span>
@@ -1954,23 +1989,10 @@ function renderFeed(){
 
   const visiblePosts = posts.filter(p => !p.isShared && canViewPostOnFeed(p));
 
-  if (!visiblePosts.length) { $("feed").innerHTML = `<div class="card empty">Chưa có bài viết nào hiển thị. (Nhấp đúp 2 lần vào Feed để làm mới)</div>`; return; }
+  if (!visiblePosts.length) { $("feed").innerHTML = `<div class="card empty">Chưa có bài viết nào hiển thị.</div>`; return; }
   $("feed").innerHTML = visiblePosts.map(p => postHTML(p, true, "feed")).join("");
   if (keep) { const el = $(keep.id); if (el) { el.value = keep.val; el.focus(); } }
 }
-
-let lastFeedClick = 0;
-document.getElementById("home").addEventListener("click", (e) => {
-  if (e.target.id === "home" || e.target.id === "feed") {
-    const now = Date.now();
-    if (now - lastFeedClick < 300) {
-      toast("🔄 Đang làm mới bảng tin...");
-      renderFeed();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    lastFeedClick = now;
-  }
-});
 
 function renderMyPosts(){
   if (!me) return;
@@ -2001,28 +2023,13 @@ function renderMyComments() {
   }
 
   box.innerHTML = myCommentList.map(item => `
-    <div class="shared-card" style="margin-bottom: 10px; cursor: pointer;" onclick="jumpToPostFromComment('${item.post.id}')">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-        <span class="muted" style="font-size:11px;">Bài viết của: <b>${escapeHTML(item.post.authorName)}</b></span>
-        <button class="secondary" style="padding:2px 8px; font-size:11px;" onclick="event.stopPropagation(); jumpToPostFromComment('${item.post.id}')">👁️ Xem bài</button>
-      </div>
-      <div style="font-size:13px; font-weight:500; margin: 6px 0;">"${escapeHTML(item.comment.text)}"</div>
-      <div class="muted" style="font-size:10px;">${ago(item.comment.createdAt)}</div>
+    <div class="shared-card" style="margin-bottom: 10px;">
+      <div class="muted" style="font-size:11px; margin-bottom:4px;">Đã bình luận trong bài viết của: <b>${escapeHTML(item.post.authorName)}</b></div>
+      <div style="font-size:13px; font-weight:500;">"${escapeHTML(item.comment.text)}"</div>
+      <div class="muted" style="font-size:10px; margin-top:6px;">${ago(item.comment.createdAt)}</div>
     </div>
   `).join("");
 }
-
-window.jumpToPostFromComment = (postId) => {
-  showPage("home");
-  openComments.add("feed:" + postId);
-  setTimeout(() => {
-    const el = document.getElementById("comments-feed-" + postId);
-    if (el) {
-      el.style.display = "block";
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, 100);
-};
 
 window.likePost = async id => {
   const p = posts.find(x => x.id === id); if (!p) return;
@@ -2294,15 +2301,16 @@ async function renderMessages(stick){
   let key = getKey(c);
 
   if (!key) {
-    box.innerHTML = `<div class="card" style="text-align:center;padding:25px">
-      <h3>🔒 Cuộc trò chuyện này đang bị khóa</h3>
-      <p class="muted" style="margin:8px 0 14px">Nhập mã bảo mật 24 ký tự hoặc dùng mật khẩu tài khoản để khôi phục:</p>
-      <div style="display:flex;gap:8px;max-width:320px;margin:0 auto;flex-direction:column">
-        <input id="directUnlockInput" class="input" placeholder="Nhập mã 24 ký tự..." maxlength="24" style="margin-bottom:0">
+    box.innerHTML = `<div class="chat-locked-container">
+      <div class="chat-locked-icon">🔐</div>
+      <div class="chat-locked-title">Cuộc trò chuyện này đang bị khóa</div>
+      <div class="chat-locked-desc">Nhập mã bảo mật 24 ký tự hoặc đặt lại bằng mật khẩu tài khoản của bạn để khôi phục:</div>
+      <div class="chat-locked-form">
+        <input id="directUnlockInput" class="input" placeholder="Nhập mã bảo mật 24 ký tự..." maxlength="24" style="margin-bottom:0">
         <button class="primary full" onclick="submitDirectUnlock()">Mở bằng mã</button>
-        <div style="font-size:12px;color:var(--muted);margin-top:6px">Hoặc nếu quên mã, bạn có thể thiết lập mã mới bằng mật khẩu tài khoản:</div>
+        <div style="margin: 6px 0; font-size: 11px; color: var(--muted);">— hoặc —</div>
         <input id="forgotKeyPwInput" class="input" type="password" placeholder="Mật khẩu tài khoản của bạn" style="margin-bottom:0">
-        <button class="secondary full" onclick="resetChatKeyWithPassword()">Quên mã? Đặt lại mã mới bằng mật khẩu</button>
+        <button class="secondary full" onclick="resetChatKeyWithPassword()">Đặt lại mã bằng mật khẩu</button>
       </div>
     </div>`;
     if (composer) composer.style.display = "none";
@@ -2886,7 +2894,7 @@ async function renderShareList(box, shares, mine){
     else if (unavailable) body = `<div class="muted" style="margin-top:8px">Bài viết này không khả dụng với bạn.</div>`;
     else {
       const anon = p.isAnonymous ?? true;
-      const author = anon ? (p.userId === me.id ? "◉ Anonymous (bạn)" : "◉ Anonymous") : `<span style="cursor:pointer; color:var(--purple); font-weight:bold;" data-uid="${escapeHTML(p.userId)}">${escapeHTML(p.authorName || "Người dùng NOVA")}</span>`;
+      const author = anon ? (p.userId === me.id ? "◉ Anonymous (bạn)" : "◉ Anonymous") : escapeHTML(p.authorName || "Người dùng NOVA");
       const imgs = p.images || (p.image ? [p.image] : []);
       let imgHtml = "";
       if (imgs.length > 0) {
@@ -2908,7 +2916,21 @@ async function renderShareList(box, shares, mine){
     </div>`;
   }).join("");
 }
+
 function renderMyShares(){ renderShareList($("myShares"), myShares, true); }
+
+async function renderUserShares(uid){
+  const box = $("upShares");
+  if (!box) return;
+  try {
+    const s = await getDocs(query(collection(db,"shares"), where("userId","==",uid)));
+    const shares = s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => sortKey(b.createdAt) - sortKey(a.createdAt));
+    renderShareList(box, shares, false);
+  } catch (e) {
+    console.error(e);
+    box.innerHTML = `<p class="muted">Không tải được bài chia sẻ.</p>`;
+  }
+}
 
 document.addEventListener("click", e => {
   const el = e.target.closest("[data-uid]");
@@ -2951,12 +2973,7 @@ window.openUserProfile = async uid => {
   $("upAvatar").innerHTML = u.avatar ? `<img src="${escapeHTML(u.avatar)}" alt="">` : escapeHTML(initial(u.name));
   renderUPActions(uid);
   renderUserPosts(uid);
-
-  try {
-    const s = await getDocs(query(collection(db,"shares"), where("userId","==",uid)));
-    const shares = s.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => sortKey(b.createdAt) - sortKey(a.createdAt));
-    if (viewingUid === uid) renderShareList($("upShares"), shares, false);
-  } catch (e) { console.error(e); $("upShares").innerHTML = `<p class="muted">Không tải được bài chia sẻ.</p>`; }
+  renderUserShares(uid);
 };
 
 function renderUPActions(uid){
