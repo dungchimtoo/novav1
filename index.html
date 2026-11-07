@@ -561,6 +561,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
     </div>
     <div class="setting"><span>🌌 Giao diện</span><button class="secondary" onclick="toggleTheme()" id="themeBtn">Chuyển Sáng</button></div>
     <div class="setting"><span>🔐 Tin nhắn mã hóa</span><span style="color:#bd7fff">AES-GCM</span></div>
+    <div class="setting"><span>🔑 Băm mật khẩu</span><span style="color:#bd7fff">PBKDF2-SHA256</span></div>
     <div class="setting"><span class="danger">Đăng xuất</span><button class="secondary" onclick="logout()">Thoát</button></div>
    </div>
   </section>
@@ -674,6 +675,7 @@ let currentPage = "home";
 let viewingUid = null, prevPage = "home", shareTarget = null;
 let currentPostImageBase64 = null;
 let posting = false;
+let seenTimer = null; // [SỬA] giữ timer lastSeen để không bị tạo chồng nhiều lần
 
 let activeFloatChatId = null;
 let floatMsgUnsub = null;
@@ -686,6 +688,33 @@ const EMOJIS = ["❤️","👍","😂","😢","🔥","🎉"];
 let localKeys = {};
 let localMessageLocks = {};
 const KEY_CHECK_TEXT = "NOVA-OK";
+
+// ================= BĂM MẬT KHẨU (PBKDF2-SHA256 + salt ngẫu nhiên) =================
+// Lưu ý: Firebase Auth đã tự băm mật khẩu ở server. Đây là lớp băm bổ sung,
+// lưu ở collection "passwordHashes/{uid}" (chỉ chủ tài khoản được đọc/ghi - xem Rules).
+// KHÔNG BAO GIỜ lưu mật khẩu gốc (plaintext).
+const PW_ITER = 210000;
+async function pbkdf2Hash(password, saltBuf){
+  const baseKey = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: saltBuf, iterations: PW_ITER }, baseKey, 256);
+  return b64(bits);
+}
+async function syncPasswordHash(uid, password){
+  try {
+    const ref = doc(db, "passwordHashes", uid);
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      const d = snap.data();
+      if (d.salt && d.hash && d.iterations === PW_ITER) {
+        const h = await pbkdf2Hash(password, unb64(d.salt));
+        if (h === d.hash) return; // mật khẩu không đổi → giữ nguyên
+      }
+    }
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const hash = await pbkdf2Hash(password, salt);
+    await setDoc(ref, { hash, salt: b64(salt), algo: "PBKDF2-SHA256", iterations: PW_ITER, updatedAt: serverTimestamp() });
+  } catch (e) { console.warn("Không lưu được hash mật khẩu (kiểm tra Rules passwordHashes)", e); }
+}
 
 function loadKeys(){
   try { localKeys = JSON.parse(localStorage.getItem("nova_keys_" + me.id) || "{}"); } catch { localKeys = {}; }
@@ -702,10 +731,14 @@ function setMessageLocked(chatId, msgId, locked){
 }
 async function makeKeyCheck(key){ return await encrypt(KEY_CHECK_TEXT, key); }
 
+// [SỬA] Trước đây luôn trả true nếu đủ 24 ký tự → nhập sai mã vẫn "mở khóa". Giờ kiểm tra thật bằng keyCheck.
 async function verifyKey(c, key){
   if (!key || key.length !== 24) return false;
-  // Bỏ qua kiểm tra khắt khe với dữ liệu cũ, cho phép mở khóa ngay lập tức khi đúng 24 ký tự
-  return true;
+  if (!c || !c.keyCheck || !c.keyCheck.cipher || !c.keyCheck.iv) return true; // chat cũ chưa có keyCheck
+  try {
+    const plain = await decrypt({ id: "keycheck", cipher: c.keyCheck.cipher, iv: c.keyCheck.iv }, key);
+    return plain === KEY_CHECK_TEXT;
+  } catch { return false; }
 }
 
 function getKey(c){ return c ? (localKeys[c.id] || null) : null; }
@@ -812,6 +845,7 @@ window.register = async () => {
       name, nameLower: name.toLowerCase(), email, emailLower: email, createdAt: serverTimestamp()
     }, { merge: true });
     userCache.delete(res.user.uid);
+    await syncPasswordHash(res.user.uid, password); // [THÊM] lưu hash PBKDF2 của mật khẩu lên Firestore
     if (me && me.id === res.user.uid) { me.name = name; updateProfileView(); }
     toast("Tạo tài khoản thành công 💜");
   } catch (err) { $("registerErr").textContent = authErr(err.code); }
@@ -822,7 +856,10 @@ window.login = async () => {
   const password = $("loginPassword").value;
   $("loginErr").textContent = "";
   if (!email || !password) { $("loginErr").textContent = "Nhập đầy đủ email và mật khẩu"; return; }
-  try { await signInWithEmailAndPassword(auth, email, password); }
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    await syncPasswordHash(cred.user.uid, password); // [THÊM] tạo/cập nhật hash (tự đồng bộ sau khi đổi mật khẩu)
+  }
   catch (err) { $("loginErr").textContent = authErr(err.code); }
 };
 
@@ -831,11 +868,20 @@ window.googleLogin = async () => {
   catch (err) { if (err.code !== "auth/popup-closed-by-user") $("loginErr").textContent = "Đăng nhập Google thất bại"; }
 };
 
+// CẬP NHẬT TÍNH NĂNG QUÊN MẬT KHẨU
 window.resetPassword = async () => {
   const email = $("loginEmail").value.trim().toLowerCase();
-  if (!email) { $("loginErr").textContent = "Nhập Gmail rồi bấm Quên mật khẩu"; return; }
-  try { await sendPasswordResetEmail(auth, email); toast("Đã gửi email đặt lại mật khẩu 📧"); }
-  catch (err) { $("loginErr").textContent = authErr(err.code); }
+  if (!email) { 
+    $("loginErr").textContent = "Vui lòng nhập Gmail ở ô trên để đổi mật khẩu!"; 
+    return; 
+  }
+  try { 
+    await sendPasswordResetEmail(auth, email); 
+    toast("Đã gửi email đặt lại mật khẩu! Vui lòng kiểm tra hộp thư 📧"); 
+  }
+  catch (err) { 
+    $("loginErr").textContent = authErr(err.code); 
+  }
 };
 
 window.logout = async () => { try { await signOut(auth); } catch { toast("Lỗi đăng xuất"); } };
@@ -934,6 +980,7 @@ async function ensureUserDoc(user){
 onAuthStateChanged(auth, async user => {
   $("loading").style.display = "none";
   stopListeners();
+  clearInterval(seenTimer); // [SỬA] dọn timer cũ trước khi tạo mới / khi đăng xuất
   if (user) {
     try {
       const data = await ensureUserDoc(user);
@@ -947,7 +994,7 @@ onAuthStateChanged(auth, async user => {
       showPage("home");
       renderSidebars();
       
-      setInterval(async () => {
+      seenTimer = setInterval(async () => {
         if (me) {
           try { await updateDoc(doc(db, "users", me.id), { lastSeen: serverTimestamp() }); } catch {}
         }
@@ -1087,8 +1134,9 @@ async function renderSidebars() {
       if (!onlineFriends.length) {
         onlineBox.innerHTML = `<p class="muted" style="font-size:12px">Không có bạn bè trực tuyến.</p>`;
       } else {
+        // [SỬA] không nhúng tên vào onclick nữa (tên có dấu ' làm vỡ JS) — openFloatingChat tự lấy tên từ cache
         onlineBox.innerHTML = onlineFriends.map(u => `
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:4px 0;cursor:pointer" onclick="openFloatingChat('${u.id}','${escapeHTML(u.name)}')">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;padding:4px 0;cursor:pointer" onclick="openFloatingChat('${u.id}')">
             <div style="display:flex;align-items:center;gap:8px;overflow:hidden">
               ${avatarHTML(u, "mini-avatar sm")}
               <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHTML(u.name)}</span>
@@ -1123,7 +1171,7 @@ window.handlePostInput = async textarea => {
     
     const friendUsers = await Promise.all(friendships.map(f => getUser(f.members.find(m => m !== me.id))));
     const filtered = friendUsers.filter(u => 
-      u.name.toLowerCase().includes(mentionQuery) || 
+      (u.name || "").toLowerCase().includes(mentionQuery) || 
       (u.handle && u.handle.toLowerCase().includes(mentionQuery))
     );
 
@@ -1132,8 +1180,9 @@ window.handlePostInput = async textarea => {
       return;
     }
 
+    // [SỬA] dùng encodeURIComponent để tên có dấu ' hoặc " không làm vỡ onclick
     drop.innerHTML = filtered.map(u => `
-      <div class="mention-item" onclick="selectMention('${escapeHTML(u.name)}')">
+      <div class="mention-item" onclick="selectMention(decodeURIComponent('${encodeURIComponent(u.name || "")}'))">
         ${avatarHTML(u, "mini-avatar sm")}
         <div>
           <div style="font-weight:bold">${escapeHTML(u.name)}</div>
@@ -1169,8 +1218,24 @@ window.selectMention = name => {
   handlePostInput(ta);
 };
 
+// ================= TỰ LẤY LẠI MÃ CHAT ĐÃ LƯU (chỉ nhận nếu khớp keyCheck) =================
+// [THÊM] tránh việc tự sinh mã ngẫu nhiên sai rồi lưu làm chat bị khóa/giải mã lỗi
+async function tryRestoreAutoKey(chatId){
+  if (getKey({ id: chatId })) return true;
+  const stored = localStorage.getItem("nova_auto_key_" + chatId);
+  if (!stored) return false;
+  try {
+    const snap = await getDoc(doc(db, "chats", chatId));
+    const c = snap.exists() ? { id: chatId, ...snap.data() } : { id: chatId };
+    if (await verifyKey(c, stored)) { saveKey(chatId, stored); return true; }
+  } catch (e) { console.error(e); }
+  return false;
+}
+
 // ================= CỬA SỔ CHAT NỔI (FLOATING CHAT) =================
-window.openFloatingChat = async (friendId, friendName) => {
+// [SỬA] nhận friendId, tự lấy tên (trước đây truyền tên qua onclick → lỗi khi tên có dấu ')
+window.openFloatingChat = async (friendId) => {
+  const friendName = (await getUser(friendId)).name || "Bạn bè";
   const id = "private_" + pairId(me.id, friendId);
   activeFloatChatId = id;
   $("floatTitle").textContent = `💬 ${friendName}`;
@@ -1185,14 +1250,7 @@ window.openFloatingChat = async (friendId, friendName) => {
       localStorage.setItem("nova_auto_key_" + id, key);
       saveKey(id, key);
     } else {
-      if (!getKey({ id })) {
-        let existingKey = localStorage.getItem("nova_auto_key_" + id);
-        if (!existingKey) {
-          existingKey = generateChatKey();
-          localStorage.setItem("nova_auto_key_" + id, existingKey);
-        }
-        saveKey(id, existingKey);
-      }
+      await tryRestoreAutoKey(id);
     }
   } catch (e) { console.error(e); }
 
@@ -1208,17 +1266,12 @@ window.closeFloatingChat = () => {
 function attachFloatMessages(chatId) {
   if (floatMsgUnsub) { floatMsgUnsub(); floatMsgUnsub = null; }
   const box = $("floatMessages");
-  const c = chats.find(x => x.id === chatId) || { id: chatId };
-  let key = getKey(c);
+  const key = getKey({ id: chatId });
 
+  // [SỬA] không tự sinh mã ngẫu nhiên nữa (mã sai → không giải mã được). Chưa có mã thì báo khóa.
   if (!key) {
-    let existingKey = localStorage.getItem("nova_auto_key_" + chatId);
-    if (!existingKey) {
-      existingKey = generateChatKey();
-      localStorage.setItem("nova_auto_key_" + chatId, existingKey);
-    }
-    saveKey(chatId, existingKey);
-    key = existingKey;
+    box.innerHTML = `<div class="empty" style="font-size:12px">🔒 Cuộc trò chuyện đang khóa. Vào tab Chat và nhập mã 24 ký tự để mở khóa.</div>`;
+    return;
   }
 
   floatMsgUnsub = onSnapshot(query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"), limit(100)), async s => {
@@ -1230,13 +1283,17 @@ function attachFloatMessages(chatId) {
     const texts = await Promise.all(docs.map(m => decrypt(m, key)));
     box.innerHTML = docs.map((m, i) => {
       const mine = m.sender === me.id;
+      const t = texts[i];
+      const body = (t && t.startsWith("data:image/"))
+        ? `<img src="${escapeHTML(t)}" alt="Ảnh" data-zoom="1" style="max-width:100%;border-radius:8px;display:block;cursor:pointer">`
+        : escapeHTML(t);
       return `<div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'};margin-bottom:6px">
-        <div style="background:${mine ? 'var(--bubble-me)' : 'var(--input-bg)'};color:${mine ? '#fff' : 'var(--text)'};padding:7px 10px;border-radius:12px;font-size:13px;max-width:85%;word-break:break-word">${escapeHTML(texts[i])}</div>
+        <div style="background:${mine ? 'var(--bubble-me)' : 'var(--input-bg)'};color:${mine ? '#fff' : 'var(--text)'};padding:7px 10px;border-radius:12px;font-size:13px;max-width:85%;word-break:break-word">${body}</div>
       </div>`;
     }).join("");
     const win = $("floatMessages");
     win.scrollTop = win.scrollHeight;
-  });
+  }, err => { console.error(err); toast("Không tải được tin nhắn"); });
 }
 
 window.sendFloatMessage = async () => {
@@ -1244,18 +1301,14 @@ window.sendFloatMessage = async () => {
   const input = $("floatMsgInput");
   const text = input.value.trim();
   if (!text) return;
-  let c = chats.find(x => x.id === activeFloatChatId);
-  let key = getKey(c);
-  if (!key) {
-    key = generateChatKey();
-    saveKey(activeFloatChatId, key);
-  }
+  const key = getKey({ id: activeFloatChatId });
+  if (!key) { toast("Cuộc trò chuyện đang khóa. Hãy mở khóa ở tab Chat trước."); return; }
   input.value = "";
   try {
     const enc = await encrypt(text, key);
     await addDoc(collection(db, "chats", activeFloatChatId, "messages"), { sender: me.id, cipher: enc.cipher, iv: enc.iv, reactions: {}, isRecalled: false, createdAt: serverTimestamp() });
     await updateDoc(doc(db, "chats", activeFloatChatId), { lastAt: serverTimestamp() });
-  } catch (e) { console.error(e); toast("Gửi thất bại"); }
+  } catch (e) { console.error(e); input.value = text; toast("Gửi thất bại"); }
 };
 
 window.showPage = page => {
@@ -1499,10 +1552,25 @@ function renderFeed(){
 
   const visiblePosts = posts.filter(p => !p.isShared && canViewPostOnFeed(p));
 
-  if (!visiblePosts.length) { $("feed").innerHTML = `<div class="card empty">Chưa có bài viết nào hiển thị.</div>`; return; }
+  if (!visiblePosts.length) { $("feed").innerHTML = `<div class="card empty">Chưa có bài viết nào hiển thị. (Nhấp đúp 2 lần vào Feed để làm mới)</div>`; return; }
   $("feed").innerHTML = visiblePosts.map(p => postHTML(p, true, "feed")).join("");
   if (keep) { const el = $(keep.id); if (el) { el.value = keep.val; el.focus(); } }
 }
+
+// CẬP NHẬT TÍNH NĂNG NHẤP ĐÚP 2 LẦN VÀO FEED ĐỂ LÀM MỚI (RELOAD)
+let lastFeedClick = 0;
+document.getElementById("home").addEventListener("click", (e) => {
+  // Chỉ nhận khi nhấp vào vùng trống của Feed (tránh bấm nhầm nút, khung soạn thảo hoặc bài viết)
+  if (e.target.id === "home" || e.target.id === "feed") {
+    const now = Date.now();
+    if (now - lastFeedClick < 300) { // Khoảng cách thời gian dưới 300ms tính là double-click
+      toast("🔄 Đang làm mới bảng tin...");
+      renderFeed();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    lastFeedClick = now;
+  }
+});
 
 function renderMyPosts(){
   if (!me) return;
@@ -1589,7 +1657,7 @@ async function doSearch(){
     }).join("");
   }
   if (foundPosts.length) {
-    html += `<h4 style="margin:16px 0 4px;color:var(--purple)">📝 Bài viết phù hợp ${isTagSearch ? '(' + q + ')' : ''}</h4>`;
+    html += `<h4 style="margin:16px 0 4px;color:var(--purple)">📝 Bài viết phù hợp ${isTagSearch ? '(' + escapeHTML(q) + ')' : ''}</h4>`;
     html += foundPosts.slice(0,20).map(p => postHTML(p, false, "search").replace('<div class="card">','<div class="card" style="margin-top:10px">')).join("");
   }
   box.innerHTML = html || `<p class="muted" style="margin-top:15px">Không tìm thấy kết quả nào phù hợp.</p>`;
@@ -1653,6 +1721,7 @@ window.acceptFriend = async id => {
       const key = generateChatKey();
       await setDoc(chatRef, { type: "private", members: [r.from, r.to].sort(), owner: "", keyCheck: await makeKeyCheck(key), createdAt: serverTimestamp(), lastAt: serverTimestamp() });
       localStorage.setItem("nova_auto_key_" + chatId, key);
+      saveKey(chatId, key); // [SỬA] trước đây chỉ lưu auto_key, người chấp nhận không có mã trong localKeys
     }
 
     await setDoc(doc(db,"friendships","f_" + pairId(r.from, r.to)), { members: [r.from, r.to].sort(), createdAt: serverTimestamp() });
@@ -1739,26 +1808,15 @@ window.openPrivateChat = async friendId => {
       localStorage.setItem("nova_auto_key_" + id, key);
       saveKey(id, key);
     } else {
-      if (!getKey({ id })) {
-        let existingKey = localStorage.getItem("nova_auto_key_" + id);
-        if (!existingKey) {
-          existingKey = generateChatKey();
-          localStorage.setItem("nova_auto_key_" + id, existingKey);
-        }
-        saveKey(id, existingKey);
-      }
+      await tryRestoreAutoKey(id); // [SỬA] chỉ dùng mã đã lưu nếu khớp keyCheck, không tự sinh mã sai
     }
     currentChat = id; attachMessages(); showPage("chat");
   } catch (e) { console.error(e); toast("Không mở được chat"); }
 };
 window.openGroup = id => { currentChat = id; attachMessages(); showPage("chat"); };
-window.openExistingChat = id => {
+window.openExistingChat = async id => {
   currentChat = id;
-  const c = curChat();
-  if (c && !getKey(c)) {
-    let existingKey = localStorage.getItem("nova_auto_key_" + c.id);
-    if (existingKey) saveKey(c.id, existingKey);
-  }
+  await tryRestoreAutoKey(id); // [SỬA] xác thực mã đã lưu bằng keyCheck
   attachMessages();
   renderChatTabs();
 };
@@ -1892,6 +1950,7 @@ window.lockChat = () => {
   const c = curChat(); if (!c) return;
   renderToken++;
   forgetKey(c.id);
+  localStorage.removeItem("nova_auto_key_" + c.id); // [SỬA] xóa mã tự lưu, nếu không "Khóa lại" sẽ tự mở khóa lần sau
   const box = $("messages");
   const composer = document.querySelector("#chat .chat-input");
   if (box) box.innerHTML = "";
@@ -2036,6 +2095,7 @@ window.newChatKey = async () => {
     batch.update(doc(db,"chats",c.id), { keyCheck: await makeKeyCheck(newKey), key: deleteField() });
     await batch.commit();
     saveKey(c.id, newKey);
+    localStorage.setItem("nova_auto_key_" + c.id, newKey); // [SỬA] đồng bộ mã tự lưu với mã mới
     toast("Đã đổi mã. Gửi mã mới cho mọi người 🔐");
   } catch (e) { console.error(e); toast("Đổi mã thất bại"); }
 };
