@@ -935,6 +935,7 @@ window.insertEmoji = (k, e) => {
 
 let localKeys = {};
 let localMessageLocks = {};
+let hiddenMsgs = {};
 const KEY_CHECK_TEXT = "NOVA-OK";
 
 const PW_ITER = 210000;
@@ -963,7 +964,10 @@ async function syncPasswordHash(uid, password){
 function loadKeys(){
   try { localKeys = JSON.parse(localStorage.getItem("nova_keys_" + me.id) || "{}"); } catch { localKeys = {}; }
   try { localMessageLocks = JSON.parse(localStorage.getItem("nova_msg_locks_" + me.id) || "{}"); } catch { localMessageLocks = {}; }
+  try { hiddenMsgs = JSON.parse(localStorage.getItem("nova_msg_hidden_" + me.id) || "{}"); } catch { hiddenMsgs = {}; }
 }
+const isMsgHidden = (chatId, msgId) => !!hiddenMsgs[chatId + ":" + msgId];
+function persistHidden(){ localStorage.setItem("nova_msg_hidden_" + me.id, JSON.stringify(hiddenMsgs)); }
 function persistKeys(){ localStorage.setItem("nova_keys_" + me.id, JSON.stringify(localKeys)); }
 
 function saveKey(chatId, key){
@@ -1616,6 +1620,7 @@ function renderFloat(stick){
     return;
   }
   box.innerHTML = floatDocs.map((m, i) => {
+    if (isMsgHidden(activeFloatChatId, m.id)) return "";
     const mine = m.sender === me.id, t = floatTexts[i];
     const body = (t && t.startsWith("data:image/"))
       ? `<img src="${escapeHTML(t)}" alt="Ảnh" data-zoom="1" style="max-width:100%;border-radius:8px;display:block;cursor:pointer">`
@@ -1628,6 +1633,7 @@ function renderFloat(stick){
       <div style="display:flex;align-items:center;gap:4px;flex-direction:${mine ? "row-reverse" : "row"};max-width:100%">
         <div style="background:${mine ? "var(--bubble-me)" : "var(--input-bg)"};color:${mine ? "#fff" : "var(--text)"};padding:7px 10px;border-radius:12px;font-size:13px;max-width:85%;word-break:break-word">${body}</div>
         ${m.isRecalled ? "" : `<button class="tool-btn" onclick="toggleFloatPicker('${m.id}')">☺</button>`}
+        <button class="tool-btn" title="Xóa tin nhắn này (chỉ phía tôi)" onclick="deleteMessageForMe('${m.id}', true)">🗑</button>
       </div>
       ${floatOpen.has(m.id) ? `<div class="reaction-picker" style="display:flex;margin-top:3px">${EMOJIS.map(e => `<span onclick="reactFloat('${m.id}','${e}')">${e}</span>`).join("")}</div>` : ""}
       ${chips ? `<div class="reactions">${chips}</div>` : ""}
@@ -2457,6 +2463,7 @@ async function renderMessages(stick){
 
   let html = "", lastDay = "";
   msgDocs.forEach((m, i) => {
+    if (isMsgHidden(c.id, m.id)) return;
     const mine = m.sender === me.id; const side = mine ? "me" : "other";
     const isRecalled = m.isRecalled === true;
     const locked = !isRecalled && texts[i] === "🔒 Không thể giải mã";
@@ -2494,8 +2501,9 @@ async function renderMessages(stick){
         ${!isRecalled ? `<div class="msg-tools">
           <button class="tool-btn" onclick="togglePicker('${m.id}')">☺</button>
           <button class="tool-btn" title="${individuallyLocked ? "Mở khóa tin nhắn này" : "Khóa riêng tin nhắn này"}" onclick="toggleMessageLock('${m.id}')">${individuallyLocked ? "🔓" : "🔒"}</button>
-          ${mine ? `<button class="tool-btn" title="Thu hồi tin nhắn" onclick="recallMessage('${m.id}')">🗑</button>` : ""}
-        </div>` : ""}
+          ${mine ? `<button class="tool-btn" title="Thu hồi tin nhắn" onclick="recallMessage('${m.id}')">↩</button>` : ""}
+          <button class="tool-btn" title="Xóa tin nhắn này (chỉ phía tôi)" onclick="deleteMessageForMe('${m.id}')">🗑</button>
+        </div>` : `<div class="msg-tools"><button class="tool-btn" title="Xóa tin nhắn này (chỉ phía tôi)" onclick="deleteMessageForMe('${m.id}')">🗑</button></div>`}
       </div>
       ${!isRecalled ? `<div class="reaction-picker">${EMOJIS.map(e => `<span onclick="reactMessage('${m.id}','${e}')">${e}</span>`).join("")}</div>` : ""}
       ${chips && !isRecalled ? `<div class="reactions">${chips}</div>` : ""}
@@ -2593,6 +2601,17 @@ window.toggleMessageLock = async msgId => {
   renderMessages();
 };
 
+window.deleteMessageForMe = (msgId, fromFloat) => {
+  const chatId = fromFloat ? activeFloatChatId : currentChat;
+  if (!chatId) return;
+  if (!confirm("Xóa tin nhắn này khỏi máy bạn? Người kia vẫn còn thấy tin nhắn. Muốn xóa cả hai bên hãy dùng ↩ Thu hồi.")) return;
+  hiddenMsgs[chatId + ":" + msgId] = true;
+  persistHidden();
+  setMessageLocked(chatId, msgId, false);
+  renderMessages();
+  renderFloat(false);
+  toast("Đã xóa tin nhắn 🗑");
+};
 window.togglePicker = id => {
   const el = document.querySelector(`.message-wrapper[data-id="${id}"]`); if (el) el.classList.toggle("open");
 };
