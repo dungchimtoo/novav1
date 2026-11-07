@@ -1995,9 +1995,9 @@ function renderCommentItem(c, postId, ctx) {
 
     <!-- Ô nhập Reply ẩn -->
     <div id="reply-box-${c.id}" class="comment-input-row" style="display:none;margin-top:8px">
-      <input id="reply-input-${c.id}" maxlength="200" placeholder="Viết phản hồi..." onkeydown="if(event.key==='Enter')sendReply('${postId}','${c.id}','${ctx}')">
+      <input maxlength="200" placeholder="Viết phản hồi..." onkeydown="if(event.key==='Enter')sendReply('${postId}','${c.id}','${ctx}')">
       <label class="comment-anon-toggle">
-        <input type="checkbox" id="reply-anon-${c.id}" checked> Ẩn danh
+        <input type="checkbox" checked> Ẩn danh
       </label>
       <button onclick="sendReply('${postId}','${c.id}','${ctx}')">Gửi</button>
     </div>
@@ -2091,8 +2091,10 @@ window.addComment = async (id, ctx = "feed") => {
 };
 
 window.sendReply = async (postId, commentId, ctx) => {
-  const input = $(`reply-input-${commentId}`);
-  const anonCheckbox = $(`reply-anon-${commentId}`);
+  const box = $("reply-box-" + commentId);
+  if (!box) return;
+  const input = box.querySelector("input");
+  const anonCheckbox = box.querySelector("input[type='checkbox']");
   if (!input) return;
   const text = input.value.trim();
   if (!text) return;
