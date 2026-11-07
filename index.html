@@ -2888,31 +2888,26 @@ async function renderShareList(box, shares, mine){
   const snaps = await Promise.all(shares.map(s => getDoc(doc(db,"posts",s.postId)).catch(() => null)));
   box.innerHTML = shares.map((s,i) => {
     const p = snaps[i]?.exists() ? { id: snaps[i].id, ...snaps[i].data() } : null;
-    const unavailable = p && !canViewPost(p);
-    let body;
-    if (!p) body = `<div class="muted" style="margin-top:8px">Bài viết gốc đã bị xóa.</div>`;
-    else if (unavailable) body = `<div class="muted" style="margin-top:8px">Bài viết này không khả dụng với bạn.</div>`;
-    else {
-      const anon = p.isAnonymous ?? true;
-      const author = anon ? (p.userId === me.id ? "◉ Anonymous (bạn)" : "◉ Anonymous") : escapeHTML(p.authorName || "Người dùng NOVA");
-      const imgs = p.images || (p.image ? [p.image] : []);
-      let imgHtml = "";
-      if (imgs.length > 0) {
-        let gridStyle = "grid-template-columns: 1fr;";
-        if (imgs.length === 2) gridStyle = "grid-template-columns: 1fr 1fr;";
-        else if (imgs.length >= 3) gridStyle = "grid-template-columns: repeat(2, 1fr);";
-        imgHtml = sensWrap(p, `<div style="display:grid; ${gridStyle} gap:6px; margin-top:8px;">${imgs.map(imgSrc => `<div style="position:relative;overflow:hidden;border-radius:8px;max-height:200px;"><img src="${escapeHTML(imgSrc)}" alt="Ảnh" data-zoom="1" style="width:100%;height:100%;object-fit:cover;cursor:pointer"></div>`).join("")}</div>`);
-      }
-      body = `<div class="muted" style="margin-top:6px">Tác giả: ${author}</div>
-             <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
-             ${p.text ? sensWrap(p, `<div class="post-text">${formatPostText(p.text)}</div>`, "txt") : ""}
-             ${imgHtml}
-             <div class="muted" style="margin-top:8px">♥ ${(p.likes || []).length} · 💬 ${(p.comments || []).length}</div>`;
+    if (!p) {
+      return `<div class="shared-card">
+        <div class="row"><span class="muted">↗ Đã chia sẻ · ${ago(s.createdAt)}</span>
+          ${mine ? `<button class="danger-btn" onclick="unshare('${s.id}')">Gỡ</button>` : ""}</div>
+        <div class="muted" style="margin-top:8px">Bài viết gốc đã bị xóa.</div>
+      </div>`;
     }
-    return `<div class="shared-card">
-      <div class="row"><span class="muted">↗ Đã chia sẻ · ${ago(s.createdAt)}</span>
-        ${mine ? `<button class="danger-btn" onclick="unshare('${s.id}')">Gỡ</button>` : ""}</div>
-      ${body}
+    if (!canViewPost(p)) {
+      return `<div class="shared-card">
+        <div class="row"><span class="muted">↗ Đã chia sẻ · ${ago(s.createdAt)}</span>
+          ${mine ? `<button class="danger-btn" onclick="unshare('${s.id}')">Gỡ</button>` : ""}</div>
+        <div class="muted" style="margin-top:8px">Bài viết này không khả dụng với bạn.</div>
+      </div>`;
+    }
+    // Sử dụng chung hàm postHTML để giao diện và tính năng tương tự như Bài đăng và Bình luận
+    return `<div style="position:relative; margin-bottom:12px;">
+      <div style="display:flex; justify-content:flex-end; margin-bottom:-10px; position:relative; z-index:5; padding-right:10px;">
+        ${mine ? `<button class="danger-btn" onclick="unshare('${s.id}')">Gỡ chia sẻ</button>` : ""}
+      </div>
+      ${postHTML(p, true, mine ? "myshare" : "upshare")}
     </div>`;
   }).join("");
 }
