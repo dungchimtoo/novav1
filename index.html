@@ -623,6 +623,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
      <div class="key-actions" id="keyActions">
       <button onclick="copyChatKey()">📋 Copy</button>
       <button onclick="newChatKey()">🔄 Đổi mã</button>
+      <button onclick="addOldKey()">🗝 Thêm mã cũ</button>
      </div>
     </div>
 
@@ -2101,21 +2102,33 @@ function renderMyPosts(){
   box.innerHTML = myPostList.map(p => postHTML(p, true, "me")).join("");
 }
 
-/* Tab Bình luận: hiện lại cả bài gốc, tương tác được như bài đăng */
-const mcSeen = new Set();
 function renderMyComments() {
   const box = $("myComments");
   if (!box || !me) return;
-  const list = posts.filter(p => canViewPost(p) && (p.comments || []).some(c => c.userId === me.id));
-  if (!list.length) {
+
+  let myCommentList = [];
+  posts.forEach(p => {
+    if (p.comments && Array.isArray(p.comments)) {
+      p.comments.forEach(c => {
+        if (c.userId === me.id) {
+          myCommentList.push({ post: p, comment: c });
+        }
+      });
+    }
+  });
+
+  if (!myCommentList.length) {
     box.innerHTML = `<p class="muted" style="margin-top:10px">Bạn chưa có bình luận nào.</p>`;
     return;
   }
-  box.innerHTML = list.map(p => {
-    const n = p.comments.filter(c => c.userId === me.id).length;
-    if (!mcSeen.has(p.id)) { mcSeen.add(p.id); openComments.add("mc:" + p.id); }
-    return `<div class="muted" style="margin:12px 0 -6px">💬 Bạn đã bình luận ${n} lần trong bài này</div>` + postHTML(p, true, "mc");
-  }).join("");
+
+  box.innerHTML = myCommentList.map(item => `
+    <div class="shared-card" style="margin-bottom: 10px;">
+      <div class="muted" style="font-size:11px; margin-bottom:4px;">Đã bình luận trong bài viết của: <b>${escapeHTML(item.post.authorName)}</b></div>
+      <div style="font-size:13px; font-weight:500;">"${escapeHTML(item.comment.text)}"</div>
+      <div class="muted" style="font-size:10px; margin-top:6px;">${ago(item.comment.createdAt)}</div>
+    </div>
+  `).join("");
 }
 
 window.likePost = async id => {
@@ -2647,6 +2660,27 @@ window.sendChatImage = async input => {
   }
 };
 
+window.addOldKey = async () => {
+  const c = curChat(); if (!c) return;
+  const entered = prompt("Nhập mã 24 ký tự CŨ của cuộc trò chuyện này (lấy từ máy/trình duyệt khác từng mở khóa, mục 🔐 Mã):");
+  if (entered === null) return;
+  const k = entered.trim().toUpperCase();
+  if (k.length !== 24) { toast("Mã phải gồm đúng 24 ký tự"); return; }
+  let ok = false;
+  for (const m of msgDocs) {
+    if (!m.cipher || !m.iv || m.isRecalled) continue;
+    try {
+      const aes = await deriveKey(k);
+      await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(m.iv)) }, aes, unb64(m.cipher));
+      ok = true; break;
+    } catch {}
+  }
+  if (!ok) { toast("Mã này không giải mã được tin nhắn nào ❌"); return; }
+  vaultAdd(c.id, k);
+  try { await updateDoc(doc(db, "chats", c.id), { oldKeys: arrayUnion(k) }); } catch (e) { console.warn(e); }
+  toast("Đã thêm mã cũ ✓ tin nhắn cũ sẽ hiện lại");
+  renderMessages(true);
+};
 window.toggleKeyPanel = () => $("keyPanel").classList.toggle("open");
 window.copyChatKey = async () => {
   const key = getKey(curChat()); if (!key) return;
