@@ -507,9 +507,8 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
     <!-- Hộp gợi ý @mention bạn bè -->
     <div id="mentionDropdown"></div>
 
-    <div id="postImagePreviewContainer" style="display:none;position:relative;margin-top:10px;">
-      <img id="postImagePreview" src="" alt="Xem trước" style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;">
-      <button onclick="removePostImage()" style="position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;border:0;border-radius:50%;width:28px;height:28px;cursor:pointer;">✕</button>
+    <div id="postImagePreviewContainer" style="display:none;margin-top:10px;">
+      <div id="postImageGrid" style="display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;"></div>
     </div>
 
     <div class="post-opts">
@@ -534,7 +533,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
      </div>
     </div>
     <div class="row" style="margin-top:12px;gap:8px;">
-     <button class="secondary" style="padding:8px 12px;font-size:14px" onclick="document.getElementById('postImageFile').click()" title="Đính kèm ảnh">📷 Ảnh</button>
+     <button class="secondary" style="padding:8px 12px;font-size:14px" onclick="document.getElementById('postImageFile').click()" title="Đính kèm ảnh">📷 Ảnh (Tối đa 8)</button>
      <button class="primary" id="postBtn" onclick="createPost()">Đăng</button>
     </div>
    </div>
@@ -623,7 +622,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
     <div class="setting"><span>↗ Đã chia sẻ</span><strong id="shareCount">0</strong></div>
    </div>
 
-   <!-- Thanh chuyển đổi tab trang cá nhân (Hữu ích trên mobile) -->
+   <!-- Thanh chuyển đổi tab trang cá nhân -->
    <div class="profile-tabs">
     <button class="profile-tab-btn active" onclick="switchProfileTab('posts', this)">📝 Bài đăng</button>
     <button class="profile-tab-btn" onclick="switchProfileTab('shares', this)">↗ Bài đã chia sẻ</button>
@@ -761,7 +760,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 
 <input id="avatarFile" type="file" accept="image/*" style="display:none" onchange="changeAvatar(this)">
 <input id="chatImageFile" type="file" accept="image/*" style="display:none" onchange="sendChatImage(this)">
-<input id="postImageFile" type="file" accept="image/*" style="display:none" onchange="previewPostImage(this)">
+<input id="postImageFile" type="file" accept="image/*" multiple style="display:none" onchange="previewPostImage(this)">
 
 <div id="toast"></div>
 
@@ -798,7 +797,9 @@ let currentChat = null, msgDocs = [], msgUnsub = null, renderToken = 0;
 let currentTheme = localStorage.getItem("nova_theme") || "dark";
 let currentPage = "home";
 let viewingUid = null, prevPage = "home", shareTarget = null;
-let currentPostImageBase64 = null;
+
+let currentPostImages = []; // Mảng chứa tối đa 8 ảnh bài đăng
+
 let posting = false;
 let seenTimer = null;
 
@@ -1539,26 +1540,53 @@ function genPostCode(){
 }
 
 window.previewPostImage = async input => {
-  const file = input.files?.[0];
+  const files = Array.from(input.files || []);
   input.value = "";
-  if (!file) return;
-  if (!file.type.startsWith("image/")) { toast("Vui lòng chọn file ảnh hợp lệ"); return; }
+  if (!files.length) return;
 
-  try {
-    toast("Đang xử lý ảnh...");
-    const base64 = await resizeImage(file, 900, false);
-    currentPostImageBase64 = base64;
-    $("postImagePreview").src = base64;
-    $("postImagePreviewContainer").style.display = "block";
-    toast("Đã đính kèm ảnh ✓ — đang kiểm duyệt...");
-    if (await scanImageSensitive(base64)) {
-      $("postSensitive").checked = true;
-      toast("⚠ Ảnh có thể nhạy cảm — đã tự động bật chế độ che");
-    }
-  } catch (e) {
-    console.error(e);
-    toast("Không tải được ảnh");
+  if (currentPostImages.length + files.length > 8) {
+    toast("Bạn chỉ có thể đăng tối đa 8 ảnh trong một bài viết!");
+    return;
   }
+
+  toast("Đang xử lý ảnh...");
+  for (const file of files) {
+    if (!file.type.startsWith("image/")) continue;
+    try {
+      const base64 = await resizeImage(file, 900, false);
+      if (currentPostImages.length < 8) {
+        currentPostImages.push(base64);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  renderPostImagePreviews();
+  toast(`Đã đính kèm ${currentPostImages.length} ảnh ✓`);
+};
+
+function renderPostImagePreviews() {
+  const container = $("postImagePreviewContainer");
+  const grid = $("postImageGrid");
+  if (currentPostImages.length === 0) {
+    container.style.display = "none";
+    grid.innerHTML = "";
+    return;
+  }
+
+  container.style.display = "block";
+  grid.innerHTML = currentPostImages.map((imgSrc, index) => `
+    <div style="position:relative;aspect-ratio:1;overflow:hidden;border-radius:8px;border:1px solid var(--border)">
+      <img src="${escapeHTML(imgSrc)}" style="width:100%;height:100%;object-fit:cover">
+      <button onclick="removePostImageIndex(${index})" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.7);color:#fff;border:0;border-radius:50%;width:22px;height:22px;font-size:11px;cursor:pointer;">✕</button>
+    </div>
+  `).join("");
+}
+
+window.removePostImageIndex = index => {
+  currentPostImages.splice(index, 1);
+  renderPostImagePreviews();
 };
 
 document.querySelectorAll("#privacySeg button").forEach(btn => btn.addEventListener("click", () => {
@@ -1571,12 +1599,6 @@ function syncAnonHint(){
     : "TẮT — bài hiện tên của bạn và lên trang cá nhân công khai";
 }
 $("postAnonymous").addEventListener("change", syncAnonHint);
-
-window.removePostImage = () => {
-  currentPostImageBase64 = null;
-  $("postImagePreview").src = "";
-  $("postImagePreviewContainer").style.display = "none";
-};
 
 function extractHashtags(text) {
   const matches = text.match(/#[a-zA-Z0-9_À-ỹ]+/g);
@@ -1596,7 +1618,7 @@ window.createPost = async () => {
   const isAnonymous = $("postAnonymous").checked;
   const privacy = $("postPrivacy").value;
 
-  if (!text && !currentPostImageBase64) { toast("Hãy viết gì đó hoặc đính kèm ảnh"); return; }
+  if (!text && currentPostImages.length === 0) { toast("Hãy viết gì đó hoặc đính kèm ảnh"); return; }
   if (text.length > 3000) { toast("Bài viết vượt quá giới hạn 3000 chữ"); return; }
 
   posting = true; $("postBtn").disabled = true;
@@ -1618,15 +1640,16 @@ window.createPost = async () => {
       comments: [],
       createdAt: serverTimestamp()
     };
-    if (currentPostImageBase64) postData.image = currentPostImageBase64;
+    if (currentPostImages.length > 0) postData.images = currentPostImages;
 
     await addDoc(collection(db,"posts"), postData);
 
     $("postText").value = ""; $("postSensitive").checked = false;
-    removePostImage();
+    currentPostImages = [];
+    renderPostImagePreviews();
     $("mentionDropdown").classList.remove("show");
     const counter = $("postCharCounter"); if (counter) counter.textContent = "0 / 3000 chữ";
-    toast("Đã đăng bài thành công 🚀");
+    toast("Đăng bài thành công 🚀");
   } catch (e) {
     console.error(e);
     toast("Đăng bài thất bại");
@@ -1686,7 +1709,6 @@ async function scanImageSensitive(dataUrl){
   } catch (e) { console.warn(e); return false; }
 }
 
-// Chuyển đổi qua lại giữa các tab trong trang cá nhân
 window.switchProfileTab = (tab, btn) => {
   document.querySelectorAll(".profile-tab-btn").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
@@ -1699,7 +1721,6 @@ window.switchProfileTab = (tab, btn) => {
   }
 };
 
-// Cấu trúc render bài viết kèm hệ thống bình luận nâng cao (Ẩn danh/Công khai & Reply)
 function postHTML(p, withActions = true, ctx = "feed"){
   const mine = p.userId === me.id;
   const isAnon = p.isAnonymous ?? true;
@@ -1729,8 +1750,20 @@ function postHTML(p, withActions = true, ctx = "feed"){
     <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
     ${p.text ? sensWrap(p, `<div class="post-text">${formatPostText(p.text)}</div>`, "txt") : ""}`;
 
-  if (p.image) {
-    html += sensWrap(p, `<img src="${escapeHTML(p.image)}" alt="Ảnh bài viết" class="post-image" data-zoom="1">`);
+  const imgs = p.images || (p.image ? [p.image] : []);
+  if (imgs.length > 0) {
+    let gridStyle = "grid-template-columns: 1fr;";
+    if (imgs.length === 2) gridStyle = "grid-template-columns: 1fr 1fr;";
+    else if (imgs.length >= 3) gridStyle = "grid-template-columns: repeat(2, 1fr);";
+
+    const imgInner = `<div style="display:grid; ${gridStyle} gap:6px; margin-top:10px;">
+      ${imgs.map((imgSrc) => `
+        <div style="position:relative; overflow:hidden; border-radius:10px; max-height:250px;">
+          <img src="${escapeHTML(imgSrc)}" alt="Ảnh bài viết" class="post-image" data-zoom="1" style="margin-top:0; height:100%; object-fit:cover;">
+        </div>
+      `).join("")}
+    </div>`;
+    html += sensWrap(p, imgInner);
   }
 
   if (withActions) {
@@ -1759,13 +1792,14 @@ function postHTML(p, withActions = true, ctx = "feed"){
   return html + `</div>`;
 }
 
-// Render từng bình luận và các phản hồi (replies) của nó
 function renderCommentItem(c, postId, ctx) {
   const isCmtAnon = c.isAnonymous ?? true;
   const isMine = c.userId === me.id;
   const cmtAuthor = isCmtAnon ? "◉ Anonymous" : escapeHTML(c.authorName || "Người dùng");
   const cmtAuthorTag = (isMine && isCmtAnon) ? " (bạn)" : "";
 
+  const commentLikes = c.likes || [];
+  const likedByMe = commentLikes.includes(me.id);
   const replies = c.replies || [];
 
   return `<div class="comment-item">
@@ -1775,7 +1809,10 @@ function renderCommentItem(c, postId, ctx) {
     </div>
     <div style="margin-top:4px">${escapeHTML(c.text)}</div>
     
-    <div style="text-align:right;margin-top:4px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+      <button class="action ${likedByMe ? "liked" : ""}" style="padding:2px 8px;font-size:11px;flex:unset" onclick="likeComment('${postId}', '${c.id}', '${ctx}')">
+        ♥ ${commentLikes.length}
+      </button>
       <span class="muted" style="cursor:pointer;font-size:11px" onclick="toggleReplyBox('${c.id}')">↩ Trả lời</span>
     </div>
 
@@ -1793,7 +1830,7 @@ function renderCommentItem(c, postId, ctx) {
       </div>`;
     }).join("")}</div>` : ""}
 
-    <!-- Ô nhập Reply ẩn (Mặc định ẩn) -->
+    <!-- Ô nhập Reply ẩn -->
     <div id="reply-box-${c.id}" class="comment-input-row" style="display:none;margin-top:8px">
       <input id="reply-input-${c.id}" maxlength="200" placeholder="Viết phản hồi..." onkeydown="if(event.key==='Enter')sendReply('${postId}','${c.id}','${ctx}')">
       <label class="comment-anon-toggle">
@@ -1809,7 +1846,28 @@ window.toggleReplyBox = (commentId) => {
   if (box) box.style.display = box.style.display === "none" ? "flex" : "none";
 };
 
-// Gửi bình luận chính (Hỗ trợ tùy chọn Ẩn danh / Công khai)
+window.likeComment = async (postId, commentId, ctx) => {
+  const p = posts.find(x => x.id === postId);
+  if (!p) return;
+  try {
+    const comments = [...(p.comments || [])];
+    const targetCmt = comments.find(c => c.id === commentId);
+    if (!targetCmt) return;
+
+    if (!targetCmt.likes) targetCmt.likes = [];
+    const index = targetCmt.likes.indexOf(me.id);
+    if (index > -1) {
+      targetCmt.likes.splice(index, 1);
+    } else {
+      targetCmt.likes.push(me.id);
+    }
+    await updateDoc(doc(db, "posts", postId), { comments });
+  } catch (e) {
+    console.error(e);
+    toast("Không thực hiện được thao tác");
+  }
+};
+
 window.addComment = async (id, ctx = "feed") => {
   const input = $(`comment-input-${ctx}-${id}`);
   const anonCheckbox = $(`comment-anon-${ctx}-${id}`);
@@ -1828,6 +1886,7 @@ window.addComment = async (id, ctx = "feed") => {
       text,
       isAnonymous,
       createdAt: Date.now(),
+      likes: [],
       replies: []
     };
     await updateDoc(doc(db,"posts",id), { comments: arrayUnion(newComment) });
@@ -1838,7 +1897,6 @@ window.addComment = async (id, ctx = "feed") => {
   }
 };
 
-// Gửi phản hồi (Reply) cho một bình luận cụ thể
 window.sendReply = async (postId, commentId, ctx) => {
   const input = $(`reply-input-${commentId}`);
   const anonCheckbox = $(`reply-anon-${commentId}`);
@@ -2781,10 +2839,18 @@ async function renderShareList(box, shares, mine){
     else {
       const anon = p.isAnonymous ?? true;
       const author = anon ? (p.userId === me.id ? "◉ Anonymous (bạn)" : "◉ Anonymous") : escapeHTML(p.authorName || "Người dùng NOVA");
+      const imgs = p.images || (p.image ? [p.image] : []);
+      let imgHtml = "";
+      if (imgs.length > 0) {
+        let gridStyle = "grid-template-columns: 1fr;";
+        if (imgs.length === 2) gridStyle = "grid-template-columns: 1fr 1fr;";
+        else if (imgs.length >= 3) gridStyle = "grid-template-columns: repeat(2, 1fr);";
+        imgHtml = sensWrap(p, `<div style="display:grid; ${gridStyle} gap:6px; margin-top:8px;">${imgs.map(imgSrc => `<div style="position:relative;overflow:hidden;border-radius:8px;max-height:200px;"><img src="${escapeHTML(imgSrc)}" alt="Ảnh" data-zoom="1" style="width:100%;height:100%;object-fit:cover;cursor:pointer"></div>`).join("")}</div>`);
+      }
       body = `<div class="muted" style="margin-top:6px">Tác giả: ${author}</div>
              <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
              ${p.text ? sensWrap(p, `<div class="post-text">${formatPostText(p.text)}</div>`, "txt") : ""}
-             ${p.image ? sensWrap(p, `<img src="${escapeHTML(p.image)}" alt="Ảnh" data-zoom="1" style="width:100%;max-height:250px;object-fit:cover;border-radius:10px;cursor:pointer">`) : ""}
+             ${imgHtml}
              <div class="muted" style="margin-top:8px">♥ ${(p.likes || []).length} · 💬 ${(p.comments || []).length}</div>`;
     }
     return `<div class="shared-card">
