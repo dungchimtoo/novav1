@@ -479,7 +479,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
      </div>
     </div>
     <div id="keyPanel" class="chat-key">
-     <div class="key-title">MÃ CUỘC TRÒ CHUYỆN — 24 KÝ TỰ (chỉ lưu trên máy bạn)</div>
+     <div class="key-title">MÃ CUỘC TRÒ CHUYỆN — 24 KÝ TỰ (được lưu vĩnh viễn trên máy bạn)</div>
      <div id="chatKey" class="key-value">--</div>
      <div class="key-actions" id="keyActions">
       <button onclick="copyChatKey()">📋 Copy</button>
@@ -736,7 +736,7 @@ function loadKeys(){
 }
 function persistKeys(){ localStorage.setItem("nova_keys_" + me.id, JSON.stringify(localKeys)); }
 
-// LƯU KEY VĨNH VIỄN - Không tự động xóa trừ khi người dùng bấm nút Khóa lại
+// LƯU KEY VĨNH VIỄN - Không bao giờ tự động xóa trừ khi người dùng bấm nút Khóa lại
 function saveKey(chatId, key){ 
   localKeys[chatId] = key; 
   persistKeys(); 
@@ -768,6 +768,7 @@ async function verifyKey(c, key){
 function getKey(c){ 
   if (!c) return null;
   if (localKeys[c.id]) return localKeys[c.id];
+  // Tự động khôi phục key vĩnh viễn từ localStorage nếu đã từng lưu trên máy này
   const perm = localStorage.getItem("nova_key_permanent_" + c.id);
   if (perm) {
     localKeys[c.id] = perm;
@@ -969,7 +970,6 @@ window.deleteMyAccount = async () => {
   try {
     await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, curPw));
     
-    // Xóa dữ liệu user trên Firestore trước khi xóa auth
     try {
       await deleteDoc(doc(db, "users", me.id));
       await deleteDoc(doc(db, "passwordHashes", me.id));
