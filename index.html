@@ -622,14 +622,14 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
     <div class="setting"><span>↗ Đã chia sẻ</span><strong id="shareCount">0</strong></div>
    </div>
 
-   <!-- Thanh chuyển đổi tab trang cá nhân (Đã cập nhật thêm tab Bình luận) -->
+   <!-- Thanh chuyển đổi tab trang cá nhân -->
    <div class="profile-tabs">
     <button class="profile-tab-btn active" onclick="switchProfileTab('posts', this)">📝 Bài đăng</button>
     <button class="profile-tab-btn" onclick="switchProfileTab('shares', this)">↗ Bài đã chia sẻ</button>
     <button class="profile-tab-btn" onclick="switchProfileTab('comments', this)">💬 Bình luận</button>
    </div>
 
-   <!-- Layout 2 cột trái/phải cho Trang cá nhân (Đã cập nhật thêm cột Bình luận) -->
+   <!-- Layout 2 cột trái/phải cho Trang cá nhân -->
    <div class="profile-content-columns">
     <div class="profile-column" id="profileColPosts">
      <h3>📝 Bài viết của tôi</h3>
@@ -857,7 +857,7 @@ function saveKey(chatId, key){
 function forgetKey(chatId){ 
   delete localKeys[chatId]; 
   persistKeys(); 
-  localStorage.removeItem("nova_key_permanent_" + chatId); 
+  // KHÔNG xóa vĩnh viễn khỏi localStorage_permanent để có thể khôi phục lại khi bấm mở khóa
 }
 
 function isMessageLocked(chatId, msgId){ return !!localMessageLocks[chatId + ":" + msgId]; }
@@ -1743,7 +1743,7 @@ function postHTML(p, withActions = true, ctx = "feed"){
   const ts = p.createdAt || new Date();
   const cKey = ctx + ":" + p.id;
 
-  let html = `<div class="card">
+  let html = `<div class="card" id="post-card-${p.id}">
     <div class="post-head">
       <div class="user-info-area">
         <span class="user" ${(!isAnon && p.userId) ? `data-uid="${escapeHTML(p.userId)}"` : ""}>${displayName}${anonTag}</span>
@@ -2001,13 +2001,29 @@ function renderMyComments() {
   }
 
   box.innerHTML = myCommentList.map(item => `
-    <div class="shared-card" style="margin-bottom: 10px;">
-      <div class="muted" style="font-size:11px; margin-bottom:4px;">Đã bình luận trong bài viết của: <b>${escapeHTML(item.post.authorName)}</b></div>
-      <div style="font-size:13px; font-weight:500;">"${escapeHTML(item.comment.text)}"</div>
-      <div class="muted" style="font-size:10px; margin-top:6px;">${ago(item.comment.createdAt)}</div>
+    <div class="shared-card" style="margin-bottom: 10px; cursor: pointer;" onclick="jumpToPostFromComment('${item.post.id}')">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span class="muted" style="font-size:11px;">Bài viết của: <b>${escapeHTML(item.post.authorName)}</b></span>
+        <button class="secondary" style="padding:2px 8px; font-size:11px;" onclick="event.stopPropagation(); jumpToPostFromComment('${item.post.id}')">👁️ Xem bài</button>
+      </div>
+      <div style="font-size:13px; font-weight:500; margin: 6px 0;">"${escapeHTML(item.comment.text)}"</div>
+      <div class="muted" style="font-size:10px;">${ago(item.comment.createdAt)}</div>
     </div>
   `).join("");
 }
+
+// Hàm hỗ trợ chuyển về Feed và mở ngay khung bình luận của bài viết đó
+window.jumpToPostFromComment = (postId) => {
+  showPage("home");
+  openComments.add("feed:" + postId);
+  setTimeout(() => {
+    const el = document.getElementById("comments-feed-" + postId);
+    if (el) {
+      el.style.display = "block";
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, 100);
+};
 
 window.likePost = async id => {
   const p = posts.find(x => x.id === id); if (!p) return;
