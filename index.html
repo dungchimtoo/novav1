@@ -141,12 +141,108 @@ h2{font-size:20px}
 .action:hover{border-color:#8b45ed;color:var(--text)}
 .action.liked{color:#ff6b9a;border-color:#ff6b9a}
 .comments{border-top:1px solid var(--border);margin-top:13px;padding-top:10px}
-.comment{background:var(--input-bg);padding:9px;border-radius:9px;margin-top:7px;font-size:14px;word-break:break-word}
-.comment-box{display:flex;gap:7px;margin-top:9px}
-.comment-box input{flex:1;background:var(--input-bg);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px;outline:none}
-.comment-box button{background:#7628e8;color:#fff;border:0;border-radius:9px;padding:0 13px}
+
+/* GIAO DIỆN BÌNH LUẬN & TRẢ LỜI MỚI */
+.comment-item {
+  background: var(--input-bg);
+  padding: 10px;
+  border-radius: 10px;
+  margin-top: 8px;
+  font-size: 13px;
+  word-break: break-word;
+  border: 1px solid var(--border);
+}
+.comment-replies {
+  margin-left: 20px;
+  margin-top: 6px;
+  border-left: 2px solid var(--purple);
+  padding-left: 10px;
+}
+.reply-item {
+  background: var(--card-bg);
+  padding: 8px;
+  border-radius: 8px;
+  margin-top: 6px;
+  font-size: 12px;
+}
+.comment-input-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  align-items: center;
+}
+.comment-input-row input {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px;
+  outline: none;
+  font-size: 13px;
+}
+.comment-input-row button {
+  background: var(--purple);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: bold;
+}
+.comment-anon-toggle {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .privacy-badge{font-size:11px;padding:2px 6px;border-radius:6px;background:var(--input-bg);border:1px solid var(--border);color:var(--muted);margin-left:6px}
 .anon-tag{font-size:11px;padding:2px 6px;border-radius:6px;background:#9b4dff22;border:1px solid #9b4dff66;color:#c994ff;margin-left:6px;font-weight:normal}
+
+/* TRANG CÁ NHÂN: LAYOUT 2 CỘT TRÁI - PHẢI */
+.profile-tabs {
+  display: flex;
+  gap: 10px;
+  margin: 15px 0;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+.profile-tab-btn {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 10px;
+  border-radius: 12px;
+  font-weight: bold;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+}
+.profile-tab-btn.active {
+  background: linear-gradient(135deg,#7628e8,#b866ff);
+  color: #fff;
+  border-color: transparent;
+}
+.profile-content-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media(max-width: 768px) {
+  .profile-content-columns { grid-template-columns: 1fr; }
+}
+.profile-column {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 16px;
+  min-height: 250px;
+}
 
 /* FLOATING CHAT BOX */
 #floatingChat {
@@ -527,12 +623,23 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
     <div class="setting"><span>↗ Đã chia sẻ</span><strong id="shareCount">0</strong></div>
    </div>
 
-   <div class="card">
-    <h3>📝 Bài viết của tôi</h3>
-    <div id="myPosts"></div>
+   <!-- Thanh chuyển đổi tab trang cá nhân (Hữu ích trên mobile) -->
+   <div class="profile-tabs">
+    <button class="profile-tab-btn active" onclick="switchProfileTab('posts', this)">📝 Bài đăng</button>
+    <button class="profile-tab-btn" onclick="switchProfileTab('shares', this)">↗ Bài đã chia sẻ</button>
    </div>
 
-   <div class="card"><h3>↗ Bài viết đã chia sẻ</h3><div id="myShares"></div></div>
+   <!-- Layout 2 cột trái/phải cho Trang cá nhân -->
+   <div class="profile-content-columns">
+    <div class="profile-column" id="profileColPosts">
+     <h3>📝 Bài viết của tôi</h3>
+     <div id="myPosts" style="margin-top:10px"></div>
+    </div>
+    <div class="profile-column" id="profileColShares" style="display:none">
+     <h3>↗ Bài viết đã chia sẻ</h3>
+     <div id="myShares" style="margin-top:10px"></div>
+    </div>
+   </div>
   </section>
 
   <section id="settings" class="page">
@@ -755,7 +862,6 @@ function setMessageLocked(chatId, msgId, locked){
 }
 async function makeKeyCheck(key){ return await encrypt(KEY_CHECK_TEXT, key); }
 
-// Lấy danh sách tất cả các key từng dùng cho chat này (key hiện tại + các key cũ)
 function getAllKeys(c){
   if (!c) return [];
   let keys = [];
@@ -1580,6 +1686,20 @@ async function scanImageSensitive(dataUrl){
   } catch (e) { console.warn(e); return false; }
 }
 
+// Chuyển đổi qua lại giữa các tab trong trang cá nhân
+window.switchProfileTab = (tab, btn) => {
+  document.querySelectorAll(".profile-tab-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  if (tab === "posts") {
+    $("profileColPosts").style.display = "block";
+    $("profileColShares").style.display = "none";
+  } else {
+    $("profileColPosts").style.display = "none";
+    $("profileColShares").style.display = "block";
+  }
+};
+
+// Cấu trúc render bài viết kèm hệ thống bình luận nâng cao (Ẩn danh/Công khai & Reply)
 function postHTML(p, withActions = true, ctx = "feed"){
   const mine = p.userId === me.id;
   const isAnon = p.isAnonymous ?? true;
@@ -1587,9 +1707,7 @@ function postHTML(p, withActions = true, ctx = "feed"){
 
   let displayName = isAnon ? "◉ Anonymous" : escapeHTML(p.authorName || "Người dùng NOVA");
   let displayHandle = isAnon ? "@anonymous" : "@" + escapeHTML(p.authorHandle || "user");
-  if (mine) {
-    displayName += isAnon ? " (bạn)" : " (chính bạn)";
-  }
+  if (mine) { displayName += isAnon ? " (bạn)" : " (chính bạn)"; }
   const anonTag = (mine && isAnon) ? `<span class="anon-tag">[Ẩn danh]</span>` : "";
 
   const privacyMap = { PUBLIC: "🌐 Công khai", FRIENDS: "👥 Bạn bè", ONLY_ME: "🔒 Chỉ mình tôi" };
@@ -1623,16 +1741,139 @@ function postHTML(p, withActions = true, ctx = "feed"){
       ${!mine ? `<button class="action" title="Báo cáo nội dung nhạy cảm" onclick="reportPost('${p.id}')">🚩</button>` : ""}
       ${mine ? `<button class="action" style="color:var(--danger)" onclick="deletePost('${p.id}')">🗑</button>` : ""}
     </div>
+    
     <div id="comments-${ctx}-${p.id}" class="comments" style="display:${openComments.has(cKey) ? "block" : "none"}">
-      ${comments.map(c => `<div class="comment"><b>Anonymous${c.userId === me.id ? " (bạn)" : ""}:</b> ${escapeHTML(c.text)}</div>`).join("")}
-      <div class="comment-box">
-        <input id="comment-${ctx}-${p.id}" maxlength="300" placeholder="Viết bình luận..." onkeydown="if(event.key==='Enter')addComment('${p.id}','${ctx}')">
+      <div id="comment-list-${ctx}-${p.id}">
+        ${comments.map(c => renderCommentItem(c, p.id, ctx)).join("")}
+      </div>
+      
+      <div class="comment-input-row" style="margin-top:12px">
+        <input id="comment-input-${ctx}-${p.id}" maxlength="300" placeholder="Viết bình luận..." onkeydown="if(event.key==='Enter')addComment('${p.id}','${ctx}')">
+        <label class="comment-anon-toggle" title="Bật để bình luận ẩn danh">
+          <input type="checkbox" id="comment-anon-${ctx}-${p.id}" checked> Ẩn danh
+        </label>
         <button onclick="addComment('${p.id}','${ctx}')">Gửi</button>
       </div>
     </div>`;
   }
   return html + `</div>`;
 }
+
+// Render từng bình luận và các phản hồi (replies) của nó
+function renderCommentItem(c, postId, ctx) {
+  const isCmtAnon = c.isAnonymous ?? true;
+  const isMine = c.userId === me.id;
+  const cmtAuthor = isCmtAnon ? "◉ Anonymous" : escapeHTML(c.authorName || "Người dùng");
+  const cmtAuthorTag = (isMine && isCmtAnon) ? " (bạn)" : "";
+
+  const replies = c.replies || [];
+
+  return `<div class="comment-item">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <b>${cmtAuthor}${cmtAuthorTag}:</b>
+      <span class="muted" style="font-size:11px">${ago(c.createdAt)}</span>
+    </div>
+    <div style="margin-top:4px">${escapeHTML(c.text)}</div>
+    
+    <div style="text-align:right;margin-top:4px">
+      <span class="muted" style="cursor:pointer;font-size:11px" onclick="toggleReplyBox('${c.id}')">↩ Trả lời</span>
+    </div>
+
+    <!-- Danh sách Reply -->
+    ${replies.length ? `<div class="comment-replies">${replies.map(r => {
+      const isRepAnon = r.isAnonymous ?? true;
+      const isRepMine = r.userId === me.id;
+      const repAuthor = isRepAnon ? "◉ Anonymous" : escapeHTML(r.authorName || "Người dùng");
+      return `<div class="reply-item">
+        <div style="display:flex;justify-content:space-between">
+          <b>${repAuthor}${isRepMine && isRepAnon ? " (bạn)" : ""}:</b>
+          <span class="muted" style="font-size:10px">${ago(r.createdAt)}</span>
+        </div>
+        <div style="margin-top:2px">${escapeHTML(r.text)}</div>
+      </div>`;
+    }).join("")}</div>` : ""}
+
+    <!-- Ô nhập Reply ẩn (Mặc định ẩn) -->
+    <div id="reply-box-${c.id}" class="comment-input-row" style="display:none;margin-top:8px">
+      <input id="reply-input-${c.id}" maxlength="200" placeholder="Viết phản hồi..." onkeydown="if(event.key==='Enter')sendReply('${postId}','${c.id}','${ctx}')">
+      <label class="comment-anon-toggle">
+        <input type="checkbox" id="reply-anon-${c.id}" checked> Ẩn danh
+      </label>
+      <button onclick="sendReply('${postId}','${c.id}','${ctx}')">Gửi</button>
+    </div>
+  </div>`;
+}
+
+window.toggleReplyBox = (commentId) => {
+  const box = $("reply-box-" + commentId);
+  if (box) box.style.display = box.style.display === "none" ? "flex" : "none";
+};
+
+// Gửi bình luận chính (Hỗ trợ tùy chọn Ẩn danh / Công khai)
+window.addComment = async (id, ctx = "feed") => {
+  const input = $(`comment-input-${ctx}-${id}`);
+  const anonCheckbox = $(`comment-anon-${ctx}-${id}`);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+
+  const isAnonymous = anonCheckbox ? anonCheckbox.checked : true;
+
+  openComments.add(ctx + ":" + id);
+  try {
+    const newComment = {
+      id: crypto.randomUUID(),
+      userId: me.id,
+      authorName: me.name,
+      text,
+      isAnonymous,
+      createdAt: Date.now(),
+      replies: []
+    };
+    await updateDoc(doc(db,"posts",id), { comments: arrayUnion(newComment) });
+    input.value = "";
+  } catch (e) {
+    console.error(e);
+    toast("Bình luận thất bại");
+  }
+};
+
+// Gửi phản hồi (Reply) cho một bình luận cụ thể
+window.sendReply = async (postId, commentId, ctx) => {
+  const input = $(`reply-input-${commentId}`);
+  const anonCheckbox = $(`reply-anon-${commentId}`);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+
+  const isAnonymous = anonCheckbox ? anonCheckbox.checked : true;
+
+  const p = posts.find(x => x.id === postId);
+  if (!p) return;
+
+  try {
+    const comments = [...(p.comments || [])];
+    const targetCmt = comments.find(c => c.id === commentId);
+    if (!targetCmt) return;
+
+    if (!targetCmt.replies) targetCmt.replies = [];
+    targetCmt.replies.push({
+      id: crypto.randomUUID(),
+      userId: me.id,
+      authorName: me.name,
+      text,
+      isAnonymous,
+      createdAt: Date.now()
+    });
+
+    await updateDoc(doc(db, "posts", postId), { comments });
+    input.value = "";
+    toast("Đã gửi phản hồi ✓");
+  } catch (e) {
+    console.error(e);
+    toast("Phản hồi thất bại");
+  }
+};
 
 function canViewPost(p){
   if (!me) return false;
@@ -1687,13 +1928,6 @@ window.toggleComments = (id, ctx = "feed") => {
   const show = el.style.display === "none"; el.style.display = show ? "block" : "none";
   const k = ctx + ":" + id;
   show ? openComments.add(k) : openComments.delete(k);
-};
-window.addComment = async (id, ctx = "feed") => {
-  const input = $("comment-" + ctx + "-" + id); if (!input) return;
-  const text = input.value.trim(); if (!text) return;
-  openComments.add(ctx + ":" + id);
-  try { await updateDoc(doc(db,"posts",id), { comments: arrayUnion({ id: crypto.randomUUID(), userId: me.id, text, createdAt: Date.now() }) }); input.value = ""; }
-  catch { toast("Bình luận thất bại"); }
 };
 window.deletePost = async id => {
   if (!confirm("Xóa bài viết này?")) return;
