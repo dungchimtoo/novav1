@@ -438,6 +438,18 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
   gap: 10px;
 }
 .name-tag{font-size:11px;padding:2px 6px;border-radius:6px;background:#22c55e22;border:1px solid #22c55e66;color:#4ade80;margin-left:6px;font-weight:normal}
+/* TÂM TRẠNG */
+#moodBoxHome{display:none}
+@media(max-width:1024px){#moodBoxHome{display:block}}
+.mood-emojis{display:flex;flex-wrap:wrap;gap:4px;margin:10px 0}
+.mood-emojis span{font-size:20px;padding:3px 6px;border-radius:10px;cursor:pointer;border:1px solid transparent}
+.mood-emojis span:hover{background:var(--input-bg)}
+.mood-emojis span.on{border-color:var(--purple);background:#9b4dff22}
+.mood-mine{display:flex;align-items:center;gap:10px;background:var(--input-bg);border:1px solid var(--border);border-radius:14px;padding:10px 12px;margin-top:10px}
+.mood-mine .big{font-size:28px;line-height:1}
+.mood-friend{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--border);cursor:pointer}
+.mood-friend:first-of-type{border-top:0}
+.mood-friend .mf-text{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* CÀI ĐẶT */
 .set-head{display:flex;align-items:center;gap:14px}
 .set-head .avatar{width:64px;height:64px;font-size:26px;margin:0;flex-shrink:0}
@@ -578,6 +590,7 @@ details.set-acc .input{margin-bottom:10px}
  <main class="main">
 
   <section id="home" class="page active">
+   <div class="card" id="moodBoxHome"></div>
    <div class="card create">
     <textarea id="postText" maxlength="3000" placeholder="Bạn đang nghĩ gì? Gõ @ để gắn thẻ bạn bè, dùng #hashtag (tối đa 3000 chữ)..." oninput="handlePostInput(this)" onkeyup="handlePostInput(this)" onclick="handlePostInput(this)"></textarea>
     <div class="char-counter" id="postCharCounter">0 / 3000 chữ</div>
@@ -695,6 +708,7 @@ details.set-acc .input{margin-bottom:10px}
     <div class="avatar-hint" onclick="document.getElementById('avatarFile').click()">Đổi ảnh đại diện</div>
     <div id="profileName" class="profile-name" style="margin-top:8px">Nova</div>
     <div id="profileEmail" class="muted" style="cursor:pointer;word-break:break-all" title="Bấm để copy NOVA ID" onclick="copyUid()">--</div>
+    <div id="profileMood" style="margin-top:8px"></div>
    </div>
    <div class="card">
     <div class="setting"><span>📝 Bài viết</span><strong id="postCount">0</strong></div>
@@ -818,6 +832,7 @@ details.set-acc .input{margin-bottom:10px}
     <div id="upAvatar" class="avatar">N</div>
     <div id="upName" class="profile-name">--</div>
     <div id="upEmail" class="muted" style="word-break:break-all">--</div>
+    <div id="upMood" style="margin-top:8px"></div>
     <div id="upActions" class="btn-row" style="justify-content:center;margin-top:14px"></div>
    </div>
 
@@ -849,6 +864,7 @@ details.set-acc .input{margin-bottom:10px}
     <p class="muted" style="font-size:13px">Đang cập nhật...</p>
    </div>
   </div>
+  <div class="card" id="moodBoxSide" style="margin-top:14px"></div>
  </aside>
 
 </div>
@@ -938,7 +954,7 @@ let viewingUid = null, prevPage = "home", shareTarget = null;
 let currentPostImages = []; 
 
 let posting = false;
-let seenTimer = null;
+let seenTimer = null, moodTimer = null;
 
 let activeFloatChatId = null;
 let floatMsgUnsub = null;
@@ -1398,12 +1414,12 @@ async function ensureUserDoc(user){
 onAuthStateChanged(auth, async user => {
   $("loading").style.display = "none";
   stopListeners();
-  clearInterval(seenTimer);
+  clearInterval(seenTimer); clearInterval(moodTimer);
   if (user) {
     try {
       const data = await ensureUserDoc(user);
       Object.assign(data, await ensureIds(user.uid, data));
-      me = { id: user.uid, name: data.name, email: (user.email || data.email || "").toLowerCase(), avatar: data.avatar || "", handle: data.handle || "", nid: data.nid || "" };
+      me = { id: user.uid, name: data.name, email: (user.email || data.email || "").toLowerCase(), avatar: data.avatar || "", handle: data.handle || "", nid: data.nid || "", mood: data.mood || null };
       userCache.set(me.id, { id: me.id, ...data });
       loadKeys();
       $("auth").style.display = "none";
@@ -1417,6 +1433,8 @@ onAuthStateChanged(auth, async user => {
           try { await updateDoc(doc(db, "users", me.id), { lastSeen: serverTimestamp() }); } catch {}
         }
       }, 60000);
+      moodTimer = setInterval(loadFriendMoods, 60000);
+      renderMood();
 
     } catch (e) {
       console.error(e);
@@ -1424,7 +1442,7 @@ onAuthStateChanged(auth, async user => {
     }
   } else {
     me = null; currentChat = null; localKeys = {}; viewingUid = null; currentPage = "home";
-    userCache.clear(); decCache.clear(); openComments.clear(); extraPosts.clear();
+    friendMoods = []; userCache.clear(); decCache.clear(); openComments.clear(); extraPosts.clear();
     $("app").style.display = "none";
     $("auth").style.display = "flex";
     showLogin();
@@ -1461,7 +1479,7 @@ function startListeners(){
   });
   listen(query(collection(db,"friendships"), where("members","array-contains",me.id)), s => {
     friendships = s.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderFriendList(); renderGroupPicker(); renderGroups(); updateProfileView(); renderSidebars();
+    renderFriendList(); renderGroupPicker(); renderGroups(); updateProfileView(); renderSidebars(); loadFriendMoods();
     if (currentPage === "home") renderFeed();
     if (currentPage === "userProfile" && viewingUid) { renderUserPosts(viewingUid); renderUserShares(viewingUid); }
   });
@@ -2408,6 +2426,99 @@ function renderSearchHome(){
   box.innerHTML = html;
 }
 
+/* ---- Tâm trạng (hết hạn sau 24 giờ, bạn bè xem được) ---- */
+const MOOD_TTL = 24 * 3600 * 1000;
+const MOOD_EMOJIS = ["😊","😄","😍","😎","🥳","💪","🔥","🤔","😴","😢","😡","🎧"];
+let friendMoods = [];
+let moodDraft = { emoji: "😊", text: "" };
+const activeMood = m => (m && m.text && m.at && (Date.now() - m.at) < MOOD_TTL) ? m : null;
+function moodLeft(m){
+  const h = Math.max(1, Math.ceil((MOOD_TTL - (Date.now() - m.at)) / 3600000));
+  return h + " giờ";
+}
+function moodBadge(m){
+  const mo = activeMood(m); if (!mo) return "";
+  return `<span class="name-tag" style="margin-left:0;font-size:13px">${escapeHTML(mo.emoji)} ${escapeHTML(mo.text)}</span>`;
+}
+function moodHTML(k){
+  const mine = activeMood(me?.mood);
+  const chips = MOOD_EMOJIS.map(e => `<span class="${moodDraft.emoji === e ? "on" : ""}" onclick="pickMoodEmoji('${e}')">${e}</span>`).join("");
+  let html = `<h3>💭 Tâm trạng</h3>`;
+  if (mine) {
+    html += `<div class="mood-mine"><span class="big">${escapeHTML(mine.emoji)}</span>
+      <div style="min-width:0;flex:1"><div style="word-break:break-word">${escapeHTML(mine.text)}</div>
+      <div class="muted" style="font-size:11px;margin-top:2px">${ago(mine.at)} · hết hạn sau ${moodLeft(mine)}</div></div>
+      <div class="btn-row"><button class="tool-btn" title="Sửa" onclick="editMood()">✎</button>
+      <button class="tool-btn" title="Xóa" onclick="deleteMood()">✕</button></div></div>`;
+  }
+  html += `<div class="mood-emojis">${chips}</div>
+    <div class="comment-input-row" style="margin-top:0">
+      <input id="moodInput-${k}" maxlength="60" placeholder="${mine ? "Cập nhật tâm trạng..." : "Hôm nay bạn thế nào?"}" value="${escapeHTML(moodDraft.text)}"
+        oninput="setMoodText(this.value)" onkeydown="if(event.key==='Enter')postMood()">
+      <button onclick="postMood()">Đăng</button>
+    </div>
+    <div class="muted" style="font-size:11px;margin-top:6px">Bạn bè xem được · tự biến mất sau 24 giờ</div>`;
+  html += `<div style="margin-top:14px"><div class="muted" style="font-size:12px;font-weight:bold;margin-bottom:4px">Tâm trạng của bạn bè</div>`;
+  html += friendMoods.length
+    ? friendMoods.map(u => `<div class="mood-friend" data-uid="${escapeHTML(u.id)}">
+        ${avatarHTML(u, "mini-avatar sm")}
+        <div style="min-width:0;flex:1"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHTML(u.name || "Bạn bè")}</div>
+        <div class="mf-text">${escapeHTML(u.mood.emoji)} ${escapeHTML(u.mood.text)}</div></div>
+        <span class="muted" style="font-size:10px;flex-shrink:0">${ago(u.mood.at)}</span></div>`).join("")
+    : `<p class="muted" style="font-size:12px">Chưa có bạn bè nào đăng tâm trạng.</p>`;
+  return html + `</div>`;
+}
+function renderMood(){
+  if (!me) return;
+  const ae = document.activeElement;
+  const fid = ae?.id || "", pos = ae?.selectionStart;
+  [["Side","moodBoxSide"],["Home","moodBoxHome"]].forEach(([k, id]) => { const el = $(id); if (el) el.innerHTML = moodHTML(k); });
+  if (fid.startsWith("moodInput-")) { const f = $(fid); if (f) { f.focus(); try { f.setSelectionRange(pos, pos); } catch {} } }
+}
+async function loadFriendMoods(){
+  if (!me) return;
+  const ids = friendships.map(f => f.members.find(m => m !== me.id)).filter(Boolean);
+  const res = await Promise.all(ids.map(async id => {
+    try { const sn = await getDoc(doc(db, "users", id)); if (!sn.exists()) return null; const u = { id, ...sn.data() }; userCache.set(id, u); return u; }
+    catch { return null; }
+  }));
+  if (!me) return;
+  friendMoods = res.filter(u => u && activeMood(u.mood)).sort((a, b) => b.mood.at - a.mood.at);
+  renderMood();
+}
+window.pickMoodEmoji = e => { moodDraft.emoji = e; renderMood(); };
+window.setMoodText = v => { moodDraft.text = v; };
+window.editMood = () => {
+  const m = activeMood(me.mood); if (!m) return;
+  moodDraft = { emoji: m.emoji, text: m.text };
+  renderMood();
+  const inp = document.querySelector("#moodBoxSide input, #moodBoxHome input"); 
+  const visible = [$("moodInput-Side"), $("moodInput-Home")].find(el => el && el.offsetParent !== null);
+  (visible || inp)?.focus();
+};
+window.postMood = async () => {
+  const text = moodDraft.text.trim();
+  if (!text) { toast("Viết vài chữ về tâm trạng của bạn nhé"); return; }
+  const mood = { emoji: moodDraft.emoji, text: text.slice(0, 60), at: Date.now() };
+  try {
+    await updateDoc(doc(db, "users", me.id), { mood });
+    me.mood = mood;
+    userCache.set(me.id, { ...(userCache.get(me.id) || {}), id: me.id, mood });
+    moodDraft.text = "";
+    renderMood(); updateProfileView();
+    toast("Đã đăng tâm trạng " + mood.emoji);
+  } catch (e) { console.error(e); toast("Đăng tâm trạng thất bại"); }
+};
+window.deleteMood = async () => {
+  try {
+    await updateDoc(doc(db, "users", me.id), { mood: deleteField() });
+    me.mood = null;
+    userCache.set(me.id, { ...(userCache.get(me.id) || {}), id: me.id, mood: null });
+    renderMood(); updateProfileView();
+    toast("Đã xóa tâm trạng");
+  } catch (e) { console.error(e); toast("Xóa thất bại"); }
+};
+
 let searchTimer = null;
 window.searchEverything = () => {
   clearTimeout(searchTimer);
@@ -3255,7 +3366,8 @@ function updateProfileView(){
     $("stId").textContent = idLine(me) || "Đang tạo ID...";
     $("stAvatar").innerHTML = me.avatar ? `<img src="${escapeHTML(me.avatar)}" alt="">` : escapeHTML(initial(me.name));
   }
-  $("profileName").textContent = me.name; $("profileEmail").textContent = idLine(me) || "Đang tạo ID...";
+  $("profileName").textContent = me.name;
+  if ($("profileMood")) $("profileMood").innerHTML = moodBadge(me.mood); $("profileEmail").textContent = idLine(me) || "Đang tạo ID...";
   $("avatar").innerHTML = me.avatar ? `<img src="${escapeHTML(me.avatar)}" alt="">` : escapeHTML(initial(me.name));
   $("postCount").textContent = posts.filter(p => p.userId === me.id && !p.isShared).length;
   $("friendCount").textContent = friendships.length;
@@ -3495,6 +3607,7 @@ window.openUserProfile = async uid => {
   if (viewingUid !== uid) return;
   $("upName").textContent = u.name;
   $("upEmail").textContent = idLine(u);
+  $("upMood").innerHTML = moodBadge(u.mood);
   $("upAvatar").innerHTML = u.avatar ? `<img src="${escapeHTML(u.avatar)}" alt="">` : escapeHTML(initial(u.name));
   renderUPActions(uid);
   renderUserPosts(uid);
