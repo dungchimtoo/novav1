@@ -444,6 +444,8 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 #pvBox{width:100%;max-width:640px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:14px;margin:auto}
 .shared-card.clickable{cursor:pointer}
 .shared-card.clickable:hover{border-color:var(--purple)}
+.clickable-zone{cursor:pointer}
+.clickable-zone:hover .post-id{color:var(--purple)}
 </style>
 </head>
 
@@ -594,7 +596,7 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
   <section id="search" class="page">
    <div class="card">
     <h2>🔎 Tìm kiếm tài khoản & bài viết</h2>
-    <input id="searchInput" class="input" style="margin-top:15px" placeholder="Tên, @tên, NOVA ID, #hashtag hoặc nội dung..." oninput="searchEverything()">
+    <input id="searchInput" class="input" style="margin-top:15px" placeholder="Tên, @tên, NOVA ID, #hashtag hoặc nội dung..." oninput="searchEverything()" onchange="saveSearchTerm()" onkeydown="if(event.key==='Enter')saveSearchTerm()">
     <div id="searchResults"></div>
    </div>
   </section>
@@ -748,6 +750,11 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
    </div>
   </section>
 
+  <section id="postView" class="page">
+   <button class="secondary" style="margin-bottom:12px" onclick="closePostView()">← Quay lại</button>
+   <div id="pvBody"></div>
+  </section>
+
   <section id="userProfile" class="page">
    <button class="secondary" style="margin-bottom:12px" onclick="goBack()">← Quay lại</button>
    <div class="card profile">
@@ -825,13 +832,6 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
   <button id="shareProfileBtn" class="primary full">↗ Chia sẻ lên trang cá nhân</button>
   <button class="secondary full" onclick="copyPost()">📋 Copy nội dung</button>
   <button class="secondary full" onclick="closeModal()">Đóng</button>
- </div>
-</div>
-
-<div id="pvModal" onclick="if(event.target===this)closePostView()">
- <div id="pvBox">
-  <div class="row" style="margin-bottom:10px"><strong>📄 Bài đăng gốc</strong><button class="secondary" style="padding:6px 12px" onclick="closePostView()">✕ Đóng</button></div>
-  <div id="pvBody"></div>
  </div>
 </div>
 
@@ -1091,7 +1091,7 @@ document.addEventListener("click", e => {
   if (tagEl) {
     e.stopPropagation();
     const tag = tagEl.dataset.tag;
-    $("searchInput").value = tag;
+    $("searchInput").value = tag; saveSearchTerm();
     showPage("search");
     searchEverything();
   }
@@ -1100,7 +1100,7 @@ document.addEventListener("click", e => {
   if (mentionEl) {
     e.stopPropagation();
     const name = mentionEl.dataset.name;
-    $("searchInput").value = name;
+    $("searchInput").value = name; saveSearchTerm();
     showPage("search");
     searchEverything();
   }
@@ -1975,7 +1975,7 @@ function renderCommentItem(c, postId, ctx) {
       </button>
       <span style="display:flex;gap:12px;align-items:center">
         ${canDelCmt ? `<span class="muted" style="cursor:pointer;font-size:11px;color:var(--danger)" onclick="deleteComment('${postId}','${c.id}')">🗑 Gỡ</span>` : ""}
-        <span class="muted" style="cursor:pointer;font-size:11px" onclick="toggleReplyBox('${c.id}')">↩ Trả lời</span>
+        <span class="muted" style="cursor:pointer;font-size:11px" onclick="toggleReplyBox('${ctx}-${c.id}')">↩ Trả lời</span>
       </span>
     </div>
 
@@ -1994,10 +1994,10 @@ function renderCommentItem(c, postId, ctx) {
     }).join("")}</div>` : ""}
 
     <!-- Ô nhập Reply ẩn -->
-    <div id="reply-box-${c.id}" class="comment-input-row" style="display:none;margin-top:8px">
-      <input maxlength="200" placeholder="Viết phản hồi..." onkeydown="if(event.key==='Enter')sendReply('${postId}','${c.id}','${ctx}')">
+    <div id="reply-box-${ctx}-${c.id}" class="comment-input-row" style="display:none;margin-top:8px">
+      <input id="reply-input-${ctx}-${c.id}" maxlength="200" placeholder="Viết phản hồi..." onkeydown="if(event.key==='Enter')sendReply('${postId}','${c.id}','${ctx}')">
       <label class="comment-anon-toggle">
-        <input type="checkbox" checked> Ẩn danh
+        <input type="checkbox" id="reply-anon-${ctx}-${c.id}" checked> Ẩn danh
       </label>
       <button onclick="sendReply('${postId}','${c.id}','${ctx}')">Gửi</button>
     </div>
@@ -2097,7 +2097,7 @@ window.addComment = async (id, ctx = "feed") => {
 };
 
 window.sendReply = async (postId, commentId, ctx) => {
-  const box = $("reply-box-" + commentId);
+  const box = $("reply-box-" + ctx + "-" + commentId);
   if (!box) return;
   const input = box.querySelector("input");
   const anonCheckbox = box.querySelector("input[type='checkbox']");
@@ -2217,7 +2217,7 @@ function renderMyComments() {
         <span class="muted" style="font-size:10px;">${ago(item.comment.createdAt)}</span>
         <span style="display:flex;gap:8px;align-items:center">
           <span class="muted" style="cursor:pointer;font-size:11px;color:var(--purple);font-weight:bold" onclick="toggleReplyBox('profile-${item.comment.id}')">↩ Trả lời</span>
-          <button class="secondary" style="padding:5px 10px;font-size:11px" onclick="openPostView('${item.post.id}')">📄 Xem bài gốc</button>
+          <button class="secondary" style="padding:5px 10px;font-size:11px" onclick="openPostView('${item.post.id}')">📄 Mở bài đăng</button>
           <button class="danger-btn" style="padding:5px 10px;font-size:11px" onclick="deleteComment('${item.post.id}','${item.comment.id}')">🗑 Gỡ</button>
         </span>
       </div>
@@ -2292,6 +2292,65 @@ window.deletePost = async id => {
   try { await deleteDoc(doc(db,"posts",id)); extraPosts.delete(id); toast("Đã xóa bài"); refreshShared(id); } catch { toast("Không xóa được"); }
 };
 
+/* ---- Trang chủ Tìm kiếm: lịch sử, hashtag thịnh hành, bài nổi bật ---- */
+const encTerm = t => encodeURIComponent(t).replace(/'/g, "%27");
+const histKey = () => "nova_search_hist_" + me.id;
+function getHist(){ try { return JSON.parse(localStorage.getItem(histKey()) || "[]"); } catch { return []; } }
+function setHist(a){ try { localStorage.setItem(histKey(), JSON.stringify(a.slice(0, 10))); } catch {} }
+window.saveSearchTerm = () => {
+  if (!me) return;
+  const q = $("searchInput").value.trim();
+  if (q.length < 2) return;
+  setHist([q, ...getHist().filter(x => x.toLowerCase() !== q.toLowerCase())]);
+};
+window.runSearchTerm = t => {
+  $("searchInput").value = decodeURIComponent(t);
+  $("searchInput").focus();
+  saveSearchTerm();
+  searchEverything();
+};
+window.removeSearchTerm = t => { const d = decodeURIComponent(t); setHist(getHist().filter(x => x !== d)); renderSearchHome(); };
+window.clearSearchHistory = () => { setHist([]); renderSearchHome(); };
+
+function renderSearchHome(){
+  const box = $("searchResults"); if (!box || !me) return;
+  let html = "";
+
+  const hist = getHist();
+  html += `<div style="margin-top:18px"><div class="row"><h4 style="color:var(--purple)">🕘 Tìm kiếm gần đây</h4>
+    ${hist.length ? `<span class="muted" style="cursor:pointer" onclick="clearSearchHistory()">Xóa tất cả</span>` : ""}</div>
+    ${hist.length ? hist.map(t => `<div class="item" style="margin-top:8px;padding:9px 12px;cursor:pointer" onclick="runSearchTerm('${encTerm(t)}')">
+        <div class="item-left"><span>🕘</span><div class="item-name">${escapeHTML(t)}</div></div>
+        <button class="tool-btn" title="Xóa khỏi lịch sử" onclick="event.stopPropagation();removeSearchTerm('${encTerm(t)}')">✕</button></div>`).join("")
+      : `<p class="muted" style="margin-top:8px">Chưa có lịch sử tìm kiếm. Gõ rồi nhấn Enter để lưu lại.</p>`}</div>`;
+
+  const visible = posts.filter(p => !p.isShared && canViewPost(p));
+  const tagCount = {};
+  visible.forEach(p => (p.hashtags || []).forEach(t => tagCount[t] = (tagCount[t] || 0) + 1));
+  const tags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  html += `<div style="margin-top:22px"><h4 style="color:var(--purple)">🔥 Hashtag thịnh hành</h4>
+    ${tags.length ? `<div class="reactions" style="margin-top:8px;gap:8px">${tags.map(([t, n]) =>
+        `<span class="chip" style="font-size:13px;padding:6px 12px" onclick="runSearchTerm('${encTerm(t)}')">${escapeHTML(t)} <span class="muted">· ${n}</span></span>`).join("")}</div>`
+      : `<p class="muted" style="margin-top:8px">Chưa có hashtag nào. Thử đăng bài kèm #hashtag nhé.</p>`}</div>`;
+
+  const hot = visible.filter(p => !isFlagged(p) && p.text)
+    .map(p => ({ p, score: (p.likes || []).length + (p.comments || []).length * 2 }))
+    .sort((a, b) => b.score - a.score).slice(0, 3).filter(x => x.score > 0);
+  html += `<div style="margin-top:22px"><h4 style="color:var(--purple)">⭐ Bài viết nổi bật</h4>
+    ${hot.length ? hot.map(({ p }) => {
+        const anon = p.isAnonymous ?? true;
+        const who = anon ? "◉ Anonymous" : escapeHTML(p.authorName || "Người dùng NOVA");
+        const txt = p.text.length > 100 ? p.text.slice(0, 100) + "…" : p.text;
+        return `<div class="shared-card clickable" onclick="openPostView('${p.id}')">
+          <div class="muted">${who} · ${ago(p.createdAt)}</div>
+          <div style="margin-top:6px;line-height:1.5">${escapeHTML(txt)}</div>
+          <div class="muted" style="margin-top:8px">♥ ${(p.likes || []).length} · 💬 ${(p.comments || []).length}</div></div>`;
+      }).join("")
+      : `<p class="muted" style="margin-top:8px">Chưa có bài nào nổi bật.</p>`}</div>`;
+
+  box.innerHTML = html;
+}
+
 let searchTimer = null;
 window.searchEverything = () => {
   clearTimeout(searchTimer);
@@ -2302,7 +2361,7 @@ async function doSearch(){
   const rawQ = $("searchInput").value.trim();
   const q = rawQ.toLowerCase();
   const box = $("searchResults");
-  if (!q) { box.innerHTML = ""; return; }
+  if (!q) { renderSearchHome(); return; }
   
   const isTagSearch = q.startsWith("#");
   const foundPosts = posts.filter(p => {
@@ -2347,7 +2406,7 @@ async function doSearch(){
   }
   if (foundPosts.length) {
     html += `<h4 style="margin:16px 0 4px;color:var(--purple)">📝 Bài viết phù hợp ${isTagSearch ? '(' + escapeHTML(q) + ')' : ''}</h4>`;
-    html += foundPosts.slice(0,20).map(p => postHTML(p, false, "search").replace('<div class="card">','<div class="card" style="margin-top:10px">')).join("");
+    html += foundPosts.slice(0,20).map(p => postHTML(p, false, "search").replace('<div class="card">',`<div class="card" style="margin-top:10px;cursor:pointer" title="Bấm để mở bài đăng" onclick="openPostView('${p.id}')">`)).join("");
   }
   box.innerHTML = html || `<p class="muted" style="margin-top:15px">Không tìm thấy kết quả nào phù hợp.</p>`;
 }
@@ -2383,7 +2442,7 @@ window.sendFriendRequest = async to => {
   if (incoming.some(r => r.from === to)) { toast("Người này đã mời bạn, hãy chấp nhận"); return; }
   try {
     await setDoc(doc(db,"friendRequests", me.id + "_" + to), { from: me.id, to, fromName: me.name, fromEmail: me.email, createdAt: serverTimestamp() });
-    await addDoc(collection(db,"notifications"), { to, type: "friend_request", text: `${me.name} đã gửi lời mời kết bạn.`, read: false, createdAt: serverTimestamp() });
+    await addDoc(collection(db,"notifications"), { to, type: "friend_request", from: me.id, text: `${me.name} đã gửi lời mời kết bạn.`, read: false, createdAt: serverTimestamp() });
     toast("Đã gửi lời mời 🤝");
     const el = $("friendResult"); if (el) el.innerHTML = "";
   } catch (e) { console.error(e); toast("Gửi lời mời thất bại"); }
@@ -2414,7 +2473,7 @@ window.acceptFriend = async id => {
 
     await setDoc(doc(db,"friendships","f_" + pairId(r.from, r.to)), { members: [r.from, r.to].sort(), createdAt: serverTimestamp() });
     await deleteDoc(doc(db,"friendRequests",id));
-    await addDoc(collection(db,"notifications"), { to: r.from, type: "friend_accept", text: `${me.name} đã chấp nhận lời mời kết bạn.`, read: false, createdAt: serverTimestamp() });
+    await addDoc(collection(db,"notifications"), { to: r.from, type: "friend_accept", from: me.id, text: `${me.name} đã chấp nhận lời mời kết bạn.`, read: false, createdAt: serverTimestamp() });
     toast("Đã trở thành bạn bè và mở khóa chat 🤝");
   } catch (e) { console.error(e); toast("Lỗi"); }
 };
@@ -2836,12 +2895,13 @@ window.addOldKey = async () => {
   toast("Đã thêm mã cũ ✓ tin nhắn cũ sẽ hiện lại");
   renderMessages(true);
 };
-let pvPostId = null;
+let pvPostId = null, pvPrevPage = "home";
 window.openPostView = async id => {
+  if (currentPage !== "postView") pvPrevPage = currentPage;
   pvPostId = id;
   openComments.add("pv:" + id);
   $("pvBody").innerHTML = `<div class="card empty">Đang tải bài đăng...</div>`;
-  $("pvModal").classList.add("show");
+  showPage("postView");
   await refetchPostView();
 };
 async function refetchPostView(){
@@ -2859,12 +2919,34 @@ async function refetchPostView(){
 function renderPostView(){
   if (!pvPostId) return;
   const p = findPost(pvPostId); if (!p) return;
-  const fid = document.activeElement?.id || "";
-  const keep = fid.startsWith("comment-input-pv-") ? { id: fid, val: document.activeElement.value } : null;
-  $("pvBody").innerHTML = postHTML(p, true, "pv");
-  if (keep) { const el = $(keep.id); if (el) { el.value = keep.val; el.focus(); } }
+  const box = $("pvBody");
+  const st = snapshotUI(box);
+  box.innerHTML = postHTML(p, true, "pv");
+  restoreUI(box, st);
 }
-window.closePostView = () => { $("pvModal").classList.remove("show"); pvPostId = null; $("pvBody").innerHTML = ""; };
+window.closePostView = () => {
+  const back = pvPrevPage && pvPrevPage !== "postView" ? pvPrevPage : "home";
+  pvPostId = null; $("pvBody").innerHTML = "";
+  showPage(back);
+};
+
+/* Giữ lại chữ đang gõ / hộp trả lời đang mở khi danh sách vẽ lại */
+function snapshotUI(box){
+  const vals = {}, open = [];
+  box.querySelectorAll("input[id]").forEach(i => {
+    if (i.type === "checkbox") vals[i.id] = i.checked; else if (i.value) vals[i.id] = i.value;
+  });
+  box.querySelectorAll("[id^='reply-box-']").forEach(b => { if (b.style.display === "flex") open.push(b.id); });
+  return { vals, open, focus: document.activeElement?.id || "" };
+}
+function restoreUI(box, st){
+  st.open.forEach(id => { const el = $(id); if (el) el.style.display = "flex"; });
+  Object.entries(st.vals).forEach(([id, v]) => {
+    const el = $(id); if (!el) return;
+    if (el.type === "checkbox") el.checked = v; else el.value = v;
+  });
+  if (st.focus) { const f = $(st.focus); if (f) f.focus(); }
+}
 
 window.toggleKeyPanel = () => $("keyPanel").classList.toggle("open");
 window.copyChatKey = async () => {
@@ -2985,7 +3067,7 @@ window.kickMember = async (gid, uid) => {
   if (!confirm(`Kick ${u.name} khỏi group?`)) return;
   try {
     await updateDoc(doc(db,"chats",gid), { members: arrayRemove(uid) });
-    await addDoc(collection(db,"notifications"), { to: uid, type: "group_kick", text: `Bạn đã bị loại khỏi group "${g.name}".`, read: false, createdAt: serverTimestamp() });
+    await addDoc(collection(db,"notifications"), { to: uid, type: "group_kick", chatId: gid, text: `Bạn đã bị loại khỏi group "${g.name}".`, read: false, createdAt: serverTimestamp() });
     toast(`Đã kick ${u.name}. Nên bấm 🔐 Mã → Đổi mã trong group`);
   } catch (e) { console.error(e); toast("Kick thất bại"); }
 };
@@ -3037,6 +3119,7 @@ window.addMemberToGroup = async gid => {
     await addDoc(collection(db,"notifications"), {
       to: uid,
       type: "group_add",
+      chatId: gid,
       text: `${me.name} đã thêm bạn vào group "${g.name}". Hãy xin mã từ chủ group để mở khóa tin nhắn.`,
       read: false,
       createdAt: serverTimestamp()
@@ -3065,13 +3148,39 @@ window.deleteGroup = async gid => {
   } catch (e) { console.error(e); toast("Lỗi"); }
 };
 
+const NOTIF_ICON = { friend_request: "🤝", friend_accept: "✅", group_add: "👥", group_kick: "🚪" };
+const NOTIF_GO = { friend_request: "Xem lời mời", friend_accept: "Xem trang cá nhân", group_add: "Mở group", group_kick: "Xem danh sách group" };
 function renderNotifications(){
   if (!me) return;
   const box = $("notificationList");
   if (!notifs.length) { box.innerHTML = `<div class="card empty">Chưa có thông báo.</div>`; return; }
-  box.innerHTML = notifs.map(n => `<div class="card" style="${n.read ? "opacity:.7" : "border-color:#713bc0"}">
-    🔔 ${escapeHTML(n.text)}<div class="muted" style="margin-top:6px">${ago(n.createdAt)}</div></div>`).join("");
+  box.innerHTML = notifs.map(n => `<div class="card" style="cursor:pointer;${n.read ? "opacity:.7" : "border-color:#713bc0"}" title="Bấm để chuyển đến" onclick="openNotification('${n.id}')">
+    ${NOTIF_ICON[n.type] || "🔔"} ${escapeHTML(n.text)}
+    <div class="row" style="margin-top:6px"><span class="muted">${ago(n.createdAt)}</span>
+    <span class="muted" style="color:var(--purple)">${NOTIF_GO[n.type] || "Xem"} ›</span></div></div>`).join("");
 }
+window.openNotification = async id => {
+  const n = notifs.find(x => x.id === id); if (!n) return;
+  if (!n.read) { try { await updateDoc(doc(db, "notifications", id), { read: true }); } catch (e) { console.error(e); } }
+  switch (n.type) {
+    case "friend_request":
+      if (n.from && incoming.some(r => r.from === n.from)) { openUserProfile(n.from); }
+      else showPage("friends");
+      break;
+    case "friend_accept":
+      if (n.from) openUserProfile(n.from); else showPage("friends");
+      break;
+    case "group_add":
+      if (n.chatId && chats.some(c => c.id === n.chatId)) openGroup(n.chatId);
+      else { showPage("groups"); toast("Group này không còn tồn tại hoặc bạn không còn là thành viên"); }
+      break;
+    case "group_kick":
+      showPage("groups");
+      break;
+    default:
+      toast(n.text || "Thông báo");
+  }
+};
 window.markAllRead = async () => {
   const unread = notifs.filter(n => !n.read); if (!unread.length) return;
   try { 
@@ -3202,18 +3311,26 @@ window.copyPost = async () => {
   else { try { await navigator.clipboard.writeText(text); toast("Đã copy bài viết 📋"); } catch { toast("Không copy được"); } }
 };
 
-/* Bài chia sẻ: thẻ gọn, bấm vào để mở bài đăng gốc và tương tác */
+/* Bài chia sẻ: bấm vào bài -> sang trang bài đăng; bình luận + trả lời từng bình luận ngay trong thẻ */
 const shareTok = {};
+const shHidden = new Set();
+window.toggleShareComments = key => {
+  shHidden.has(key) ? shHidden.delete(key) : shHidden.add(key);
+  const el = $("shc-" + key); if (el) el.style.display = shHidden.has(key) ? "none" : "block";
+};
 async function renderShareList(box, shares, mine){
   if (!box) return;
   if (!shares.length) { box.innerHTML = `<p class="muted" style="margin-top:10px">Chưa chia sẻ bài viết nào.</p>`; return; }
   const tok = shareTok[box.id] = (shareTok[box.id] || 0) + 1;
+  const ctx = mine ? "sh" : "ush";
   const snaps = await Promise.all(shares.map(s => getDoc(doc(db,"posts",s.postId)).catch(() => null)));
   if (tok !== shareTok[box.id]) return;
+  const st = snapshotUI(box);
   box.innerHTML = shares.map((s,i) => {
     const p = snaps[i]?.exists() ? { id: snaps[i].id, ...snaps[i].data() } : null;
     const unavailable = p && !canViewPost(p);
-    let body;
+    const open = p && !unavailable;
+    let body = "", actions = "", commentsHtml = "";
     if (!p) body = `<div class="muted" style="margin-top:8px">Bài viết gốc đã bị xóa.</div>`;
     else if (unavailable) body = `<div class="muted" style="margin-top:8px">Bài viết này không khả dụng với bạn.</div>`;
     else {
@@ -3231,17 +3348,36 @@ async function renderShareList(box, shares, mine){
       body = `<div class="muted" style="margin-top:6px">Tác giả: ${author} ${anon ? `<span class="anon-tag">Bài ẩn danh</span>` : `<span class="name-tag">Bài hiện tên</span>`}</div>
              <div class="post-id">Post ID: ${escapeHTML(p.postCode)}</div>
              ${p.text ? sensWrap(p, `<div class="post-text">${formatPostText(p.text)}</div>`, "txt") : ""}
-             ${imgHtml}
-             <div class="muted" style="margin-top:8px">♥ ${(p.likes || []).length} · 💬 ${(p.comments || []).length}</div>
-             <button class="secondary" style="margin-top:10px;padding:7px 12px;font-size:13px" onclick="event.stopPropagation();openPostView('${p.id}')">📄 Xem bài đăng</button>`;
+             ${imgHtml}`;
+
+      const likes = p.likes || [], cmts = p.comments || [];
+      const cKey = ctx + "-" + p.id;
+      actions = `<div class="actions" style="margin-top:10px">
+        <button class="action ${likes.includes(me.id) ? "liked" : ""}" onclick="likePost('${p.id}')">♥ ${likes.length}</button>
+        <button class="action" onclick="toggleShareComments('${cKey}')">💬 ${cmts.length}</button>
+        <button class="action" onclick="openPostView('${p.id}')">📄 Mở bài đăng</button>
+      </div>`;
+      commentsHtml = `<div id="shc-${cKey}" class="comments" style="display:${shHidden.has(cKey) ? "none" : "block"}">
+        ${cmts.length ? cmts.map(c => renderCommentItem(c, p.id, ctx)).join("") : `<p class="muted" style="margin-top:4px">Chưa có bình luận nào.</p>`}
+        <div class="comment-input-row" style="margin-top:12px">
+          <input id="comment-input-${ctx}-${p.id}" maxlength="300" placeholder="Viết bình luận..." onkeydown="if(event.key==='Enter')addComment('${p.id}','${ctx}')">
+          <label class="comment-anon-toggle" title="Bật để bình luận ẩn danh">
+            <input type="checkbox" id="comment-anon-${ctx}-${p.id}" checked> Ẩn danh
+          </label>
+          <button onclick="addComment('${p.id}','${ctx}')">Gửi</button>
+        </div>
+      </div>`;
     }
-    const open = p && !unavailable;
-    return `<div class="shared-card ${open ? "clickable" : ""}" ${open ? `title="Bấm để xem bài đăng gốc" onclick="openPostView('${p.id}')"` : ""}>
-      <div class="row"><span class="muted">↗ Đã chia sẻ · ${ago(s.createdAt)}</span>
-        ${mine ? `<button class="danger-btn" onclick="event.stopPropagation();unshare('${s.id}')">Gỡ</button>` : ""}</div>
-      ${body}
+    return `<div class="shared-card">
+      <div ${open ? `class="clickable-zone" title="Bấm để chuyển đến bài đăng" onclick="openPostView('${p.id}')"` : ""}>
+        <div class="row"><span class="muted">↗ Đã chia sẻ · ${ago(s.createdAt)}</span>
+          ${mine ? `<button class="danger-btn" onclick="event.stopPropagation();unshare('${s.id}')">Gỡ</button>` : ""}</div>
+        ${body}
+      </div>
+      ${actions}${commentsHtml}
     </div>`;
   }).join("");
+  restoreUI(box, st);
 }
 
 function renderMyShares(){ renderShareList($("myShares"), myShares, true); }
