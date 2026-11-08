@@ -438,6 +438,30 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
   gap: 10px;
 }
 .name-tag{font-size:11px;padding:2px 6px;border-radius:6px;background:#22c55e22;border:1px solid #22c55e66;color:#4ade80;margin-left:6px;font-weight:normal}
+/* GAME */
+.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.game-card{margin-bottom:0}
+.game-stats{display:flex;gap:10px;margin:10px 0}
+.game-stats div{flex:1;background:var(--input-bg);border:1px solid var(--border);border-radius:12px;padding:8px 12px;font-size:12px;color:var(--muted)}
+.game-stats b{display:block;font-size:20px;color:var(--text)}
+.game-board{position:relative;max-width:420px;margin:12px auto 0}
+.game-canvas{width:100%;display:block;margin:0 auto;border-radius:14px;border:1px solid var(--border);touch-action:none;background:#0b0b12}
+.game-overlay{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(5,5,7,.8);border-radius:14px;text-align:center;padding:16px;color:#fff;z-index:5}
+.dpad{display:flex;flex-direction:column;align-items:center;gap:6px;max-width:420px;margin:0 auto}
+.dpad div{display:flex;gap:6px}
+.dpad button{width:58px;height:50px;border-radius:14px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:18px;touch-action:manipulation}
+.dpad button:active{background:var(--purple);color:#fff}
+.g2048{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:#2a2a38;padding:8px;border-radius:14px;touch-action:none}
+.g2048 .t{display:flex;align-items:center;justify-content:center;border-radius:10px;font-weight:bold;font-size:clamp(18px,6vw,30px);background:#3a3a4c;color:#fff;aspect-ratio:1}
+.g2048 .t2{background:#e9ddff;color:#3b1d6b}.g2048 .t4{background:#d6bfff;color:#3b1d6b}
+.g2048 .t8{background:#b88cff}.g2048 .t16{background:#a066ff}.g2048 .t32{background:#8b45ed}
+.g2048 .t64{background:#7628e8}.g2048 .t128{background:#f5b942;color:#3b2a00}.g2048 .t256{background:#f59e42}
+.g2048 .t512{background:#f26b3a}.g2048 .t1024{background:#ee4b6a;font-size:clamp(15px,5vw,24px)}
+.g2048 .t2048,.g2048 .tbig{background:#ff2e93;font-size:clamp(15px,5vw,24px)}
+.mem-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mem-card{aspect-ratio:1;border-radius:12px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:clamp(24px,8vw,38px);touch-action:manipulation}
+.mem-card.up{background:#9b4dff22;border-color:var(--purple)}
+.mem-card.ok{background:#22c55e22;border-color:#22c55e}
 /* TÂM TRẠNG */
 #moodBoxHome{display:none}
 @media(max-width:1024px){#moodBoxHome{display:block}}
@@ -563,6 +587,7 @@ details.set-acc .input{margin-bottom:10px}
    <span class="mini-word">NOVA</span>
  </div>
  <div class="top-actions">
+  <button class="icon-btn" onclick="showPage('games')" title="Game">🎮</button>
   <button class="icon-btn" onclick="showPage('notifications')">🔔<span id="notifBadge" class="badge">0</span></button>
   <button class="icon-btn" onclick="showPage('settings')">⚙</button>
  </div>
@@ -821,6 +846,33 @@ details.set-acc .input{margin-bottom:10px}
    <button class="set-logout" onclick="logout()">🚪 Đăng xuất</button>
   </section>
 
+  <section id="games" class="page">
+   <h2>🎮 Game</h2>
+   <div id="gameLobby">
+    <p class="muted" style="margin:8px 0 14px">Game nhẹ chạy ngay trên máy bạn. Phá kỷ lục để lên bảng xếp hạng.</p>
+    <div id="gameGrid" class="game-grid"></div>
+   </div>
+   <div id="gameStage" style="display:none">
+    <div class="row" style="margin:10px 0">
+     <button class="secondary" onclick="closeGame(true)">← Sảnh game</button>
+     <button class="secondary" onclick="showLeaderboard()">🏆 Xếp hạng</button>
+    </div>
+    <div class="card">
+     <div class="row"><strong id="gTitle"></strong><span class="muted" id="gHelp" style="text-align:right;font-size:12px"></span></div>
+     <div class="game-stats"><div>Điểm<b id="gScore">0</b></div><div>Kỷ lục<b id="gBest">0</b></div></div>
+     <div id="gBoard" class="game-board">
+      <div id="gArea"></div>
+      <div id="gOver" class="game-overlay">
+       <div id="gOverTitle" style="font-size:20px;font-weight:bold"></div>
+       <div id="gOverScore"></div>
+       <button class="primary" onclick="restartGame()">Chơi lại</button>
+      </div>
+     </div>
+     <div id="gControls" style="margin-top:12px"></div>
+    </div>
+   </div>
+  </section>
+
   <section id="postView" class="page">
    <button class="secondary" style="margin-bottom:12px" onclick="closePostView()">← Quay lại</button>
    <div id="pvBody"></div>
@@ -905,6 +957,14 @@ details.set-acc .input{margin-bottom:10px}
   <button id="shareProfileBtn" class="primary full">↗ Chia sẻ lên trang cá nhân</button>
   <button class="secondary full" onclick="copyPost()">📋 Copy nội dung</button>
   <button class="secondary full" onclick="closeModal()">Đóng</button>
+ </div>
+</div>
+
+<div id="lbModal" class="modal" onclick="if(event.target===this)closeLeaderboard()">
+ <div class="modal-box">
+  <h3 id="lbTitle">🏆 Xếp hạng</h3>
+  <div id="lbBody" style="max-height:60vh;overflow-y:auto"></div>
+  <button class="secondary full" onclick="closeLeaderboard()">Đóng</button>
  </div>
 </div>
 
@@ -1442,7 +1502,7 @@ onAuthStateChanged(auth, async user => {
     }
   } else {
     me = null; currentChat = null; localKeys = {}; viewingUid = null; currentPage = "home";
-    friendMoods = []; userCache.clear(); decCache.clear(); openComments.clear(); extraPosts.clear();
+    friendMoods = []; closeGame(); userCache.clear(); decCache.clear(); openComments.clear(); extraPosts.clear();
     $("app").style.display = "none";
     $("auth").style.display = "flex";
     showLogin();
@@ -1767,6 +1827,7 @@ window.sendFloatImage = async input => {
 window.showPage = page => {
   const changed = currentPage !== page;
   currentPage = page;
+  if (page === "games") closeGame(true); else if (curGame) closeGame();
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   $(page).classList.add("active");
   document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page === page));
@@ -2518,6 +2579,372 @@ window.deleteMood = async () => {
     toast("Đã xóa tâm trạng");
   } catch (e) { console.error(e); toast("Xóa thất bại"); }
 };
+
+/* ===== GAME ENGINES (chạy hoàn toàn trên máy, không dùng Firebase) ===== */
+const rand = n => Math.floor(Math.random() * n);
+function bindSwipe(el, cb, th = 24){
+  let sx = 0, sy = 0;
+  el.addEventListener("touchstart", e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; }, { passive: true });
+  el.addEventListener("touchend", e => {
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < th) return;
+    cb(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up"));
+  }, { passive: true });
+}
+const KEYDIR = { ArrowUp:"up", ArrowDown:"down", ArrowLeft:"left", ArrowRight:"right", w:"up", s:"down", a:"left", d:"right", W:"up", S:"down", A:"left", D:"right" };
+
+/* ---------- 1. Rắn săn mồi ---------- */
+function makeSnake(api){
+  const N = 18, C = 20, SZ = N * C;
+  const cv = document.createElement("canvas"); cv.width = cv.height = SZ; cv.className = "game-canvas";
+  api.board.appendChild(cv);
+  const ctx = cv.getContext("2d");
+  const pad = document.createElement("div"); pad.className = "dpad";
+  pad.innerHTML = `<button data-d="up">▲</button><div><button data-d="left">◀</button><button data-d="down">▼</button><button data-d="right">▶</button></div>`;
+  api.controls.appendChild(pad);
+  const OPP = { up:"down", down:"up", left:"right", right:"left" };
+  const V = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] };
+  let snake, dir, queue, food, score, over, paused, started, timer, delay;
+  const eq = (a, b) => a[0] === b[0] && a[1] === b[1];
+  function placeFood(){ do { food = [rand(N), rand(N)]; } while (snake.some(s => eq(s, food))); }
+  function reset(){
+    snake = [[9,9],[8,9],[7,9]]; dir = "right"; queue = []; score = 0;
+    over = false; paused = false; started = false; delay = 130;
+    placeFood(); api.setScore(0); draw("Bấm mũi tên / vuốt để bắt đầu");
+  }
+  function schedule(){ clearTimeout(timer); timer = setTimeout(tick, delay); }
+  function turn(d){
+    if (over) return;
+    if (!started) { started = true; schedule(); }
+    else if (paused) { paused = false; schedule(); }
+    const last = queue.length ? queue[queue.length - 1] : dir;
+    if (d === last || d === OPP[last]) return;
+    if (queue.length < 2) queue.push(d);
+  }
+  function tick(){
+    if (over || paused) return;
+    if (queue.length) dir = queue.shift();
+    const h = snake[0], nh = [h[0] + V[dir][0], h[1] + V[dir][1]];
+    const eat = eq(nh, food);
+    const body = eat ? snake : snake.slice(0, -1);
+    if (nh[0] < 0 || nh[1] < 0 || nh[0] >= N || nh[1] >= N || body.some(s => eq(s, nh))) {
+      over = true; draw(); api.over(score, "Rắn đã đâm! 🐍"); return;
+    }
+    snake.unshift(nh);
+    if (eat) { score += 10; api.setScore(score); delay = Math.max(65, delay - 3); placeFood(); } else snake.pop();
+    draw(); schedule();
+  }
+  function draw(msg){
+    ctx.fillStyle = "#0b0b12"; ctx.fillRect(0, 0, SZ, SZ);
+    ctx.fillStyle = "#14141f";
+    for (let x = 0; x < N; x++) for (let y = 0; y < N; y++) if ((x + y) % 2 === 0) ctx.fillRect(x * C, y * C, C, C);
+    ctx.fillStyle = "#ff5875"; ctx.beginPath(); ctx.arc(food[0] * C + C / 2, food[1] * C + C / 2, C / 2 - 3, 0, 7); ctx.fill();
+    snake.forEach((s, i) => {
+      ctx.fillStyle = i === 0 ? "#d9b3ff" : (i % 2 ? "#9b4dff" : "#8b45ed");
+      ctx.fillRect(s[0] * C + 1, s[1] * C + 1, C - 2, C - 2);
+    });
+    if (msg) {
+      ctx.fillStyle = "rgba(5,5,7,.65)"; ctx.fillRect(0, SZ / 2 - 22, SZ, 44);
+      ctx.fillStyle = "#fff"; ctx.font = "bold 15px system-ui,sans-serif"; ctx.textAlign = "center";
+      ctx.fillText(msg, SZ / 2, SZ / 2 + 5);
+    }
+  }
+  function pause(){ if (started && !over && !paused) { paused = true; clearTimeout(timer); draw("Tạm dừng — bấm mũi tên để tiếp tục"); } }
+  pad.addEventListener("pointerdown", e => { const b = e.target.closest("button"); if (b) { e.preventDefault(); turn(b.dataset.d); } });
+  bindSwipe(cv, turn);
+  reset();
+  return {
+    destroy(){ clearTimeout(timer); },
+    pause,
+    onKey(e){
+      if (KEYDIR[e.key]) { turn(KEYDIR[e.key]); return true; }
+      if (e.key === " ") { paused ? turn(dir) : pause(); return true; }
+      return false;
+    }
+  };
+}
+
+/* ---------- 2. 2048 ---------- */
+function make2048(api){
+  const grid = document.createElement("div"); grid.className = "g2048"; api.board.appendChild(grid);
+  let b, score, over, won;
+  function addTile(){
+    const empty = b.map((v, i) => v ? -1 : i).filter(i => i >= 0);
+    if (empty.length) b[empty[rand(empty.length)]] = Math.random() < 0.9 ? 2 : 4;
+  }
+  function slide(line){
+    const nz = line.filter(x => x), out = []; let gained = 0;
+    for (let i = 0; i < nz.length; i++) {
+      if (nz[i] === nz[i + 1]) { out.push(nz[i] * 2); gained += nz[i] * 2; i++; } else out.push(nz[i]);
+    }
+    while (out.length < 4) out.push(0);
+    return { out, gained };
+  }
+  function canMove(){
+    if (b.includes(0)) return true;
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+      const v = b[r * 4 + c];
+      if (c < 3 && v === b[r * 4 + c + 1]) return true;
+      if (r < 3 && v === b[(r + 1) * 4 + c]) return true;
+    }
+    return false;
+  }
+  function render(){
+    grid.innerHTML = b.map(v => `<div class="t ${v ? (v > 2048 ? "tbig" : "t" + v) : ""}">${v || ""}</div>`).join("");
+  }
+  function move(d){
+    if (over) return;
+    let moved = false, gain = 0; const nb = b.slice();
+    for (let i = 0; i < 4; i++) {
+      const idx = [0,1,2,3].map(j => (d === "left" || d === "right") ? i * 4 + j : j * 4 + i);
+      const rev = d === "right" || d === "down";
+      const line = idx.map(k => b[k]); if (rev) line.reverse();
+      const { out, gained } = slide(line); gain += gained;
+      if (rev) out.reverse();
+      idx.forEach((k, j) => { if (nb[k] !== out[j]) moved = true; nb[k] = out[j]; });
+    }
+    if (!moved) return;
+    b = nb; score += gain; addTile(); render(); api.setScore(score);
+    if (!won && b.includes(2048)) { won = true; toast("🎉 Bạn đã đạt 2048! Chơi tiếp để lấy điểm cao hơn"); }
+    if (!canMove()) { over = true; api.over(score, "Hết nước đi!"); }
+  }
+  b = Array(16).fill(0); score = 0; over = false; won = false;
+  addTile(); addTile(); render(); api.setScore(0);
+  bindSwipe(grid, move);
+  return {
+    destroy(){},
+    onKey(e){ if (KEYDIR[e.key]) { move(KEYDIR[e.key]); return true; } return false; },
+    _debug: () => ({ b, score })
+  };
+}
+
+/* ---------- 3. Chim bay ---------- */
+function makeFlappy(api){
+  const W = 320, H = 480, GROUND = 40, G = 1500, FLAP = -430, SPEED = 130, GAP = 140, PW = 52, BR = 12, BX = 90;
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H; cv.className = "game-canvas";
+  api.board.appendChild(cv);
+  const ctx = cv.getContext("2d");
+  let bird, pipes, score, started, dead, paused, raf, last, spawn;
+  function reset(){
+    bird = { y: H / 2, v: 0 }; pipes = []; score = 0; started = false; dead = false; paused = false;
+    spawn = 0.4; last = performance.now(); api.setScore(0);
+  }
+  function flap(){
+    if (dead) return;
+    if (!started) { started = true; last = performance.now(); }
+    if (paused) { paused = false; last = performance.now(); }
+    bird.v = FLAP;
+  }
+  function die(){ dead = true; api.over(score, "Chim đã đâm! 🐤"); }
+  function step(dt){
+    bird.v += G * dt; bird.y += bird.v * dt;
+    spawn -= dt;
+    if (spawn <= 0) { spawn = 1.6; pipes.push({ x: W + 10, gy: 110 + Math.random() * (H - GROUND - 220), passed: false }); }
+    pipes.forEach(p => { p.x -= SPEED * dt; });
+    pipes = pipes.filter(p => p.x + PW > -10);
+    for (const p of pipes) {
+      if (!p.passed && p.x + PW < BX - BR) { p.passed = true; score++; api.setScore(score); }
+      if (BX + BR > p.x && BX - BR < p.x + PW && (bird.y - BR < p.gy - GAP / 2 || bird.y + BR > p.gy + GAP / 2)) { die(); return; }
+    }
+    if (bird.y + BR >= H - GROUND) { bird.y = H - GROUND - BR; die(); return; }
+    if (bird.y - BR < 0) { bird.y = BR; bird.v = 0; }
+  }
+  function loop(t){
+    const dt = Math.min(0.033, Math.max(0, (t - last) / 1000)); last = t;
+    if (started && !dead && !paused) step(dt);
+    else if (!started) bird.y = H / 2 + Math.sin(t / 250) * 6;
+    draw();
+    if (!dead) raf = requestAnimationFrame(loop);
+  }
+  function draw(){
+    const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#1a1033"); g.addColorStop(1, "#3b1d6b");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    pipes.forEach(p => {
+      ctx.fillStyle = "#5eead4";
+      ctx.fillRect(p.x, 0, PW, p.gy - GAP / 2); ctx.fillRect(p.x, p.gy + GAP / 2, PW, H);
+      ctx.fillStyle = "#2dd4bf";
+      ctx.fillRect(p.x - 3, p.gy - GAP / 2 - 14, PW + 6, 14); ctx.fillRect(p.x - 3, p.gy + GAP / 2, PW + 6, 14);
+    });
+    ctx.fillStyle = "#2a2a38"; ctx.fillRect(0, H - GROUND, W, GROUND);
+    ctx.fillStyle = "#9b4dff"; ctx.fillRect(0, H - GROUND, W, 4);
+    ctx.fillStyle = "#ffd84d"; ctx.beginPath(); ctx.arc(BX, bird.y, BR, 0, 7); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(BX + 5, bird.y - 4, 4, 0, 7); ctx.fill();
+    ctx.fillStyle = "#111"; ctx.beginPath(); ctx.arc(BX + 6, bird.y - 4, 2, 0, 7); ctx.fill();
+    ctx.fillStyle = "#ff8a3d"; ctx.beginPath(); ctx.moveTo(BX + 10, bird.y); ctx.lineTo(BX + 20, bird.y + 3); ctx.lineTo(BX + 10, bird.y + 6); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = "bold 36px system-ui,sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(score, W / 2, 60);
+    if (!started || paused) {
+      ctx.font = "bold 16px system-ui,sans-serif";
+      ctx.fillText(paused ? "Tạm dừng — chạm để tiếp tục" : "Chạm / bấm Space để bay", W / 2, H / 2 + 60);
+    }
+  }
+  cv.addEventListener("pointerdown", e => { e.preventDefault(); flap(); });
+  reset(); raf = requestAnimationFrame(loop);
+  return {
+    destroy(){ cancelAnimationFrame(raf); },
+    pause(){ if (started && !dead) paused = true; },
+    onKey(e){ if (e.key === " " || e.key === "ArrowUp" || e.key === "w" || e.key === "W") { flap(); return true; } return false; }
+  };
+}
+
+/* ---------- 4. Lật hình ---------- */
+function makeMemory(api){
+  const EM = ["🐶","🐱","🦊","🐼","🐸","🦄","🐙","🍓"];
+  const deck = [...EM, ...EM].sort(() => Math.random() - 0.5);
+  const grid = document.createElement("div"); grid.className = "mem-grid";
+  grid.innerHTML = deck.map((e, i) => `<button class="mem-card" data-i="${i}">❔</button>`).join("");
+  api.board.appendChild(grid);
+  const info = document.createElement("div"); info.className = "muted"; info.style.textAlign = "center";
+  api.controls.appendChild(info);
+  let open = [], matched = 0, moves = 0, lock = false, t0 = 0, tick = null, timeouts = [];
+  const secs = () => t0 ? Math.floor((Date.now() - t0) / 1000) : 0;
+  const showInfo = () => { info.textContent = `Lượt: ${moves} · Thời gian: ${secs()}s · Cặp: ${matched / 2}/8`; };
+  showInfo();
+  grid.addEventListener("click", e => {
+    const el = e.target.closest(".mem-card"); if (!el || lock) return;
+    const i = Number(el.dataset.i);
+    if (open.includes(i) || el.classList.contains("ok")) return;
+    if (!t0) { t0 = Date.now(); tick = setInterval(showInfo, 1000); }
+    el.textContent = deck[i]; el.classList.add("up"); open.push(i);
+    if (open.length < 2) return;
+    moves++;
+    const [a, c] = open, ea = grid.children[a], ec = grid.children[c];
+    if (deck[a] === deck[c]) {
+      matched += 2; open = [];
+      [ea, ec].forEach(x => { x.classList.remove("up"); x.classList.add("ok"); });
+      showInfo();
+      if (matched === 16) {
+        clearInterval(tick);
+        const score = Math.max(100, 1000 - moves * 15 - secs() * 3);
+        api.setScore(score);
+        info.textContent = `Xong sau ${moves} lượt, ${secs()} giây`;
+        api.over(score, "Hoàn thành! 🎉");
+      }
+    } else {
+      lock = true; showInfo();
+      timeouts.push(setTimeout(() => {
+        [ea, ec].forEach(x => { x.classList.remove("up"); x.textContent = "❔"; });
+        open = []; lock = false;
+      }, 700));
+    }
+  });
+  return { destroy(){ clearInterval(tick); timeouts.forEach(clearTimeout); }, pause(){} };
+}
+
+/* ===== GAME: sảnh, kỷ lục, bảng xếp hạng ===== */
+const GAMES = [
+  { id: "snake",  emoji: "🐍", name: "Rắn săn mồi", desc: "Ăn mồi, đừng đâm tường hay cắn đuôi", help: "Mũi tên / WASD / vuốt · Space: tạm dừng", make: makeSnake },
+  { id: "g2048",  emoji: "🔢", name: "2048",         desc: "Gộp các ô giống nhau để lên 2048",   help: "Mũi tên / WASD / vuốt", make: make2048 },
+  { id: "flappy", emoji: "🐤", name: "Chim bay",     desc: "Chạm để vỗ cánh, luồn qua các ống",  help: "Chạm / click / Space", make: makeFlappy },
+  { id: "memory", emoji: "🃏", name: "Lật hình",     desc: "Tìm đủ 8 cặp với ít lượt nhất",       help: "Bấm vào thẻ để lật", make: makeMemory }
+];
+let curGame = null;
+const lbCache = new Map();
+const bestKey = id => "nova_best_" + (me ? me.id : "x") + "_" + id;
+function getBest(id){ try { return Number(localStorage.getItem(bestKey(id)) || 0); } catch { return 0; } }
+function setBest(id, v){ try { localStorage.setItem(bestKey(id), String(v)); } catch {} }
+
+function renderGameLobby(){
+  const box = $("gameGrid"); if (!box || !me) return;
+  box.innerHTML = GAMES.map(g => `<div class="card game-card">
+    <div style="font-size:40px;line-height:1">${g.emoji}</div>
+    <div style="font-weight:bold;margin-top:8px">${escapeHTML(g.name)}</div>
+    <div class="muted" style="font-size:12px;margin:4px 0 10px">${escapeHTML(g.desc)}</div>
+    <div class="muted" style="font-size:12px;margin-bottom:10px">Kỷ lục của bạn: <b style="color:var(--purple)">${getBest(g.id)}</b></div>
+    <div class="btn-row"><button class="primary" onclick="openGame('${g.id}')">▶ Chơi</button>
+    <button class="secondary" onclick="showLeaderboard('${g.id}')" title="Bảng xếp hạng">🏆</button></div></div>`).join("");
+}
+function stopInst(){
+  try { curGame?.inst?.destroy?.(); } catch (e) { console.warn(e); }
+  if (curGame) curGame.inst = null;
+  const a = $("gArea"), c = $("gControls"), o = $("gOver");
+  if (a) a.innerHTML = ""; if (c) c.innerHTML = ""; if (o) o.style.display = "none";
+}
+function startInst(){
+  const def = curGame.def;
+  stopInst();
+  $("gScore").textContent = "0"; $("gBest").textContent = getBest(def.id);
+  const api = {
+    board: $("gArea"), controls: $("gControls"),
+    setScore: n => { $("gScore").textContent = n; },
+    over: (score, msg) => {
+      $("gOverTitle").textContent = msg || "Kết thúc!";
+      $("gOverScore").textContent = "Điểm: " + score;
+      $("gOver").style.display = "flex";
+      submitScore(def.id, score);
+    }
+  };
+  curGame.inst = def.make(api);
+}
+window.openGame = id => {
+  const def = GAMES.find(g => g.id === id); if (!def) return;
+  stopInst();
+  curGame = { def, inst: null };
+  $("gameLobby").style.display = "none"; $("gameStage").style.display = "block";
+  $("gTitle").textContent = def.emoji + " " + def.name;
+  $("gHelp").textContent = def.help;
+  startInst();
+  window.scrollTo(0, 0);
+};
+window.restartGame = () => { if (curGame) startInst(); };
+function closeGame(toLobby){
+  stopInst(); curGame = null;
+  const st = $("gameStage"), lb = $("gameLobby");
+  if (st) st.style.display = "none"; if (lb) lb.style.display = "block";
+  if (toLobby) renderGameLobby();
+}
+window.closeGame = closeGame;
+
+async function submitScore(id, score){
+  if (!me || score <= 0 || score <= getBest(id)) return;
+  setBest(id, score);
+  if (curGame && curGame.def.id === id) $("gBest").textContent = score;
+  toast("🎉 Kỷ lục mới: " + score);
+  try {
+    const ref = doc(db, "gameScores_" + id, me.id);
+    const sn = await getDoc(ref);
+    if (!sn.exists() || (sn.data().score || 0) < score) {
+      await setDoc(ref, { uid: me.id, name: me.name, score, at: Date.now() });
+      lbCache.delete(id);
+    }
+  } catch (e) { console.warn("Chưa lưu được lên bảng xếp hạng (kiểm tra Firestore Rules)", e); }
+}
+window.showLeaderboard = async id => {
+  id = id || curGame?.def.id; if (!id) return;
+  const def = GAMES.find(g => g.id === id);
+  $("lbTitle").textContent = "🏆 " + def.name;
+  $("lbBody").innerHTML = `<p class="muted">Đang tải...</p>`;
+  $("lbModal").classList.add("show");
+  const c = lbCache.get(id);
+  let rows;
+  if (c && Date.now() - c.at < 60000) rows = c.rows;
+  else {
+    try {
+      const s = await getDocs(query(collection(db, "gameScores_" + id), orderBy("score", "desc"), limit(10)));
+      rows = s.docs.map(d => d.data());
+      lbCache.set(id, { at: Date.now(), rows });
+    } catch (e) {
+      console.warn(e);
+      $("lbBody").innerHTML = `<p class="muted">Chưa đọc được bảng xếp hạng. Cần thêm quy tắc (Rules) cho <b>gameScores_*</b> trong Firestore.</p>`;
+      return;
+    }
+  }
+  if (!rows.length) { $("lbBody").innerHTML = `<p class="muted">Chưa có ai lên bảng. Hãy là người đầu tiên!</p>`; return; }
+  const medal = ["🥇", "🥈", "🥉"];
+  $("lbBody").innerHTML = rows.map((r, i) => `<div class="item" style="margin-top:8px;padding:9px 12px;${r.uid === me.id ? "border-color:var(--purple)" : ""}">
+    <div class="item-left"><span style="width:26px;text-align:center">${medal[i] || i + 1}</span>
+    <div class="item-name">${escapeHTML(r.name || "Người chơi")}${r.uid === me.id ? " (bạn)" : ""}</div></div>
+    <b style="color:var(--purple)">${r.score}</b></div>`).join("");
+};
+window.closeLeaderboard = () => $("lbModal").classList.remove("show");
+
+document.addEventListener("keydown", e => {
+  if (!curGame || !curGame.inst || currentPage !== "games" || !curGame.inst.onKey) return;
+  const t = e.target.tagName; if (t === "INPUT" || t === "TEXTAREA") return;
+  if (curGame.inst.onKey(e)) e.preventDefault();
+});
+document.addEventListener("visibilitychange", () => { if (document.hidden && curGame?.inst?.pause) curGame.inst.pause(); });
+
 
 let searchTimer = null;
 window.searchEverything = () => {
