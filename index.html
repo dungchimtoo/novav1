@@ -438,6 +438,13 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
   gap: 10px;
 }
 .name-tag{font-size:11px;padding:2px 6px;border-radius:6px;background:#22c55e22;border:1px solid #22c55e66;color:#4ade80;margin-left:6px;font-weight:normal}
+/* NỀN CHAT */
+.chat-window.has-bg .day-sep{display:table;margin:14px auto 6px;background:rgba(0,0,0,.5);color:#fff;padding:2px 10px;border-radius:10px}
+.chat-window.has-bg .msg-time,.chat-window.has-bg .sender-name,.float-body.has-bg .empty{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.9)}
+.chat-window.has-bg .empty{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.9)}
+.bg-swatches{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+.bg-sw{aspect-ratio:1;border-radius:12px;border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;text-align:center;background:var(--input-bg)}
+.bg-sw.on{border-color:var(--purple);box-shadow:0 0 0 2px #9b4dff55}
 /* GAME */
 .game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
 .game-card{margin-bottom:0}
@@ -686,6 +693,7 @@ details.set-acc .input{margin-bottom:10px}
      <div class="chat-title" id="chatTitle">Chưa chọn cuộc trò chuyện</div>
      <div style="display:flex;gap:6px;">
       <button class="secondary" style="padding:6px 10px;font-size:13px" onclick="toggleKeyPanel()">🔐 Mã</button>
+      <button class="secondary" style="padding:6px 10px;font-size:13px" onclick="openBgModal()" title="Đổi nền cuộc trò chuyện">🎨 Nền</button>
       <button class="secondary" style="padding:6px 10px;font-size:13px;color:var(--danger);border-color:var(--danger);" onclick="lockChat()">🔒 Khóa lại</button>
      </div>
     </div>
@@ -818,6 +826,14 @@ details.set-acc .input{margin-bottom:10px}
       <input id="newPw2" class="input" type="password" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" onkeydown="if(event.key==='Enter')changePassword()">
       <div id="pwErr" class="err"></div>
       <button class="primary full" id="pwBtn" onclick="changePassword()">Đổi mật khẩu</button>
+     </div>
+    </details>
+    <details class="set-acc">
+     <summary>🔓 Mở khóa chat bằng mật khẩu</summary>
+     <div class="acc-body">
+      <p class="muted" style="font-size:12px;margin-bottom:10px">Khóa chat được chia sẻ an toàn cho các thành viên. Khi bị khóa hoặc đổi máy, chỉ cần nhập mật khẩu tài khoản là xem lại được toàn bộ tin nhắn cũ. Tự bật khi bạn đăng nhập bằng mật khẩu; bấm ở đây nếu bạn đang đăng nhập sẵn.</p>
+      <input id="kwPw" class="input" type="password" placeholder="Mật khẩu hiện tại" autocomplete="current-password" onkeydown="if(event.key==='Enter')activateKeySync()">
+      <button class="primary full" onclick="activateKeySync()">Kích hoạt</button>
      </div>
     </details>
     <div class="set-row">
@@ -960,6 +976,17 @@ details.set-acc .input{margin-bottom:10px}
  </div>
 </div>
 
+<div id="bgModal" class="modal" onclick="if(event.target===this)closeBgModal()">
+ <div class="modal-box">
+  <h3>🎨 Nền cuộc trò chuyện</h3>
+  <div class="muted" style="font-size:12px;margin-top:4px">Cả hai bên cùng thấy. Đổi ảnh mới sẽ tự xóa ảnh cũ để không tốn dung lượng.</div>
+  <div id="bgSwatches" class="bg-swatches"></div>
+  <button class="primary full" onclick="document.getElementById('chatBgFile').click()">📷 Chọn ảnh từ máy</button>
+  <button class="secondary full" id="bgRemoveBtn" onclick="removeChatBg()">🗑 Xóa nền (về mặc định)</button>
+  <button class="secondary full" onclick="closeBgModal()">Đóng</button>
+ </div>
+</div>
+
 <div id="lbModal" class="modal" onclick="if(event.target===this)closeLeaderboard()">
  <div class="modal-box">
   <h3 id="lbTitle">🏆 Xếp hạng</h3>
@@ -971,6 +998,7 @@ details.set-acc .input{margin-bottom:10px}
 <div id="lightbox" onclick="closeImage()"><img id="lightboxImg" alt=""></div>
 
 <input id="avatarFile" type="file" accept="image/*" style="display:none" onchange="changeAvatar(this)">
+<input id="chatBgFile" type="file" accept="image/*" style="display:none" onchange="setChatBgImage(this)">
 <input id="chatImageFile" type="file" accept="image/*" style="display:none" onchange="sendChatImage(this)">
 <input id="floatImageFile" type="file" accept="image/*" style="display:none" onchange="sendFloatImage(this)">
 <input id="postImageFile" type="file" accept="image/*" multiple style="display:none" onchange="previewPostImage(this)">
@@ -1104,7 +1132,9 @@ const isMsgHidden = (chatId, msgId) => !!hiddenMsgs[chatId + ":" + msgId];
 function persistHidden(){ localStorage.setItem("nova_msg_hidden_" + me.id, JSON.stringify(hiddenMsgs)); }
 function persistKeys(){ localStorage.setItem("nova_keys_" + me.id, JSON.stringify(localKeys)); }
 
+const keyFresh = {};   // vừa nhập/đổi mã: chưa so với keyCheck trong vài giây đầu (chờ dữ liệu cuộc trò chuyện cập nhật)
 function saveKey(chatId, key){
+  keyFresh[chatId] = Date.now() + 6000;
   const prev = localKeys[chatId] || localStorage.getItem("nova_key_permanent_" + chatId);
   if (prev && prev !== key) vaultAdd(chatId, prev); // giữ mã cũ để đọc lại tin cũ
   localKeys[chatId] = key;
@@ -1255,6 +1285,7 @@ window.register = async () => {
   $("registerErr").textContent = "";
   if (!name || !email || !password) { $("registerErr").textContent = "Nhập đầy đủ thông tin"; return; }
   try {
+    pendingPw = password;
     const res = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(res.user, { displayName: name });
     await setDoc(doc(db,"users",res.user.uid), {
@@ -1264,7 +1295,7 @@ window.register = async () => {
     await syncPasswordHash(res.user.uid, password);
     if (me && me.id === res.user.uid) { me.name = name; updateProfileView(); }
     toast("Tạo tài khoản thành công 💜");
-  } catch (err) { $("registerErr").textContent = authErr(err.code); }
+  } catch (err) { pendingPw = null; $("registerErr").textContent = authErr(err.code); }
 };
 
 window.login = async () => {
@@ -1273,10 +1304,11 @@ window.login = async () => {
   $("loginErr").textContent = "";
   if (!email || !password) { $("loginErr").textContent = "Nhập đầy đủ email và mật khẩu"; return; }
   try {
+    pendingPw = password;
     const cred = await signInWithEmailAndPassword(auth, email, password);
     await syncPasswordHash(cred.user.uid, password);
   }
-  catch (err) { $("loginErr").textContent = authErr(err.code); }
+  catch (err) { pendingPw = null; $("loginErr").textContent = authErr(err.code); }
 };
 
 window.googleLogin = async () => {
@@ -1319,6 +1351,7 @@ window.changePassword = async () => {
     await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, cur));
     await updatePassword(user, np);
     await syncPasswordHash(user.uid, np);
+    await kwRewrap(cur, np);
     $("curPw").value = ""; $("newPw").value = ""; $("newPw2").value = "";
     toast("Đổi mật khẩu thành công ✓");
   } catch (e) {
@@ -1482,6 +1515,7 @@ onAuthStateChanged(auth, async user => {
       me = { id: user.uid, name: data.name, email: (user.email || data.email || "").toLowerCase(), avatar: data.avatar || "", handle: data.handle || "", nid: data.nid || "", mood: data.mood || null };
       userCache.set(me.id, { id: me.id, ...data });
       loadKeys();
+      if (pendingPw) { const pw = pendingPw; pendingPw = null; ensureKeypair(pw); }   // tạo/kiểm tra khóa tài khoản để mở khóa chat bằng mật khẩu
       $("auth").style.display = "none";
       $("app").style.display = "block";
       startListeners();
@@ -1549,6 +1583,8 @@ function startListeners(){
     if (currentChat && !chats.find(c => c.id === currentChat)) { currentChat = null; detachMessages(); }
     await renderChatTabs(); renderGroups(); updateProfileView(); renderSidebars();
     if (currentChat) renderMessages();
+    if (activeFloatChatId) applyChatBg($("floatMessages"), chats.find(x => x.id === activeFloatChatId) || { id: activeFloatChatId });
+    if ($("bgModal").classList.contains("show")) renderBgModal();
   });
   listen(query(collection(db,"shares"), where("userId","==",me.id)), s => {
     myShares = s.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1741,6 +1777,7 @@ window.closeFloatingChat = () => {
 function attachFloatMessages(chatId) {
   if (floatMsgUnsub) { floatMsgUnsub(); floatMsgUnsub = null; }
   const chatObj = chats.find(x => x.id === chatId) || { id: chatId };
+  applyChatBg($("floatMessages"), chatObj);
 
   floatMsgUnsub = onSnapshot(query(collection(db, "chats", chatId, "messages"), orderBy("createdAt", "asc"), limit(100)), async s => {
     floatDocs = s.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1799,6 +1836,7 @@ window.sendFloatMessage = async () => {
   const chatObj = chats.find(x => x.id === activeFloatChatId) || { id: activeFloatChatId };
   const key = getKey(chatObj);
   if (!key) { toast("Cuộc trò chuyện đang khóa. Hãy mở khóa ở tab Chat trước."); return; }
+  if (!(await keyMatches(chatObj, key))) { toast("Mã cuộc trò chuyện đã được đổi, hãy mở khóa lại ở tab Chat."); return; }
   input.value = "";
   try {
     const enc = await encrypt(text, key);
@@ -2580,6 +2618,277 @@ window.deleteMood = async () => {
   } catch (e) { console.error(e); toast("Xóa thất bại"); }
 };
 
+/* ===== CHIA SẺ KHÓA CHAT GIỮA CÁC THÀNH VIÊN =====
+   Mỗi người có 1 cặp khóa RSA. Khóa riêng được bọc bằng MẬT KHẨU TÀI KHOẢN (PBKDF2 + AES-GCM) rồi lưu trong hồ sơ.
+   Khóa chat được bọc bằng khóa công khai của từng thành viên -> ai cũng mở khóa lại được bằng mật khẩu, tin cũ không mất. */
+const KW_ITER = 210000;
+async function kwDeriveAes(password, salt){
+  const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({ name: "PBKDF2", hash: "SHA-256", salt, iterations: KW_ITER }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+}
+async function kwWrapPriv(pkcs8, password){
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await kwDeriveAes(password, salt), pkcs8);
+  return { salt: b64(salt), iv: b64(iv), cipher: b64(ct), v: 1 };
+}
+async function kwDecryptPkcs8(pw, password){
+  return crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(pw.iv)) }, await kwDeriveAes(password, new Uint8Array(unb64(pw.salt))), unb64(pw.cipher));
+}
+const kwImportPriv = pkcs8 => crypto.subtle.importKey("pkcs8", pkcs8, { name: "RSA-OAEP", hash: "SHA-256" }, false, ["decrypt"]);
+async function kwNewPair(password){
+  const pair = await crypto.subtle.generateKey({ name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["encrypt", "decrypt"]);
+  const pub = JSON.stringify(await crypto.subtle.exportKey("jwk", pair.publicKey));
+  return { pub, privWrap: await kwWrapPriv(await crypto.subtle.exportKey("pkcs8", pair.privateKey), password) };
+}
+async function kwFingerprint(pubJson){
+  return b64(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pubJson))).slice(0, 16);
+}
+async function kwWrapChatKey(pubJson, chatKey){
+  const pub = await crypto.subtle.importKey("jwk", JSON.parse(pubJson), { name: "RSA-OAEP", hash: "SHA-256" }, false, ["encrypt"]);
+  return { w: b64(await crypto.subtle.encrypt({ name: "RSA-OAEP" }, pub, new TextEncoder().encode(chatKey))), f: await kwFingerprint(pubJson) };
+}
+async function kwUnwrapChatKey(priv, wrap){
+  return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "RSA-OAEP" }, priv, unb64(wrap.w)));
+}
+
+let pendingPw = null;
+const keyOkCache = new Map();
+async function keyMatches(c, key){
+  if (!c || !c.keyCheck) return true;
+  if (Date.now() < (keyFresh[c.id] || 0)) return true;
+  const ck = c.id + "|" + key + "|" + (c.keyCheck.iv || "");
+  if (keyOkCache.has(ck)) return keyOkCache.get(ck);
+  const ok = await verifyKey(c, key);
+  keyOkCache.set(ck, ok); return ok;
+}
+function dropKey(chatId){   // bỏ mã đang dùng nhưng GIỮ kho mã cũ để còn đọc lại tin nhắn
+  delete localKeys[chatId]; persistKeys();
+  localStorage.removeItem("nova_key_permanent_" + chatId);
+}
+async function getUserFresh(uid){
+  try { const sn = await getDoc(doc(db, "users", uid)); if (!sn.exists()) return null; const u = { id: uid, ...sn.data() }; userCache.set(uid, u); return u; }
+  catch { return null; }
+}
+async function ensureKeypair(password, force){
+  if (!me) return false;
+  try {
+    const ref = doc(db, "users", me.id);
+    const d = (await getDoc(ref)).data() || {};
+    if (d.pubKey && d.privWrap && !force) {
+      try { await kwDecryptPkcs8(d.privWrap, password); me.pubKey = d.pubKey; return true; }
+      catch { /* mật khẩu đã đổi ở nơi khác (vd. đặt lại qua email) -> tạo cặp khóa mới */ }
+    }
+    const { pub, privWrap } = await kwNewPair(password);
+    await updateDoc(ref, { pubKey: pub, privWrap });
+    me.pubKey = pub;
+    userCache.set(me.id, { ...(userCache.get(me.id) || {}), id: me.id, pubKey: pub });
+    return true;
+  } catch (e) { console.warn("Không tạo được khóa tài khoản", e); return false; }
+}
+async function kwRewrap(oldPw, newPw){
+  try {
+    const ref = doc(db, "users", me.id);
+    const d = (await getDoc(ref)).data() || {};
+    if (!d.privWrap) return;
+    let pk;
+    try { pk = await kwDecryptPkcs8(d.privWrap, oldPw); } catch { await ensureKeypair(newPw, true); return; }
+    await updateDoc(ref, { privWrap: await kwWrapPriv(pk, newPw) });
+  } catch (e) { console.warn("Không cập nhật được khóa tài khoản", e); }
+}
+const kwDone = new Set(), kwProbed = new Map();
+async function ensureKeyWraps(c, key){
+  if (!me || !c || !key || !Array.isArray(c.members)) return;
+  const tag = [c.id, c.members.join(","), c.keyCheck?.iv || "", Object.keys(c.keyWraps || {}).length].join("|");
+  if (kwDone.has(tag)) return; kwDone.add(tag);
+  try {
+    if (!(await keyMatches(c, key))) return;          // không chia sẻ mã đã cũ
+    const wraps = c.keyWraps || {}, upd = {};
+    for (const uid of c.members) {
+      let u = userCache.get(uid) || await getUser(uid);
+      if (!u?.pubKey && !wraps[uid] && Date.now() - (kwProbed.get(c.id + ":" + uid) || 0) > 10000) { kwProbed.set(c.id + ":" + uid, Date.now()); u = (await getUserFresh(uid)) || u; }
+      if (!u?.pubKey) continue;
+      if (wraps[uid] && wraps[uid].f === await kwFingerprint(u.pubKey)) continue;
+      upd["keyWraps." + uid] = await kwWrapChatKey(u.pubKey, key);
+    }
+    if (Object.keys(upd).length) await updateDoc(doc(db, "chats", c.id), upd);
+  } catch (e) { console.warn("Không chia sẻ được khóa chat", e); }
+}
+async function kwWrapAll(c, key){
+  const map = {};
+  for (const uid of c.members || []) {
+    const u = await getUserFresh(uid);
+    if (u?.pubKey) map[uid] = await kwWrapChatKey(u.pubKey, key);
+  }
+  return map;
+}
+window.unlockChatWithPassword = async () => {
+  const c = curChat(); if (!c) return;
+  const password = $("forgotKeyPwInput")?.value;
+  if (!password) { toast("Vui lòng nhập mật khẩu tài khoản của bạn"); return; }
+  const user = auth.currentUser;
+  if (!user || !user.email || !user.providerData.some(p => p.providerId === "password")) {
+    toast("Tài khoản Google không có mật khẩu — hãy nhập mã 24 ký tự"); return;
+  }
+  try {
+    toast("Đang xác thực mật khẩu...");
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+  } catch { toast("Mật khẩu tài khoản không đúng ❌"); return; }
+  try {
+    const d = (await getDoc(doc(db, "users", me.id))).data() || {};
+    let priv = null;
+    if (d.privWrap) { try { priv = await kwImportPriv(await kwDecryptPkcs8(d.privWrap, password)); } catch {} }
+    if (!priv) {
+      await ensureKeypair(password, true);
+      toast("Đã tạo khóa tài khoản. Nhờ một thành viên đã mở khóa mở lại cuộc trò chuyện này để chia sẻ khóa cho bạn, hoặc nhập mã 24 ký tự.");
+      return;
+    }
+    const w = c.keyWraps && c.keyWraps[me.id];
+    if (!w) { toast("Chưa có khóa chia sẻ cho bạn. Nhờ một thành viên đã mở khóa mở lại cuộc trò chuyện này, hoặc nhập mã 24 ký tự."); return; }
+    let key;
+    try { key = await kwUnwrapChatKey(priv, w); } catch { toast("Khóa chia sẻ không còn hợp lệ. Nhờ thành viên khác mở lại chat để cập nhật."); return; }
+    if (!(await verifyKey(c, key))) { toast("Khóa chia sẻ chưa theo kịp mã mới. Nhờ thành viên khác mở lại chat."); return; }
+    saveKey(c.id, key);
+    toast("Đã mở khóa bằng mật khẩu — xem lại được toàn bộ tin nhắn 🔓");
+    renderChatTabs(); renderMessages(true);
+  } catch (e) { console.error(e); toast("Mở khóa thất bại"); }
+};
+window.activateKeySync = async () => {
+  const password = $("kwPw").value;
+  if (!password) { toast("Nhập mật khẩu tài khoản để kích hoạt"); return; }
+  const user = auth.currentUser;
+  if (!user || !user.providerData.some(p => p.providerId === "password")) { toast("Chỉ dùng được với tài khoản đăng nhập bằng mật khẩu"); return; }
+  try { await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password)); }
+  catch { toast("Mật khẩu không đúng ❌"); return; }
+  toast("Đang kích hoạt...");
+  if (!(await ensureKeypair(password))) { toast("Kích hoạt thất bại"); return; }
+  kwDone.clear(); kwProbed.clear();
+  let n = 0;
+  for (const c of chats) { const k = getKey(c); if (k) { n++; await ensureKeyWraps(c, k); } }
+  $("kwPw").value = "";
+  toast(`Đã bật mở khóa bằng mật khẩu${n ? " và chia sẻ khóa cho " + n + " cuộc trò chuyện" : ""} ✓`);
+};
+
+/* ===== NỀN CHAT: 1 ảnh/chat, đổi ảnh mới thì ảnh cũ bị ghi đè hoặc xóa ===== */
+const BG_PRESETS = [
+  { id: "p1", name: "Tím đêm",  css: "linear-gradient(160deg,#1a1033,#6d28d9)" },
+  { id: "p2", name: "Biển",     css: "linear-gradient(160deg,#0f2027,#2c7a9b)" },
+  { id: "p3", name: "Hoàng hôn", css: "linear-gradient(160deg,#42275a,#e76f51)" },
+  { id: "p4", name: "Rừng",     css: "linear-gradient(160deg,#0b3d2e,#3fa36b)" },
+  { id: "p5", name: "Hồng",     css: "linear-gradient(160deg,#4a1942,#ff6ec7)" },
+  { id: "p6", name: "Than",     css: "linear-gradient(160deg,#0d0d12,#3a3a4c)" },
+  { id: "p7", name: "Xanh đêm", css: "linear-gradient(160deg,#0a1128,#1c4e80)" }
+];
+const bgMem = new Map();
+const bgImgCss = d => `linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)), url("${d}") center/cover no-repeat`;
+const lsGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch { return false; } };
+const lsDel = k => { try { localStorage.removeItem(k); } catch {} };
+const bgLocalKey = id => "nova_bg_local_" + id;
+const bgCacheKey = id => "nova_bgc_" + id;
+
+async function resolveBg(c){
+  if (!c || !c.id) return "";
+  const loc = lsGet(bgLocalKey(c.id));
+  if (loc) return bgImgCss(loc);
+  if (c.bgPreset) { const p = BG_PRESETS.find(x => x.id === c.bgPreset); if (p) return p.css; }
+  if (c.bgVer) {
+    const m = bgMem.get(c.id);
+    if (m && m.ver === c.bgVer) return bgImgCss(m.data);
+    try {
+      const cached = JSON.parse(lsGet(bgCacheKey(c.id)) || "null");
+      if (cached && cached.ver === c.bgVer && cached.data) { bgMem.set(c.id, cached); return bgImgCss(cached.data); }
+    } catch {}
+    try {
+      const sn = await getDoc(doc(db, "chats", c.id, "meta", "background"));
+      if (sn.exists() && sn.data().data) {
+        const rec = { ver: c.bgVer, data: sn.data().data };
+        bgMem.set(c.id, rec); lsSet(bgCacheKey(c.id), JSON.stringify(rec));
+        return bgImgCss(rec.data);
+      }
+    } catch (e) { console.warn("Không tải được ảnh nền", e); }
+    return "";
+  }
+  bgMem.delete(c.id); lsDel(bgCacheKey(c.id));   // không còn ảnh nền -> dọn bản lưu tạm trên máy
+  return "";
+}
+async function applyChatBg(el, c){
+  if (!el) return;
+  const key = c ? [c.id, c.bgVer || "", c.bgPreset || "", (lsGet(bgLocalKey(c.id)) || "").length].join("|") : "none";
+  if (el.dataset.bgKey === key) return;
+  el.dataset.bgKey = key;
+  const css = await resolveBg(c);
+  if (el.dataset.bgKey !== key) return;   // đã đổi sang chat khác trong lúc tải
+  el.style.background = css || "";
+  el.classList.toggle("has-bg", !!css);
+}
+function refreshChatBgs(){
+  const c = curChat();
+  const win = $("chatWindow"); if (win) { delete win.dataset.bgKey; applyChatBg(win, c); }
+  if (activeFloatChatId) { const f = $("floatMessages"); delete f.dataset.bgKey; applyChatBg(f, chats.find(x => x.id === activeFloatChatId) || { id: activeFloatChatId }); }
+}
+async function deleteBgImageDoc(chatId){
+  bgMem.delete(chatId); lsDel(bgCacheKey(chatId));
+  try { await deleteDoc(doc(db, "chats", chatId, "meta", "background")); } catch (e) { console.warn("Không xóa được ảnh nền cũ", e); }
+}
+function renderBgModal(){
+  const c = curChat(); if (!c) return;
+  const has = !!(c.bgPreset || c.bgVer || lsGet(bgLocalKey(c.id)));
+  $("bgSwatches").innerHTML = BG_PRESETS.map(p =>
+    `<div class="bg-sw ${c.bgPreset === p.id && !lsGet(bgLocalKey(c.id)) ? "on" : ""}" style="background:${p.css}" onclick="setChatPreset('${p.id}')" title="${p.name}">${p.name}</div>`).join("");
+  $("bgRemoveBtn").style.display = has ? "block" : "none";
+}
+window.openBgModal = () => {
+  if (!curChat()) { toast("Hãy mở một cuộc trò chuyện trước"); return; }
+  renderBgModal(); $("bgModal").classList.add("show");
+};
+window.closeBgModal = () => $("bgModal").classList.remove("show");
+window.setChatPreset = async pid => {
+  const c = curChat(); if (!c) return;
+  lsDel(bgLocalKey(c.id));
+  try {
+    await updateDoc(doc(db, "chats", c.id), { bgPreset: pid, bgVer: deleteField() });
+    if (c.bgVer) await deleteBgImageDoc(c.id);          // đổi sang màu -> xóa ảnh cũ khỏi Firebase
+    toast("Đã đổi nền 🎨");
+  } catch (e) { console.error(e); toast("Không đổi được nền"); }
+  refreshChatBgs(); renderBgModal();
+};
+window.setChatBgImage = async input => {
+  const file = input.files?.[0]; input.value = "";
+  if (!file) return;
+  if (!file.type.startsWith("image/")) { toast("Hãy chọn file ảnh"); return; }
+  const c = curChat(); if (!c) return;
+  toast("Đang xử lý ảnh nền...");
+  let data;
+  try {
+    data = await resizeImage(file, 900, false);
+    if (data.length > 600000) data = await resizeImage(file, 600, false);
+  } catch { toast("Ảnh không hợp lệ"); return; }
+  const at = Date.now();
+  try {
+    // set() ghi đè toàn bộ tài liệu -> ảnh nền cũ bị xóa, luôn chỉ còn 1 ảnh mỗi cuộc trò chuyện
+    await setDoc(doc(db, "chats", c.id, "meta", "background"), { data, by: me.id, at });
+    await updateDoc(doc(db, "chats", c.id), { bgVer: at, bgPreset: deleteField() });
+    bgMem.set(c.id, { ver: at, data }); lsSet(bgCacheKey(c.id), JSON.stringify({ ver: at, data }));
+    lsDel(bgLocalKey(c.id));
+    toast("Đã đổi ảnh nền, ảnh cũ đã được xóa 🎨");
+  } catch (e) {
+    console.warn("Lưu chung thất bại, chuyển sang lưu trên máy", e);
+    if (lsSet(bgLocalKey(c.id), data)) toast("Chưa lưu chung được (cần thêm Rules) — đã đặt nền chỉ trên máy này");
+    else toast("Không lưu được ảnh nền");
+  }
+  refreshChatBgs(); renderBgModal();
+};
+window.removeChatBg = async () => {
+  const c = curChat(); if (!c) return;
+  lsDel(bgLocalKey(c.id));
+  try {
+    if (c.bgVer || c.bgPreset) await updateDoc(doc(db, "chats", c.id), { bgVer: deleteField(), bgPreset: deleteField() });
+    if (c.bgVer) await deleteBgImageDoc(c.id);
+    toast("Đã xóa nền, ảnh được dọn khỏi Firebase 🗑");
+  } catch (e) { console.error(e); toast("Không xóa được nền"); }
+  refreshChatBgs(); renderBgModal();
+};
+
 /* ===== GAME ENGINES (chạy hoàn toàn trên máy, không dùng Firebase) ===== */
 const rand = n => Math.floor(Math.random() * n);
 function bindSwipe(el, cb, th = 24){
@@ -3157,12 +3466,12 @@ window.openPrivateChat = async friendId => {
       await setDoc(ref, { type: "private", members: [me.id, friendId].sort(), owner: "", keyCheck: await makeKeyCheck(key), createdAt: serverTimestamp(), lastAt: serverTimestamp() });
       saveKey(id, key);
     }
-    currentChat = id; attachMessages(); showPage("chat");
+    currentChat = id; kwDone.clear(); attachMessages(); showPage("chat");
   } catch (e) { console.error(e); toast("Không mở được chat"); }
 };
-window.openGroup = id => { currentChat = id; attachMessages(); showPage("chat"); };
+window.openGroup = id => { currentChat = id; kwDone.clear(); attachMessages(); showPage("chat"); };
 window.openExistingChat = async id => {
-  currentChat = id;
+  currentChat = id; kwDone.clear();
   attachMessages();
   renderChatTabs();
 };
@@ -3187,6 +3496,7 @@ async function renderMessages(stick){
   const box = $("messages"); const win = $("chatWindow");
   const composer = document.querySelector("#chat .chat-input");
   const c = curChat();
+  applyChatBg(win, c);
 
   if (!currentChat || !c) {
     if (composer) composer.style.display = "none";
@@ -3198,18 +3508,30 @@ async function renderMessages(stick){
   }
 
   let key = getKey(c);
+  let staleKey = false;
+  if (key && !(await keyMatches(c, key))) {
+    // mã trên máy này đã cũ (thành viên khác đã đổi mã): giữ làm mã cũ để vẫn đọc tin cũ, rồi mở khóa lại
+    dropKey(c.id); vaultAdd(c.id, key); key = null; staleKey = true;
+  }
+  if (token !== renderToken) return;
 
   if (!key) {
+    const fresh = box.querySelector("#forgotKeyPwInput")?.value || "";
     box.innerHTML = `<div class="chat-locked-container">
       <div class="chat-locked-icon">🔐</div>
       <div class="chat-locked-title">Cuộc trò chuyện này đang bị khóa</div>
-      <div class="chat-locked-desc">Nhập mã bảo mật 24 ký tự hoặc đặt lại bằng mật khẩu tài khoản của bạn để khôi phục (tin nhắn cũ sẽ được giữ lại):</div>
+      <div class="chat-locked-desc">${staleKey ? "Mã đã được thành viên khác đổi. " : ""}Nhập mật khẩu tài khoản để mở lại, toàn bộ tin nhắn cũ vẫn được giữ nguyên.</div>
       <div class="chat-locked-form">
-        <input id="directUnlockInput" class="input" placeholder="Nhập mã bảo mật 24 ký tự..." maxlength="24" style="margin-bottom:0">
-        <button class="primary full" onclick="submitDirectUnlock()">Mở bằng mã</button>
+        <input id="forgotKeyPwInput" class="input" type="password" placeholder="Mật khẩu tài khoản của bạn" style="margin-bottom:0" value="${escapeHTML(fresh)}" onkeydown="if(event.key==='Enter')unlockChatWithPassword()">
+        <button class="primary full" onclick="unlockChatWithPassword()">🔓 Mở khóa bằng mật khẩu</button>
         <div style="margin: 6px 0; font-size: 11px; color: var(--muted);">— hoặc —</div>
-        <input id="forgotKeyPwInput" class="input" type="password" placeholder="Mật khẩu tài khoản của bạn" style="margin-bottom:0">
-        <button class="secondary full" onclick="resetChatKeyWithPassword()">Đặt lại mã bằng mật khẩu</button>
+        <input id="directUnlockInput" class="input" placeholder="Nhập mã bảo mật 24 ký tự..." maxlength="24" style="margin-bottom:0">
+        <button class="secondary full" onclick="submitDirectUnlock()">Mở bằng mã</button>
+        <details style="margin-top:10px;text-align:left">
+          <summary class="muted" style="cursor:pointer;font-size:12px">Quên cả mã lẫn khóa chia sẻ?</summary>
+          <p class="muted" style="font-size:12px;margin:8px 0">Tạo mã mới: tin nhắn cũ chỉ đọc lại được trên máy nào còn giữ mã cũ. Chỉ dùng khi các cách trên không được.</p>
+          <button class="danger-btn full" style="padding:10px" onclick="resetChatKeyWithPassword()">Tạo mã mới</button>
+        </details>
       </div>
     </div>`;
     if (composer) composer.style.display = "none";
@@ -3221,6 +3543,7 @@ async function renderMessages(stick){
 
   $("chatKey").textContent = key;
   $("keyActions").style.display = "flex";
+  ensureKeyWraps(c, key);
   if (composer) composer.style.display = "flex";
 
   const nearBottom = win.scrollHeight - win.scrollTop - win.clientHeight < 120;
@@ -3312,7 +3635,7 @@ window.resetChatKeyWithPassword = async () => {
   // Gom các mã cũ để vẫn đọc lại được tin nhắn đã gửi trước đó
   const prevKeys = [...new Set([...(c.oldKeys || []), ...vaultGet(c.id)])];
   if (!prevKeys.length && msgDocs.length &&
-      !confirm("Máy này không còn mã cũ nên tin nhắn cũ sẽ KHÔNG đọc lại được. Vẫn đặt lại mã?")) return;
+      !confirm("Máy này không giữ mã cũ nên tin nhắn cũ sẽ KHÔNG đọc lại được trên máy này (thành viên nào còn mã cũ vẫn đọc được). Bạn nên thử \"Mở khóa bằng mật khẩu\" trước. Vẫn tạo mã mới?")) return;
 
   try {
     toast("Đang xác thực mật khẩu...");
@@ -3321,10 +3644,12 @@ window.resetChatKeyWithPassword = async () => {
     const newKey = generateChatKey();
     const upd = { keyCheck: await makeKeyCheck(newKey) };
     if (prevKeys.length) upd.oldKeys = prevKeys;
+    await ensureKeypair(password);
+    upd.keyWraps = await kwWrapAll(c, newKey);     // chia sẻ mã mới cho mọi thành viên có khóa tài khoản
     await updateDoc(doc(db, "chats", c.id), upd);
     saveKey(c.id, newKey);
 
-    toast("Đã đặt lại mã mới, tin nhắn cũ vẫn xem được 🔓");
+    toast(prevKeys.length ? "Đã tạo mã mới, tin nhắn cũ vẫn xem được 🔓" : "Đã tạo mã mới 🔓");
     renderChatTabs();
     renderMessages(true);
   } catch (e) {
@@ -3337,7 +3662,7 @@ window.lockChat = () => {
   const c = curChat(); if (!c) return;
   const k = getKey(c);
   renderToken++;
-  forgetKey(c.id);
+  dropKey(c.id);
   vaultAdd(c.id, k); // giữ mã để mở khóa xong vẫn xem lại được toàn bộ tin nhắn
   const box = $("messages");
   const composer = document.querySelector("#chat .chat-input");
@@ -3423,6 +3748,7 @@ window.sendMessage = async () => {
     toast("Cuộc trò chuyện đang bị khóa. Hãy nhập mã bảo mật để mở khóa trước.");
     return;
   }
+  if (!(await keyMatches(c, key))) { toast("Mã cuộc trò chuyện đã được đổi, hãy mở khóa lại"); renderMessages(); return; }
   const input = $("messageInput"); const text = input.value.trim(); if (!text) return;
   input.value = "";
   try {
@@ -3565,6 +3891,7 @@ window.newChatKey = async () => {
     await updateDoc(doc(db, "chats", c.id), { 
       keyCheck: await makeKeyCheck(newKey), 
       oldKeys: existingOldKeys,
+      keyWraps: await kwWrapAll(c, newKey),
       key: deleteField() 
     });
     
@@ -3730,7 +4057,7 @@ window.addMemberToGroup = async gid => {
 
 window.leaveGroup = async gid => {
   if (!confirm("Rời group này?")) return;
-  try { await updateDoc(doc(db,"chats",gid), { members: arrayRemove(me.id) }); forgetKey(gid); toast("Đã rời group"); } catch { toast("Lỗi"); }
+  try { await updateDoc(doc(db,"chats",gid), { members: arrayRemove(me.id) }); forgetKey(gid); bgMem.delete(gid); lsDel(bgCacheKey(gid)); lsDel(bgLocalKey(gid)); toast("Đã rời group"); } catch { toast("Lỗi"); }
 };
 window.deleteGroup = async gid => {
   if (!confirm("Xóa group? Toàn bộ tin nhắn sẽ mất.")) return;
@@ -3739,6 +4066,7 @@ window.deleteGroup = async gid => {
     for (let i = 0; i < snap.docs.length; i += 400) {
       const b = writeBatch(db); snap.docs.slice(i, i+400).forEach(d => b.delete(d.ref)); await b.commit();
     }
+    await deleteBgImageDoc(gid); lsDel(bgLocalKey(gid));
     await deleteDoc(doc(db,"chats",gid)); forgetKey(gid); toast("Đã xóa group");
   } catch (e) { console.error(e); toast("Lỗi"); }
 };
