@@ -438,6 +438,31 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
   gap: 10px;
 }
 .name-tag{font-size:11px;padding:2px 6px;border-radius:6px;background:#22c55e22;border:1px solid #22c55e66;color:#4ade80;margin-left:6px;font-weight:normal}
+/* CÀI ĐẶT */
+.set-head{display:flex;align-items:center;gap:14px}
+.set-head .avatar{width:64px;height:64px;font-size:26px;margin:0;flex-shrink:0}
+.set-title{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:18px 4px 8px;font-weight:bold}
+.set-card{background:var(--card-bg);border:1px solid var(--border);border-radius:18px;padding:4px 16px;margin-bottom:6px}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--border)}
+.set-row:last-child{border-bottom:0}
+.set-label{font-weight:600}
+.set-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.set-field{padding:13px 0;border-bottom:1px solid var(--border)}
+.set-field:last-child{border-bottom:0}
+.set-field .search-friend{margin-top:8px}
+.set-field .input:last-of-type{margin-bottom:0}
+.set-badge{font-size:12px;padding:4px 10px;border-radius:20px;background:#9b4dff22;border:1px solid #9b4dff55;color:#c994ff;white-space:nowrap}
+details.set-acc{border-bottom:1px solid var(--border)}
+details.set-acc:last-child{border-bottom:0}
+details.set-acc summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:13px 0;font-weight:600}
+details.set-acc summary::-webkit-details-marker{display:none}
+details.set-acc summary::after{content:"›";font-size:20px;color:var(--muted);transition:transform .2s}
+details.set-acc[open] summary::after{transform:rotate(90deg)}
+details.set-acc .acc-body{padding:0 0 14px}
+details.set-acc .input{margin-bottom:10px}
+.set-danger{border-color:#ff587555}
+.set-logout{width:100%;margin-top:14px;padding:13px;border-radius:14px;border:1px solid var(--danger);background:transparent;color:var(--danger);font-weight:bold}
+.set-logout:hover{background:var(--danger);color:#fff}
 /* XEM BÀI GỐC */
 #pvModal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-start;justify-content:center;z-index:140;padding:20px;overflow-y:auto}
 #pvModal.show{display:flex}
@@ -704,50 +729,82 @@ body.light .sens-wrap.txt .sens-note{color:#1f2937;text-shadow:none}
 
   <section id="settings" class="page">
    <h2>⚙️ Cài đặt</h2>
-   <div class="card" style="margin-top:15px">
-    <div class="setting"><span>🖼️ Ảnh đại diện</span>
-     <div class="btn-row">
-      <button class="secondary" onclick="document.getElementById('avatarFile').click()">Chọn ảnh</button>
-      <button class="secondary" onclick="removeAvatar()">Xóa</button>
+
+   <div class="card set-head" style="margin-top:15px">
+    <div id="stAvatar" class="avatar editable" onclick="document.getElementById('avatarFile').click()" title="Đổi ảnh đại diện">N</div>
+    <div style="min-width:0;flex:1">
+     <div id="stName" class="profile-name" style="font-size:18px;overflow:hidden;text-overflow:ellipsis">Nova</div>
+     <div id="stId" class="muted" style="word-break:break-all">--</div>
+     <div class="btn-row" style="margin-top:8px">
+      <button class="secondary" style="padding:6px 12px;font-size:13px" onclick="document.getElementById('avatarFile').click()">Đổi ảnh</button>
+      <button class="secondary" style="padding:6px 12px;font-size:13px" onclick="removeAvatar()">Xóa ảnh</button>
      </div>
     </div>
-    <div class="setting" style="flex-direction:column;align-items:stretch">
-     <span>✏️ Tên hiển thị</span>
-     <div class="search-friend" style="margin-top:8px">
+   </div>
+
+   <div class="set-title">Hồ sơ</div>
+   <div class="set-card">
+    <div class="set-field">
+     <div class="set-label">✏️ Tên hiển thị</div>
+     <div class="search-friend">
       <input id="newName" class="input" maxlength="30" placeholder="Tên mới">
       <button class="primary" onclick="changeName()">Lưu</button>
      </div>
     </div>
-    <div class="setting" style="flex-direction:column;align-items:stretch">
-     <span>＠ Tên định danh</span>
-     <div class="search-friend" style="margin-top:8px">
+    <div class="set-field">
+     <div class="set-label">＠ Tên định danh</div>
+     <div class="search-friend">
       <input id="newHandle" class="input" maxlength="20" placeholder="vd: dung_nova">
       <button class="primary" onclick="changeHandle()">Lưu</button>
      </div>
-     <div class="muted" id="myNidLine"></div>
+     <div class="set-sub" id="myNidLine"></div>
     </div>
-    <div class="setting" style="flex-direction:column;align-items:stretch">
-     <span>🔑 Đổi mật khẩu</span>
-     <input id="curPw" class="input" type="password" style="margin-top:8px" placeholder="Mật khẩu hiện tại" autocomplete="current-password">
-     <input id="newPw" class="input" type="password" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)" autocomplete="new-password">
-     <input id="newPw2" class="input" type="password" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" onkeydown="if(event.key==='Enter')changePassword()">
-     <div id="pwErr" class="err"></div>
-     <button class="primary" id="pwBtn" onclick="changePassword()">Đổi mật khẩu</button>
-    </div>
-    <div class="setting"><span>🌌 Giao diện</span><button class="secondary" onclick="toggleTheme()" id="themeBtn">Chuyển Sáng</button></div>
-    <div class="setting"><span>🔐 Tin nhắn mã hóa</span><span style="color:#bd7fff">AES-GCM</span></div>
-    <div class="setting"><span>🔑 Băm mật khẩu</span><span style="color:#bd7fff">PBKDF2-SHA256</span></div>
-    
-    <div class="setting" style="flex-direction:column;align-items:stretch;border-top:1px solid var(--border);margin-top:10px;padding-top:15px">
-     <span style="color:var(--danger);font-weight:bold">⚠️ Xóa tài khoản vĩnh viễn</span>
-     <p class="muted" style="font-size:12px;margin:4px 0 8px">Thao tác này sẽ xóa vĩnh viễn thông tin và tài khoản của bạn. Nhập mật khẩu hiện tại để xác nhận:</p>
-     <input id="delAccountPw" class="input" type="password" placeholder="Mật khẩu hiện tại để xác nhận xóa" autocomplete="current-password">
-     <div id="delAccErr" class="err"></div>
-     <button class="danger-btn" style="padding:10px;font-weight:bold;font-size:13px;width:100%" onclick="deleteMyAccount()">Xóa tài khoản của tôi</button>
-    </div>
-
-    <div class="setting"><span class="danger">Đăng xuất</span><button class="secondary" onclick="logout()">Thoát</button></div>
    </div>
+
+   <div class="set-title">Giao diện</div>
+   <div class="set-card">
+    <div class="set-row">
+     <div><div class="set-label">🌌 Chế độ màu</div><div class="set-sub">Chuyển qua lại giữa nền tối và nền sáng</div></div>
+     <button class="secondary" onclick="toggleTheme()" id="themeBtn">Chuyển Sáng</button>
+    </div>
+   </div>
+
+   <div class="set-title">Bảo mật</div>
+   <div class="set-card">
+    <details class="set-acc">
+     <summary>🔑 Đổi mật khẩu</summary>
+     <div class="acc-body">
+      <input id="curPw" class="input" type="password" placeholder="Mật khẩu hiện tại" autocomplete="current-password">
+      <input id="newPw" class="input" type="password" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)" autocomplete="new-password">
+      <input id="newPw2" class="input" type="password" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" onkeydown="if(event.key==='Enter')changePassword()">
+      <div id="pwErr" class="err"></div>
+      <button class="primary full" id="pwBtn" onclick="changePassword()">Đổi mật khẩu</button>
+     </div>
+    </details>
+    <div class="set-row">
+     <div><div class="set-label">🔐 Mã hóa tin nhắn</div><div class="set-sub">Tin nhắn được mã hóa trước khi gửi</div></div>
+     <span class="set-badge">AES-GCM</span>
+    </div>
+    <div class="set-row">
+     <div><div class="set-label">🛡️ Băm mật khẩu</div><div class="set-sub">Mật khẩu được băm, không lưu dạng thô</div></div>
+     <span class="set-badge">PBKDF2-SHA256</span>
+    </div>
+   </div>
+
+   <div class="set-title">Tài khoản</div>
+   <div class="set-card set-danger">
+    <details class="set-acc">
+     <summary style="color:var(--danger)">⚠️ Xóa tài khoản vĩnh viễn</summary>
+     <div class="acc-body">
+      <p class="muted" style="font-size:12px;margin-bottom:10px">Thao tác này xóa vĩnh viễn thông tin và tài khoản của bạn, không thể hoàn tác. Nhập mật khẩu hiện tại để xác nhận.</p>
+      <input id="delAccountPw" class="input" type="password" placeholder="Mật khẩu hiện tại" autocomplete="current-password">
+      <div id="delAccErr" class="err"></div>
+      <button class="danger-btn" style="padding:11px;font-weight:bold;font-size:13px;width:100%" onclick="deleteMyAccount()">Xóa tài khoản của tôi</button>
+     </div>
+    </details>
+   </div>
+
+   <button class="set-logout" onclick="logout()">🚪 Đăng xuất</button>
   </section>
 
   <section id="postView" class="page">
@@ -3193,6 +3250,11 @@ window.markAllRead = async () => {
 
 function updateProfileView(){
   if (!me) return;
+  if ($("stName")) {
+    $("stName").textContent = me.name;
+    $("stId").textContent = idLine(me) || "Đang tạo ID...";
+    $("stAvatar").innerHTML = me.avatar ? `<img src="${escapeHTML(me.avatar)}" alt="">` : escapeHTML(initial(me.name));
+  }
   $("profileName").textContent = me.name; $("profileEmail").textContent = idLine(me) || "Đang tạo ID...";
   $("avatar").innerHTML = me.avatar ? `<img src="${escapeHTML(me.avatar)}" alt="">` : escapeHTML(initial(me.name));
   $("postCount").textContent = posts.filter(p => p.userId === me.id && !p.isShared).length;
