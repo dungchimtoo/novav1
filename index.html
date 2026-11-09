@@ -571,8 +571,8 @@ details.set-acc .input{margin-bottom:10px}
  .chat-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1}
  .chat-head .lbl{display:none}
  .chat-head button.secondary{padding:7px 11px!important;font-size:15px!important}
- .bday-form select{flex:1 0 40%}
- #bdVis{flex:1 0 100%}
+ .bday-form select,.bday-form input{flex:1 0 28%!important;min-width:0!important}
+ #bdVis{flex:1 0 100%!important}
  .note-add .btn-row button{padding:9px 14px}
  #bdayPop .box{padding:22px 18px}
 }
@@ -883,6 +883,7 @@ details.set-acc .input{margin-bottom:10px}
      <div class="bday-form">
       <select id="bdD" class="input"></select>
       <select id="bdM" class="input"></select>
+      <input id="bdY" class="input" type="number" inputmode="numeric" placeholder="Năm sinh" min="1900" max="2100" style="flex:1;min-width:90px;margin:0">
       <select id="bdVis" class="input">
        <option value="public">🌍 Công khai</option>
        <option value="friends">👥 Chỉ bạn bè</option>
@@ -890,7 +891,7 @@ details.set-acc .input{margin-bottom:10px}
       </select>
      </div>
      <div class="btn-row" style="margin-top:8px"><button class="primary" onclick="saveBirthday()">Lưu</button><button class="secondary" onclick="clearBirthday()">Xóa</button></div>
-     <div class="set-sub">Chỉ lưu ngày/tháng. Đến ngày sinh nhật, NOVA sẽ gửi lời chúc cho bạn 🎉 Bạn bè (nếu bạn cho phép) sẽ thấy nhắc sinh nhật.</div>
+     <div class="set-sub">Gồm ngày, tháng và năm sinh (năm có thể để trống). Đến ngày sinh nhật, NOVA sẽ gửi lời chúc cho bạn 🎉 Bạn bè (nếu bạn cho phép) sẽ thấy nhắc sinh nhật.</div>
     </div>
 
    <div class="set-title">Giao diện</div>
@@ -2803,6 +2804,12 @@ function bdayDays(b){
   if (n < t0) n = new Date(t0.getFullYear() + 1, b.m - 1, b.d);
   return Math.round((n - t0) / 864e5);
 }
+function bdayAge(b){
+  if (!b?.y) return 0;
+  const t = new Date(); const n = new Date(t.getFullYear(), t.getMonth(), t.getDate() + bdayDays(b));
+  return n.getFullYear() - b.y;
+}
+const bdayFull = b => pad2(b.d) + "/" + pad2(b.m) + (b.y ? "/" + b.y : "");
 function bdayShown(u, isFr){
   const b = u?.birthday; if (!b || !b.d || !b.m) return false;
   return b.vis === "public" || (b.vis === "friends" && !!isFr) || u.id === me?.id;
@@ -2810,7 +2817,7 @@ function bdayShown(u, isFr){
 function bdayBadge(u, self){
   const b = u?.birthday; if (!b || !b.d || !b.m) return "";
   const today = bdayDays(b) === 0;
-  return `<span class="name-tag" style="margin-left:0;font-size:13px">🎂 ${pad2(b.d)}/${pad2(b.m)}${self ? " · " + (BDAY_VIS[b.vis] || "") : ""}${today ? " · 🎉 Hôm nay!" : ""}</span>`;
+  return `<span class="name-tag" style="margin-left:0;font-size:13px">🎂 ${bdayFull(b)}${b.y ? " · " + bdayAge(b) + " tuổi" + (today ? "" : " (sắp tới)") : ""}${self ? " · " + (BDAY_VIS[b.vis] || "") : ""}${today ? " · 🎉 Hôm nay!" : ""}</span>`;
 }
 function wishBtn(u){
   if (!u || u.id === me.id || bdayDays(u.birthday) !== 0) return "";
@@ -2831,7 +2838,7 @@ function bdayHTML(){
   const mine = me.birthday;
   if (mine && mine.d) {
     const dm = bdayDays(mine);
-    h += `<div class="bday-mine">Của bạn: <b>${pad2(mine.d)}/${pad2(mine.m)}</b> · ${dm === 0 ? "🎉 hôm nay!" : "còn " + dm + " ngày"} · <span class="muted">${BDAY_VIS[mine.vis] || ""}</span></div>`;
+    h += `<div class="bday-mine">Của bạn: <b>${bdayFull(mine)}</b> · ${dm === 0 ? "🎉 hôm nay!" : "còn " + dm + " ngày"}${mine.y ? " · tròn " + bdayAge(mine) + " tuổi" : ""} · <span class="muted">${BDAY_VIS[mine.vis] || ""}</span></div>`;
   } else {
     h += `<p class="muted" style="font-size:12px;margin-top:6px">Thêm ngày sinh để NOVA chúc mừng bạn và bạn bè biết nhé!</p>
       <button class="secondary" style="margin-top:8px;padding:7px 12px;font-size:13px" onclick="showPage('settings')">Thêm ngày sinh</button>`;
@@ -2840,7 +2847,7 @@ function bdayHTML(){
     .filter(x => x.days <= 30).sort((a, b) => a.days - b.days).slice(0, 5);
   h += `<div style="margin-top:8px">` + list.map(({ u, days }) => `<div class="bday-row" onclick="openUserProfile('${u.id}')">
     <span>${days === 0 ? "🎉" : "🎈"}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHTML(u.name || "Bạn")}</span>
-    <span class="muted" style="font-size:11px">${days === 0 ? "Hôm nay!" : pad2(u.birthday.d) + "/" + pad2(u.birthday.m) + " · " + days + " ngày"}</span></div>`).join("") + `</div>`;
+    <span class="muted" style="font-size:11px">${days === 0 ? "Hôm nay!" : pad2(u.birthday.d) + "/" + pad2(u.birthday.m) + (u.birthday.y ? " · " + bdayAge(u.birthday) + " tuổi" : "") + " · " + days + " ngày"}</span></div>`).join("") + `</div>`;
   if (!list.length && mine) h += `<p class="muted" style="font-size:12px;margin-top:8px">Chưa có sinh nhật bạn bè trong 30 ngày tới.</p>`;
   return h;
 }
@@ -2858,13 +2865,15 @@ function initBdayForm(){
     m.innerHTML = `<option value="">Tháng</option>` + Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">Tháng ${i + 1}</option>`).join("");
   }
   const b = me.birthday;
-  d.value = b?.d || ""; m.value = b?.m || ""; v.value = b?.vis || "friends";
+  d.value = b?.d || ""; m.value = b?.m || ""; v.value = b?.vis || "friends"; if ($("bdY")) $("bdY").value = b?.y || "";
 }
 window.saveBirthday = async () => {
   const d = +$("bdD").value, m = +$("bdM").value, vis = $("bdVis").value;
   if (!d || !m) { toast("Chọn ngày và tháng sinh"); return; }
   if (d > new Date(2024, m, 0).getDate()) { toast("Ngày không hợp lệ cho tháng này"); return; }
-  const birthday = { d, m, vis };
+  const yRaw = $("bdY").value.trim(), y = yRaw ? parseInt(yRaw, 10) : 0;
+  if (yRaw && (!(y >= 1900 && y <= new Date().getFullYear()) || new Date(y, m - 1, d) > new Date())) { toast("Năm sinh không hợp lệ"); return; }
+  const birthday = y ? { d, m, y, vis } : { d, m, vis };
   try {
     await updateDoc(doc(db, "users", me.id), { birthday });
     me.birthday = birthday;
@@ -2887,7 +2896,7 @@ window.showBirthdayPop = () => {
   $("bdayPop")?.remove();
   const el = document.createElement("div"); el.id = "bdayPop";
   const conf = Array.from({ length: 28 }, () => `<span class="confetti" style="left:${Math.random() * 100}%;animation-duration:${3 + Math.random() * 4}s;animation-delay:${Math.random() * 3}s">${["🎉", "🎊", "✨", "🎈", "💜", "⭐"][Math.floor(Math.random() * 6)]}</span>`).join("");
-  el.innerHTML = conf + `<div class="box"><div class="cake">🎂</div><h2>Chúc mừng sinh nhật, ${escapeHTML(me.name)}!</h2>
+  el.innerHTML = conf + `<div class="box"><div class="cake">🎂</div><h2>Chúc mừng sinh nhật${me.birthday?.y ? " lần thứ " + bdayAge(me.birthday) : ""}, ${escapeHTML(me.name)}!</h2>
     <p>NOVA chúc bạn một tuổi mới thật nhiều niềm vui, sức khỏe và những điều tuyệt vời nhất 💜<br>Cảm ơn bạn đã ở cùng NOVA!</p>
     <button class="primary full" onclick="document.getElementById('bdayPop').remove()">Cảm ơn NOVA 💜</button></div>`;
   document.body.appendChild(el);
@@ -2898,7 +2907,7 @@ async function maybeBirthdayGreeting(){
   if (lsGet(k) === yr) return;
   lsSet(k, yr);
   showBirthdayPop();
-  try { await addDoc(collection(db, "notifications"), { to: me.id, type: "birthday", from: me.id, text: `🎂 Chúc mừng sinh nhật ${me.name}! NOVA chúc bạn một tuổi mới thật nhiều niềm vui 💜`, read: false, createdAt: serverTimestamp() }); } catch {}
+  try { await addDoc(collection(db, "notifications"), { to: me.id, type: "birthday", from: me.id, text: `🎂 Chúc mừng sinh nhật${b.y ? " lần thứ " + bdayAge(b) : ""} ${me.name}! NOVA chúc bạn một tuổi mới thật nhiều niềm vui 💜`, read: false, createdAt: serverTimestamp() }); } catch {}
 }
 
 /* ===== CHIA SẺ KHÓA CHAT GIỮA CÁC THÀNH VIÊN =====
