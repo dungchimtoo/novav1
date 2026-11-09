@@ -514,6 +514,37 @@ details.set-acc .input{margin-bottom:10px}
 .shared-card.clickable:hover{border-color:var(--purple)}
 .clickable-zone{cursor:pointer}
 .clickable-zone:hover .post-id{color:var(--purple)}
+
+/* nova11: chế độ chỉ xem, ghi chú, sinh nhật */
+.chat-locked-container.ro{min-height:0!important;height:auto!important;padding:12px!important;margin:0 0 12px!important;border:1px solid var(--border);border-radius:14px;background:var(--input-bg)}
+.chat-locked-container.ro .chat-locked-icon{display:none}
+.chat-locked-container.ro .chat-locked-title{font-size:14px}
+#bdayBoxHome,#notesBoxHome{display:none}
+@media(max-width:1024px){#bdayBoxHome,#notesBoxHome{display:block;margin-bottom:14px}}
+.note-add textarea{width:100%;min-height:56px;resize:vertical;background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:9px 11px;margin-top:10px;font-size:13px}
+.note-add .btn-row{margin-top:8px;display:flex;gap:8px}
+.note-add .btn-row button{padding:7px 12px;font-size:13px}
+.note-prev{position:relative;margin-top:8px}
+.note-prev img{width:100%;max-height:140px;object-fit:cover;border-radius:10px;display:block}
+.note-prev button{position:absolute;top:6px;right:6px;border:0;background:#000a;color:#fff;border-radius:50%;width:24px;height:24px}
+.note-item{border:1px solid var(--border);background:var(--input-bg);border-radius:12px;padding:10px;margin-top:10px}
+.note-item.pin{border-color:var(--purple)}
+.note-text{font-size:13px;white-space:pre-wrap;word-break:break-word}
+.note-item img.note-img{width:100%;max-height:200px;object-fit:cover;border-radius:10px;margin-top:8px;cursor:pointer;display:block}
+.note-foot{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:11px}
+.note-foot button{border:0;background:transparent;font-size:14px;padding:2px 4px;opacity:.8}
+.bday-row{display:flex;align-items:center;gap:6px;padding:8px 0;border-top:1px solid var(--border);cursor:pointer;font-size:13px}
+.bday-row:first-of-type{border-top:0}
+.bday-mine{background:var(--input-bg);border:1px solid var(--border);border-radius:12px;padding:9px 11px;margin-top:10px;font-size:13px}
+.bday-form{display:flex;gap:8px;flex-wrap:wrap}
+.bday-form select{flex:1;min-width:90px;margin:0}
+#bdayPop{position:fixed;inset:0;background:rgba(5,5,12,.82);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;overflow:hidden}
+#bdayPop .box{position:relative;z-index:2;max-width:380px;text-align:center;background:var(--card-bg);border:1px solid var(--purple);border-radius:24px;padding:28px 24px;box-shadow:0 0 60px #9b4dff55}
+#bdayPop .cake{font-size:64px;line-height:1}
+#bdayPop h2{margin:12px 0 8px;font-size:22px}
+#bdayPop p{color:var(--muted);font-size:14px;line-height:1.5;margin-bottom:16px}
+.confetti{position:absolute;top:-40px;font-size:22px;animation:cfall linear infinite;z-index:1}
+@keyframes cfall{to{transform:translateY(110vh) rotate(360deg)}}
 </style>
 </head>
 
@@ -616,6 +647,8 @@ details.set-acc .input{margin-bottom:10px}
     <p class="muted" style="font-size:13px">Chưa có nhóm nào.</p>
    </div>
   </div>
+  <div class="card" id="bdayBoxSide" style="margin-top:14px"></div>
+  <div class="card" id="notesBoxSide" style="margin-top:14px"></div>
  </aside>
 
  <!-- Cột Giữa: Nội dung chính -->
@@ -623,6 +656,8 @@ details.set-acc .input{margin-bottom:10px}
 
   <section id="home" class="page active">
    <div class="card" id="moodBoxHome"></div>
+   <div class="card" id="bdayBoxHome"></div>
+   <div class="card" id="notesBoxHome"></div>
    <div class="card create">
     <textarea id="postText" maxlength="3000" placeholder="Bạn đang nghĩ gì? Gõ @ để gắn thẻ bạn bè, dùng #hashtag (tối đa 3000 chữ)..." oninput="handlePostInput(this)" onkeyup="handlePostInput(this)" onclick="handlePostInput(this)"></textarea>
     <div class="char-counter" id="postCharCounter">0 / 3000 chữ</div>
@@ -742,6 +777,7 @@ details.set-acc .input{margin-bottom:10px}
     <div id="profileName" class="profile-name" style="margin-top:8px">Nova</div>
     <div id="profileEmail" class="muted" style="cursor:pointer;word-break:break-all" title="Bấm để copy NOVA ID" onclick="copyUid()">--</div>
     <div id="profileMood" style="margin-top:8px"></div>
+    <div id="profileBday" style="margin-top:6px"></div>
    </div>
    <div class="card">
     <div class="setting"><span>📝 Bài viết</span><strong id="postCount">0</strong></div>
@@ -806,7 +842,20 @@ details.set-acc .input{margin-bottom:10px}
      </div>
      <div class="set-sub" id="myNidLine"></div>
     </div>
-   </div>
+    <div class="set-field">
+     <div class="set-label">🎂 Sinh nhật</div>
+     <div class="bday-form">
+      <select id="bdD" class="input"></select>
+      <select id="bdM" class="input"></select>
+      <select id="bdVis" class="input">
+       <option value="public">🌍 Công khai</option>
+       <option value="friends">👥 Chỉ bạn bè</option>
+       <option value="private">🔒 Ẩn (chỉ mình tôi)</option>
+      </select>
+     </div>
+     <div class="btn-row" style="margin-top:8px"><button class="primary" onclick="saveBirthday()">Lưu</button><button class="secondary" onclick="clearBirthday()">Xóa</button></div>
+     <div class="set-sub">Chỉ lưu ngày/tháng. Đến ngày sinh nhật, NOVA sẽ gửi lời chúc cho bạn 🎉 Bạn bè (nếu bạn cho phép) sẽ thấy nhắc sinh nhật.</div>
+    </div>
 
    <div class="set-title">Giao diện</div>
    <div class="set-card">
@@ -901,6 +950,7 @@ details.set-acc .input{margin-bottom:10px}
     <div id="upName" class="profile-name">--</div>
     <div id="upEmail" class="muted" style="word-break:break-all">--</div>
     <div id="upMood" style="margin-top:8px"></div>
+    <div id="upBday" style="margin-top:6px"></div>
     <div id="upActions" class="btn-row" style="justify-content:center;margin-top:14px"></div>
    </div>
 
@@ -995,6 +1045,7 @@ details.set-acc .input{margin-bottom:10px}
  </div>
 </div>
 
+<input type="file" id="noteFile" accept="image/*" hidden onchange="noteImgPicked(this)">
 <div id="lightbox" onclick="closeImage()"><img id="lightboxImg" alt=""></div>
 
 <input id="avatarFile" type="file" accept="image/*" style="display:none" onchange="changeAvatar(this)">
@@ -1134,6 +1185,7 @@ function persistKeys(){ localStorage.setItem("nova_keys_" + me.id, JSON.stringif
 
 const keyFresh = {};   // vừa nhập/đổi mã: chưa so với keyCheck trong vài giây đầu (chờ dữ liệu cuộc trò chuyện cập nhật)
 function saveKey(chatId, key){
+  lsDel("nova_manual_lock_" + chatId);
   keyFresh[chatId] = Date.now() + 6000;
   const prev = localKeys[chatId] || localStorage.getItem("nova_key_permanent_" + chatId);
   if (prev && prev !== key) vaultAdd(chatId, prev); // giữ mã cũ để đọc lại tin cũ
@@ -1159,8 +1211,9 @@ async function makeKeyCheck(key){ return await encrypt(KEY_CHECK_TEXT, key); }
 function getAllKeys(c){
   if (!c) return [];
   const cur = getKey(c);
-  if (!cur) return []; // đang khoá thì không giải mã (chat nhỏ cũng bị khoá theo)
-  return [...new Set([cur, ...vaultGet(c.id), ...(Array.isArray(c.oldKeys) ? c.oldKeys : [])])];
+  // khóa thủ công (bấm 🔒) -> ẩn hết; mất mã/mã cũ -> vẫn đọc được tin cũ bằng kho mã (chế độ chỉ xem)
+  if (!cur && lsGet("nova_manual_lock_" + c.id)) return [];
+  return [...new Set([cur, ...vaultGet(c.id), ...(Array.isArray(c.oldKeys) ? c.oldKeys : [])].filter(Boolean))];
 }
 
 async function verifyKey(c, key){
@@ -1193,9 +1246,9 @@ if (currentTheme === "light") document.body.classList.add("light");
 $("themeBtn").textContent = currentTheme === "light" ? "Chuyển Tối" : "Chuyển Sáng";
 
 const escapeHTML = t => String(t ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
-function toast(text){
+function toast(text, ms){
   const t = $("toast"); t.textContent = text; t.classList.add("show");
-  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2600);
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), ms || (text.length > 70 ? 5000 : 2600));
 }
 function toDate(ts){ if(!ts) return new Date(); if(ts.toDate) return ts.toDate(); return new Date(ts); }
 function ago(ts){
@@ -1512,7 +1565,7 @@ onAuthStateChanged(auth, async user => {
     try {
       const data = await ensureUserDoc(user);
       Object.assign(data, await ensureIds(user.uid, data));
-      me = { id: user.uid, name: data.name, email: (user.email || data.email || "").toLowerCase(), avatar: data.avatar || "", handle: data.handle || "", nid: data.nid || "", mood: data.mood || null };
+      me = { id: user.uid, name: data.name, email: (user.email || data.email || "").toLowerCase(), avatar: data.avatar || "", handle: data.handle || "", nid: data.nid || "", mood: data.mood || null, birthday: data.birthday || null };
       userCache.set(me.id, { id: me.id, ...data });
       loadKeys();
       if (pendingPw) { const pw = pendingPw; pendingPw = null; ensureKeypair(pw); }   // tạo/kiểm tra khóa tài khoản để mở khóa chat bằng mật khẩu
@@ -1529,6 +1582,8 @@ onAuthStateChanged(auth, async user => {
       }, 60000);
       moodTimer = setInterval(loadFriendMoods, 60000);
       renderMood();
+      loadNotes(); initBdayForm(); renderBdays();
+      setTimeout(() => maybeBirthdayGreeting(), 900);
 
     } catch (e) {
       console.error(e);
@@ -1536,7 +1591,7 @@ onAuthStateChanged(auth, async user => {
     }
   } else {
     me = null; currentChat = null; localKeys = {}; viewingUid = null; currentPage = "home";
-    friendMoods = []; closeGame(); userCache.clear(); decCache.clear(); openComments.clear(); extraPosts.clear();
+    friendMoods = []; notes = []; friendUsers = []; closeGame(); userCache.clear(); decCache.clear(); openComments.clear(); extraPosts.clear();
     $("app").style.display = "none";
     $("auth").style.display = "flex";
     showLogin();
@@ -1875,7 +1930,7 @@ window.showPage = page => {
   if (page === "groups") { renderGroups(); renderGroupPicker(); }
   if (page === "notifications") renderNotifications();
   if (page === "profile") { updateProfileView(); renderMyPosts(); renderMyShares(); renderMyComments(); }
-  if (page === "settings") { $("newName").value = me?.name || ""; $("newHandle").value = me?.handle || ""; $("myNidLine").textContent = me?.nid ? "NOVA ID của bạn: " + me.nid + " (cố định)" : ""; }
+  if (page === "settings") { initBdayForm(); $("newName").value = me?.name || ""; $("newHandle").value = me?.handle || ""; $("myNidLine").textContent = me?.nid ? "NOVA ID của bạn: " + me.nid + " (cố định)" : ""; }
   if (page === "search") searchEverything();
   if (changed) window.scrollTo(0,0);
 };
@@ -2582,8 +2637,9 @@ async function loadFriendMoods(){
     catch { return null; }
   }));
   if (!me) return;
-  friendMoods = res.filter(u => u && activeMood(u.mood)).sort((a, b) => b.mood.at - a.mood.at);
-  renderMood();
+  friendUsers = res.filter(Boolean);
+  friendMoods = friendUsers.filter(u => activeMood(u.mood)).sort((a, b) => b.mood.at - a.mood.at);
+  renderMood(); renderBdays();
 }
 window.pickMoodEmoji = e => { moodDraft.emoji = e; renderMood(); };
 window.setMoodText = v => { moodDraft.text = v; };
@@ -2617,6 +2673,191 @@ window.deleteMood = async () => {
     toast("Đã xóa tâm trạng");
   } catch (e) { console.error(e); toast("Xóa thất bại"); }
 };
+
+
+/* ===== GHI CHÚ "MEMORY" (riêng tư, có ảnh) ===== */
+let notes = [], notesRemote = true, noteDraft = { text: "", img: "" };
+const NOTE_MAX = 30;
+const noteSort = () => notes.sort((a, b) => (b.pin ? 1 : 0) - (a.pin ? 1 : 0) || (b.at || 0) - (a.at || 0));
+const notesSaveLocal = () => { if (!notesRemote && me) lsSet("nova_notes_" + me.id, JSON.stringify(notes)); };
+async function loadNotes(){
+  if (!me) return;
+  try {
+    const sn = await getDocs(query(collection(db, "users", me.id, "notes"), limit(NOTE_MAX + 10)));
+    notes = sn.docs.map(d => ({ id: d.id, ...d.data() })); notesRemote = true;
+  } catch (e) {
+    notesRemote = false;
+    try { notes = JSON.parse(lsGet("nova_notes_" + me.id) || "[]"); } catch { notes = []; }
+  }
+  noteSort(); renderNotes();
+}
+async function noteSync(op, n){
+  if (!notesRemote) return;
+  try {
+    const ref = doc(db, "users", me.id, "notes", n.id);
+    if (op === "del") await deleteDoc(ref); else { const { id, ...d } = n; await setDoc(ref, d); }
+  } catch (e) { console.error(e); notesRemote = false; toast("Chưa ghi được lên Firebase (Rules) — tạm lưu trên máy này"); }
+}
+function notesHTML(k){
+  let h = `<h3>📝 Memory</h3><p class="muted" style="font-size:12px;margin-top:4px">Ghi chú riêng tư — chỉ mình bạn thấy${notesRemote ? "" : " (đang lưu trên máy này)"}.</p>
+   <div class="note-add"><textarea id="noteInput-${k}" maxlength="500" placeholder="Ghi nhớ điều gì đó..." oninput="setNoteText(this.value)">${escapeHTML(noteDraft.text)}</textarea>
+   ${noteDraft.img ? `<div class="note-prev"><img src="${escapeHTML(noteDraft.img)}" alt=""><button onclick="clearNoteImg()">✕</button></div>` : ""}
+   <div class="btn-row"><button class="secondary" onclick="pickNoteImg()">🖼️ Ảnh</button><button class="primary" onclick="addNote()">Lưu</button></div></div>`;
+  h += notes.map(n => `<div class="note-item ${n.pin ? "pin" : ""}">
+     ${n.text ? `<div class="note-text">${escapeHTML(n.text)}</div>` : ""}
+     ${n.img ? `<img class="note-img" src="${escapeHTML(n.img)}" alt="" onclick="viewImage(this.src)">` : ""}
+     <div class="note-foot"><span class="muted">${ago(n.at)}</span><span>
+       <button title="${n.pin ? "Bỏ ghim" : "Ghim"}" onclick="pinNote('${n.id}')">${n.pin ? "📌" : "📍"}</button>
+       <button title="Sửa" onclick="editNote('${n.id}')">✏️</button>
+       <button title="Xóa" onclick="delNote('${n.id}')">🗑</button></span></div></div>`).join("");
+  if (!notes.length) h += `<p class="muted" style="font-size:12px;margin-top:10px">Chưa có ghi chú nào.</p>`;
+  return h;
+}
+function renderNotes(){
+  if (!me) return;
+  const ae = document.activeElement, fid = ae?.id || "", pos = ae?.selectionStart;
+  [["Side", "notesBoxSide"], ["Home", "notesBoxHome"]].forEach(([k, id]) => { const el = $(id); if (el) el.innerHTML = notesHTML(k); });
+  if (fid.startsWith("noteInput-")) { const f = $(fid); if (f) { f.focus(); try { f.setSelectionRange(pos, pos); } catch {} } }
+}
+window.setNoteText = v => { noteDraft.text = v; };
+window.pickNoteImg = () => $("noteFile").click();
+window.clearNoteImg = () => { noteDraft.img = ""; renderNotes(); };
+window.noteImgPicked = async inp => {
+  const f = inp.files?.[0]; inp.value = ""; if (!f) return;
+  try { noteDraft.img = await resizeImage(f, 720, false); renderNotes(); } catch { toast("Ảnh không hợp lệ"); }
+};
+window.addNote = async () => {
+  const text = noteDraft.text.trim(), img = noteDraft.img;
+  if (!text && !img) { toast("Viết gì đó hoặc chọn ảnh nhé"); return; }
+  if (notes.length >= NOTE_MAX) { toast(`Tối đa ${NOTE_MAX} ghi chú — hãy xóa bớt`); return; }
+  const n = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), text: text.slice(0, 500), img: img || "", pin: false, at: Date.now() };
+  notes.push(n); noteDraft = { text: "", img: "" }; noteSort();
+  await noteSync("set", n); notesSaveLocal(); renderNotes(); toast("Đã lưu ghi chú 📝");
+};
+window.delNote = async id => {
+  const n = notes.find(x => x.id === id); if (!n) return;
+  notes = notes.filter(x => x.id !== id);
+  await noteSync("del", n); notesSaveLocal(); renderNotes();
+};
+window.pinNote = async id => {
+  const n = notes.find(x => x.id === id); if (!n) return;
+  n.pin = !n.pin; noteSort(); await noteSync("set", n); notesSaveLocal(); renderNotes();
+};
+window.editNote = async id => {
+  const n = notes.find(x => x.id === id); if (!n) return;
+  const t = prompt("Sửa ghi chú:", n.text || ""); if (t === null) return;
+  n.text = t.slice(0, 500);
+  if (!n.text && !n.img) { delNote(id); return; }
+  await noteSync("set", n); notesSaveLocal(); renderNotes();
+};
+
+/* ===== SINH NHẬT ===== */
+let friendUsers = [];
+const BDAY_VIS = { public: "🌍 Công khai", friends: "👥 Chỉ bạn bè", private: "🔒 Ẩn" };
+const pad2 = n => String(n).padStart(2, "0");
+function bdayDays(b){
+  const t = new Date(), t0 = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  let n = new Date(t0.getFullYear(), b.m - 1, b.d);
+  if (n < t0) n = new Date(t0.getFullYear() + 1, b.m - 1, b.d);
+  return Math.round((n - t0) / 864e5);
+}
+function bdayShown(u, isFr){
+  const b = u?.birthday; if (!b || !b.d || !b.m) return false;
+  return b.vis === "public" || (b.vis === "friends" && !!isFr) || u.id === me?.id;
+}
+function bdayBadge(u, self){
+  const b = u?.birthday; if (!b || !b.d || !b.m) return "";
+  const today = bdayDays(b) === 0;
+  return `<span class="name-tag" style="margin-left:0;font-size:13px">🎂 ${pad2(b.d)}/${pad2(b.m)}${self ? " · " + (BDAY_VIS[b.vis] || "") : ""}${today ? " · 🎉 Hôm nay!" : ""}</span>`;
+}
+function wishBtn(u){
+  if (!u || u.id === me.id || bdayDays(u.birthday) !== 0) return "";
+  const done = lsGet("nova_wish_" + u.id + "_" + new Date().toDateString());
+  return `<div style="margin-top:8px"><button class="primary" style="padding:7px 14px;font-size:13px" ${done ? "disabled" : ""} onclick="sendBdayWish('${u.id}')">${done ? "Đã gửi lời chúc ✓" : "🎁 Gửi lời chúc mừng"}</button></div>`;
+}
+window.sendBdayWish = async uid => {
+  const k = "nova_wish_" + uid + "_" + new Date().toDateString();
+  if (lsGet(k)) return;
+  try {
+    await addDoc(collection(db, "notifications"), { to: uid, type: "birthday_wish", from: me.id, text: `${me.name} chúc mừng sinh nhật bạn 🎂🎉`, read: false, createdAt: serverTimestamp() });
+    lsSet(k, "1"); toast("Đã gửi lời chúc 🎁");
+    const u = userCache.get(uid); if (u && $("upBday") && viewingUid === uid) $("upBday").innerHTML = bdayBadge(u, false) + wishBtn(u);
+  } catch (e) { console.error(e); toast("Gửi lời chúc thất bại"); }
+};
+function bdayHTML(){
+  let h = `<h3>🎂 Sinh nhật</h3>`;
+  const mine = me.birthday;
+  if (mine && mine.d) {
+    const dm = bdayDays(mine);
+    h += `<div class="bday-mine">Của bạn: <b>${pad2(mine.d)}/${pad2(mine.m)}</b> · ${dm === 0 ? "🎉 hôm nay!" : "còn " + dm + " ngày"} · <span class="muted">${BDAY_VIS[mine.vis] || ""}</span></div>`;
+  } else {
+    h += `<p class="muted" style="font-size:12px;margin-top:6px">Thêm ngày sinh để NOVA chúc mừng bạn và bạn bè biết nhé!</p>
+      <button class="secondary" style="margin-top:8px;padding:7px 12px;font-size:13px" onclick="showPage('settings')">Thêm ngày sinh</button>`;
+  }
+  const list = friendUsers.filter(u => bdayShown(u, true)).map(u => ({ u, days: bdayDays(u.birthday) }))
+    .filter(x => x.days <= 30).sort((a, b) => a.days - b.days).slice(0, 5);
+  h += `<div style="margin-top:8px">` + list.map(({ u, days }) => `<div class="bday-row" onclick="openUserProfile('${u.id}')">
+    <span>${days === 0 ? "🎉" : "🎈"}</span><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHTML(u.name || "Bạn")}</span>
+    <span class="muted" style="font-size:11px">${days === 0 ? "Hôm nay!" : pad2(u.birthday.d) + "/" + pad2(u.birthday.m) + " · " + days + " ngày"}</span></div>`).join("") + `</div>`;
+  if (!list.length && mine) h += `<p class="muted" style="font-size:12px;margin-top:8px">Chưa có sinh nhật bạn bè trong 30 ngày tới.</p>`;
+  return h;
+}
+function renderBdays(){
+  if (!me) return;
+  [["bdayBoxSide"], ["bdayBoxHome"]].forEach(([id]) => { const el = $(id); if (el) el.innerHTML = bdayHTML(); });
+  const todays = friendUsers.filter(u => bdayShown(u, true) && bdayDays(u.birthday) === 0);
+  const k = "nova_bdaynote_" + me.id + "_" + new Date().toDateString();
+  if (todays.length && !lsGet(k)) { lsSet(k, "1"); toast("🎂 Hôm nay là sinh nhật của " + todays.map(u => u.name).slice(0, 3).join(", ") + "!", 5000); }
+}
+function initBdayForm(){
+  const d = $("bdD"), m = $("bdM"), v = $("bdVis"); if (!d || !me) return;
+  if (!d.options.length) {
+    d.innerHTML = `<option value="">Ngày</option>` + Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join("");
+    m.innerHTML = `<option value="">Tháng</option>` + Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">Tháng ${i + 1}</option>`).join("");
+  }
+  const b = me.birthday;
+  d.value = b?.d || ""; m.value = b?.m || ""; v.value = b?.vis || "friends";
+}
+window.saveBirthday = async () => {
+  const d = +$("bdD").value, m = +$("bdM").value, vis = $("bdVis").value;
+  if (!d || !m) { toast("Chọn ngày và tháng sinh"); return; }
+  if (d > new Date(2024, m, 0).getDate()) { toast("Ngày không hợp lệ cho tháng này"); return; }
+  const birthday = { d, m, vis };
+  try {
+    await updateDoc(doc(db, "users", me.id), { birthday });
+    me.birthday = birthday;
+    userCache.set(me.id, { ...(userCache.get(me.id) || {}), id: me.id, birthday });
+    renderBdays(); updateProfileView();
+    toast("Đã lưu sinh nhật 🎂");
+    maybeBirthdayGreeting();
+  } catch (e) { console.error(e); toast("Lưu sinh nhật thất bại — kiểm tra Rules"); }
+};
+window.clearBirthday = async () => {
+  try {
+    await updateDoc(doc(db, "users", me.id), { birthday: deleteField() });
+    me.birthday = null;
+    userCache.set(me.id, { ...(userCache.get(me.id) || {}), id: me.id, birthday: null });
+    initBdayForm(); renderBdays(); updateProfileView(); toast("Đã xóa sinh nhật");
+  } catch (e) { console.error(e); toast("Xóa thất bại"); }
+};
+window.showBirthdayPop = () => {
+  if (!me) return;
+  $("bdayPop")?.remove();
+  const el = document.createElement("div"); el.id = "bdayPop";
+  const conf = Array.from({ length: 28 }, () => `<span class="confetti" style="left:${Math.random() * 100}%;animation-duration:${3 + Math.random() * 4}s;animation-delay:${Math.random() * 3}s">${["🎉", "🎊", "✨", "🎈", "💜", "⭐"][Math.floor(Math.random() * 6)]}</span>`).join("");
+  el.innerHTML = conf + `<div class="box"><div class="cake">🎂</div><h2>Chúc mừng sinh nhật, ${escapeHTML(me.name)}!</h2>
+    <p>NOVA chúc bạn một tuổi mới thật nhiều niềm vui, sức khỏe và những điều tuyệt vời nhất 💜<br>Cảm ơn bạn đã ở cùng NOVA!</p>
+    <button class="primary full" onclick="document.getElementById('bdayPop').remove()">Cảm ơn NOVA 💜</button></div>`;
+  document.body.appendChild(el);
+};
+async function maybeBirthdayGreeting(){
+  const b = me?.birthday; if (!b || !b.d || bdayDays(b) !== 0) return;
+  const k = "nova_bday_" + me.id, yr = String(new Date().getFullYear());
+  if (lsGet(k) === yr) return;
+  lsSet(k, yr);
+  showBirthdayPop();
+  try { await addDoc(collection(db, "notifications"), { to: me.id, type: "birthday", from: me.id, text: `🎂 Chúc mừng sinh nhật ${me.name}! NOVA chúc bạn một tuổi mới thật nhiều niềm vui 💜`, read: false, createdAt: serverTimestamp() }); } catch {}
+}
 
 /* ===== CHIA SẺ KHÓA CHAT GIỮA CÁC THÀNH VIÊN =====
    Mỗi người có 1 cặp khóa RSA. Khóa riêng được bọc bằng MẬT KHẨU TÀI KHOẢN (PBKDF2 + AES-GCM) rồi lưu trong hồ sơ.
@@ -2743,7 +2984,7 @@ window.unlockChatWithPassword = async () => {
       return;
     }
     const w = c.keyWraps && c.keyWraps[me.id];
-    if (!w) { toast("Chưa có khóa chia sẻ cho bạn. Nhờ một thành viên đã mở khóa mở lại cuộc trò chuyện này, hoặc nhập mã 24 ký tự."); return; }
+    if (!w) { toast("Chưa có khóa chia sẻ. Cách xử lý: (1) người còn mở được chat này đăng nhập bằng mật khẩu rồi mở lại chat, (2) hoặc nhập mã 24 ký tự (cũ/mới) lấy từ máy/trình duyệt khác, ở mục 🔐 Mã.", 6500); return; }
     let key;
     try { key = await kwUnwrapChatKey(priv, w); } catch { toast("Khóa chia sẻ không còn hợp lệ. Nhờ thành viên khác mở lại chat để cập nhật."); return; }
     if (!(await verifyKey(c, key))) { toast("Khóa chia sẻ chưa theo kịp mã mới. Nhờ thành viên khác mở lại chat."); return; }
@@ -3515,17 +3756,21 @@ async function renderMessages(stick){
   }
   if (token !== renderToken) return;
 
+  const roKeys = !key ? getAllKeys(c) : [];
+  const readOnly = !key && roKeys.length > 0;
+  let roBanner = "";
   if (!key) {
     const fresh = box.querySelector("#forgotKeyPwInput")?.value || "";
-    box.innerHTML = `<div class="chat-locked-container">
+    const freshCode = box.querySelector("#directUnlockInput")?.value || "";
+    const lockHtml = `<div class="chat-locked-container ${readOnly ? "ro" : ""}">
       <div class="chat-locked-icon">🔐</div>
-      <div class="chat-locked-title">Cuộc trò chuyện này đang bị khóa</div>
-      <div class="chat-locked-desc">${staleKey ? "Mã đã được thành viên khác đổi. " : ""}Nhập mật khẩu tài khoản để mở lại, toàn bộ tin nhắn cũ vẫn được giữ nguyên.</div>
+      <div class="chat-locked-title">${readOnly ? "Chế độ chỉ xem tin cũ" : "Cuộc trò chuyện này đang bị khóa"}</div>
+      <div class="chat-locked-desc">${readOnly ? "Bạn chưa có mã hiện tại nên chưa nhắn tiếp được. " : ""}${staleKey ? "Mã đã được thành viên khác đổi. " : ""}Nhập mật khẩu tài khoản hoặc mã 24 ký tự (mã hiện tại hoặc mã cũ đều được).</div>
       <div class="chat-locked-form">
         <input id="forgotKeyPwInput" class="input" type="password" placeholder="Mật khẩu tài khoản của bạn" style="margin-bottom:0" value="${escapeHTML(fresh)}" onkeydown="if(event.key==='Enter')unlockChatWithPassword()">
         <button class="primary full" onclick="unlockChatWithPassword()">🔓 Mở khóa bằng mật khẩu</button>
         <div style="margin: 6px 0; font-size: 11px; color: var(--muted);">— hoặc —</div>
-        <input id="directUnlockInput" class="input" placeholder="Nhập mã bảo mật 24 ký tự..." maxlength="24" style="margin-bottom:0">
+        <input id="directUnlockInput" class="input" placeholder="Nhập mã bảo mật 24 ký tự..." maxlength="24" style="margin-bottom:0" value="${escapeHTML(freshCode)}">
         <button class="secondary full" onclick="submitDirectUnlock()">Mở bằng mã</button>
         <details style="margin-top:10px;text-align:left">
           <summary class="muted" style="cursor:pointer;font-size:12px">Quên cả mã lẫn khóa chia sẻ?</summary>
@@ -3536,15 +3781,18 @@ async function renderMessages(stick){
     </div>`;
     if (composer) composer.style.display = "none";
     $("emojiPanelMain").classList.remove("show");
-    $("chatKey").textContent = "🔒 Chưa mở khóa";
     $("keyActions").style.display = "none";
-    return;
+    if (!readOnly) { box.innerHTML = lockHtml; $("chatKey").textContent = "🔒 Chưa mở khóa"; return; }
+    $("chatKey").textContent = "🔒 Chỉ xem tin cũ";
+    roBanner = lockHtml;
   }
 
-  $("chatKey").textContent = key;
-  $("keyActions").style.display = "flex";
-  ensureKeyWraps(c, key);
-  if (composer) composer.style.display = "flex";
+  if (key) {
+    $("chatKey").textContent = key;
+    $("keyActions").style.display = "flex";
+    ensureKeyWraps(c, key);
+    if (composer) composer.style.display = "flex";
+  }
 
   const nearBottom = win.scrollHeight - win.scrollTop - win.clientHeight < 120;
   const open = new Set([...box.querySelectorAll(".message-wrapper.open")].map(e => e.dataset.id));
@@ -3553,7 +3801,7 @@ async function renderMessages(stick){
   const texts = await Promise.all(msgDocs.map(m => decrypt(m, c)));
   if (token !== renderToken) return;
 
-  if (!msgDocs.length) { box.innerHTML = `<div class="empty">Chưa có tin nhắn. Hãy nói xin chào 👋</div>`; return; }
+  if (!msgDocs.length) { box.innerHTML = roBanner + `<div class="empty">Chưa có tin nhắn. Hãy nói xin chào 👋</div>`; return; }
 
   let html = "", lastDay = "";
   msgDocs.forEach((m, i) => {
@@ -3604,7 +3852,7 @@ async function renderMessages(stick){
       <div class="msg-time">${hhmm(m.createdAt)}</div>
     </div>`;
   });
-  box.innerHTML = html;
+  box.innerHTML = roBanner + html;
   if (stick || nearBottom) win.scrollTop = win.scrollHeight;
 }
 
@@ -3614,10 +3862,27 @@ window.submitDirectUnlock = async () => {
   if (!inputEl) return;
   const key = inputEl.value.trim().toUpperCase();
   if (key.length !== 24) { toast("Mã bảo mật phải gồm đúng 24 ký tự"); return; }
-  if (!(await verifyKey(c, key))) { toast("Mã không chính xác, thử lại ❌"); return; }
-
-  saveKey(c.id, key);
-  toast("Đã mở khóa thành công 🔓");
+  if (await verifyKey(c, key)) {
+    saveKey(c.id, key);
+    toast("Đã mở khóa thành công 🔓");
+    renderChatTabs();
+    renderMessages(true);
+    return;
+  }
+  // không phải mã hiện tại: thử xem có phải MÃ CŨ giải được tin nhắn không
+  let okOld = false;
+  const cand = msgDocs.filter(m => !m.isRecalled && m.cipher && m.iv).slice(-8);
+  for (const m of cand) {
+    try {
+      const aes = await deriveKey(key);
+      await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(unb64(m.iv)) }, aes, unb64(m.cipher));
+      okOld = true; break;
+    } catch {}
+  }
+  if (!okOld) { toast("Mã không đúng với chat này ❌"); return; }
+  vaultAdd(c.id, key);
+  lsDel("nova_manual_lock_" + c.id);
+  toast("Đã nhận mã cũ ✓ Xem lại được tin cũ. Muốn nhắn tiếp cần mã hiện tại hoặc mở bằng mật khẩu.");
   renderChatTabs();
   renderMessages(true);
 };
@@ -3663,6 +3928,7 @@ window.lockChat = () => {
   const k = getKey(c);
   renderToken++;
   dropKey(c.id);
+  lsSet("nova_manual_lock_" + c.id, "1");
   vaultAdd(c.id, k); // giữ mã để mở khóa xong vẫn xem lại được toàn bộ tin nhắn
   const box = $("messages");
   const composer = document.querySelector("#chat .chat-input");
@@ -4071,8 +4337,8 @@ window.deleteGroup = async gid => {
   } catch (e) { console.error(e); toast("Lỗi"); }
 };
 
-const NOTIF_ICON = { friend_request: "🤝", friend_accept: "✅", group_add: "👥", group_kick: "🚪" };
-const NOTIF_GO = { friend_request: "Xem lời mời", friend_accept: "Xem trang cá nhân", group_add: "Mở group", group_kick: "Xem danh sách group" };
+const NOTIF_ICON = { friend_request: "🤝", friend_accept: "✅", group_add: "👥", group_kick: "🚪", birthday: "🎂", birthday_wish: "🎁" };
+const NOTIF_GO = { friend_request: "Xem lời mời", friend_accept: "Xem trang cá nhân", group_add: "Mở group", group_kick: "Xem danh sách group", birthday: "Cảm ơn Nova", birthday_wish: "Xem trang cá nhân" };
 function renderNotifications(){
   if (!me) return;
   const box = $("notificationList");
@@ -4100,6 +4366,12 @@ window.openNotification = async id => {
     case "group_kick":
       showPage("groups");
       break;
+    case "birthday":
+      showBirthdayPop();
+      break;
+    case "birthday_wish":
+      if (n.from) openUserProfile(n.from);
+      break;
     default:
       toast(n.text || "Thông báo");
   }
@@ -4122,6 +4394,7 @@ function updateProfileView(){
     $("stAvatar").innerHTML = me.avatar ? `<img src="${escapeHTML(me.avatar)}" alt="">` : escapeHTML(initial(me.name));
   }
   $("profileName").textContent = me.name;
+  if ($("profileBday")) $("profileBday").innerHTML = bdayBadge(me, true);
   if ($("profileMood")) $("profileMood").innerHTML = moodBadge(me.mood); $("profileEmail").textContent = idLine(me) || "Đang tạo ID...";
   $("avatar").innerHTML = me.avatar ? `<img src="${escapeHTML(me.avatar)}" alt="">` : escapeHTML(initial(me.name));
   $("postCount").textContent = posts.filter(p => p.userId === me.id && !p.isShared).length;
@@ -4363,6 +4636,7 @@ window.openUserProfile = async uid => {
   $("upName").textContent = u.name;
   $("upEmail").textContent = idLine(u);
   $("upMood").innerHTML = moodBadge(u.mood);
+  $("upBday").innerHTML = bdayShown(u, isFriend(uid)) ? bdayBadge(u, false) + wishBtn(u) : "";
   $("upAvatar").innerHTML = u.avatar ? `<img src="${escapeHTML(u.avatar)}" alt="">` : escapeHTML(initial(u.name));
   renderUPActions(uid);
   renderUserPosts(uid);
