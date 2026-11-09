@@ -545,6 +545,37 @@ details.set-acc .input{margin-bottom:10px}
 #bdayPop p{color:var(--muted);font-size:14px;line-height:1.5;margin-bottom:16px}
 .confetti{position:absolute;top:-40px;font-size:22px;animation:cfall linear infinite;z-index:1}
 @keyframes cfall{to{transform:translateY(110vh) rotate(360deg)}}
+
+/* nova11: tối ưu điện thoại */
+.mob-chips{display:none}
+@media(max-width:1024px){
+ .mob-chips{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;scrollbar-width:none}
+ .mob-chips::-webkit-scrollbar{display:none}
+ .mob-chips button{white-space:nowrap;flex-shrink:0;border-radius:20px;padding:8px 14px;font-size:13px;background:var(--card-bg);border:1px solid var(--border);color:var(--muted)}
+ .mob-chips button.on{color:var(--text);border-color:#914cff;background:var(--input-bg)}
+ #moodBoxHome,#bdayBoxHome,#notesBoxHome{display:none!important}
+ #moodBoxHome.open,#bdayBoxHome.open,#notesBoxHome.open{display:block!important}
+}
+@media(max-width:768px){
+ input,textarea,select{font-size:16px!important}
+ .nova-layout{padding:12px 12px calc(96px + env(safe-area-inset-bottom))}
+ .card{padding:14px;border-radius:16px}
+ .game-grid{grid-template-columns:1fr 1fr;gap:10px}
+ .game-card{padding:12px}
+ .stat-card{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;text-align:center;padding:10px}
+ .stat-card .setting{flex-direction:column;border-bottom:0;padding:6px 0;gap:4px;font-size:12px}
+ .stat-card .setting strong{font-size:18px}
+ #chat>h2{display:none}
+ .chat-window{height:calc(100dvh - 350px);min-height:220px;padding:10px}
+ .chat-head{padding:10px 12px;gap:8px}
+ .chat-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1}
+ .chat-head .lbl{display:none}
+ .chat-head button.secondary{padding:7px 11px!important;font-size:15px!important}
+ .bday-form select{flex:1 0 40%}
+ #bdVis{flex:1 0 100%}
+ .note-add .btn-row button{padding:9px 14px}
+ #bdayPop .box{padding:22px 18px}
+}
 </style>
 </head>
 
@@ -655,6 +686,11 @@ details.set-acc .input{margin-bottom:10px}
  <main class="main">
 
   <section id="home" class="page active">
+   <div class="mob-chips" id="mobChips">
+    <button data-w="moodBoxHome" onclick="toggleWidget(this)">💭 Tâm trạng</button>
+    <button data-w="bdayBoxHome" onclick="toggleWidget(this)">🎂 Sinh nhật</button>
+    <button data-w="notesBoxHome" onclick="toggleWidget(this)">📝 Memory</button>
+   </div>
    <div class="card" id="moodBoxHome"></div>
    <div class="card" id="bdayBoxHome"></div>
    <div class="card" id="notesBoxHome"></div>
@@ -727,9 +763,9 @@ details.set-acc .input{margin-bottom:10px}
     <div class="chat-head">
      <div class="chat-title" id="chatTitle">Chưa chọn cuộc trò chuyện</div>
      <div style="display:flex;gap:6px;">
-      <button class="secondary" style="padding:6px 10px;font-size:13px" onclick="toggleKeyPanel()">🔐 Mã</button>
-      <button class="secondary" style="padding:6px 10px;font-size:13px" onclick="openBgModal()" title="Đổi nền cuộc trò chuyện">🎨 Nền</button>
-      <button class="secondary" style="padding:6px 10px;font-size:13px;color:var(--danger);border-color:var(--danger);" onclick="lockChat()">🔒 Khóa lại</button>
+      <button class="secondary" style="padding:6px 10px;font-size:13px" onclick="toggleKeyPanel()">🔐<span class="lbl"> Mã</span></button>
+      <button class="secondary" style="padding:6px 10px;font-size:13px" onclick="openBgModal()" title="Đổi nền cuộc trò chuyện">🎨<span class="lbl"> Nền</span></button>
+      <button class="secondary" style="padding:6px 10px;font-size:13px;color:var(--danger);border-color:var(--danger);" onclick="lockChat()" title="Khóa lại">🔒<span class="lbl"> Khóa lại</span></button>
      </div>
     </div>
     <div id="keyPanel" class="chat-key">
@@ -779,7 +815,7 @@ details.set-acc .input{margin-bottom:10px}
     <div id="profileMood" style="margin-top:8px"></div>
     <div id="profileBday" style="margin-top:6px"></div>
    </div>
-   <div class="card">
+   <div class="card stat-card">
     <div class="setting"><span>📝 Bài viết</span><strong id="postCount">0</strong></div>
     <div class="setting"><span>🤝 Bạn bè</span><strong id="friendCount">0</strong></div>
     <div class="setting"><span>👥 Group</span><strong id="groupCount">0</strong></div>
@@ -2720,6 +2756,11 @@ function renderNotes(){
   [["Side", "notesBoxSide"], ["Home", "notesBoxHome"]].forEach(([k, id]) => { const el = $(id); if (el) el.innerHTML = notesHTML(k); });
   if (fid.startsWith("noteInput-")) { const f = $(fid); if (f) { f.focus(); try { f.setSelectionRange(pos, pos); } catch {} } }
 }
+window.toggleWidget = btn => {
+  const id = btn.dataset.w, el = $(id), was = el.classList.contains("open");
+  document.querySelectorAll("#mobChips button").forEach(b => { b.classList.remove("on"); $(b.dataset.w).classList.remove("open"); });
+  if (!was) { el.classList.add("open"); btn.classList.add("on"); }
+};
 window.setNoteText = v => { noteDraft.text = v; };
 window.pickNoteImg = () => $("noteFile").click();
 window.clearNoteImg = () => { noteDraft.img = ""; renderNotes(); };
