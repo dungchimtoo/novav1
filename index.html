@@ -576,6 +576,72 @@ details.set-acc .input{margin-bottom:10px}
  .note-add .btn-row button{padding:9px 14px}
  #bdayPop .box{padding:22px 18px}
 }
+
+#postOpts{display:none}#postOpts.show{display:block}
+/* ===== nova11 UI v2: giao diện tím vũ trụ, kính mờ, menu nổi ===== */
+:root{--purple:#a855f7}
+body:not(.light){
+ --bg:#07041a;--card-bg:rgba(26,15,54,.66);--input-bg:rgba(255,255,255,.06);--border:rgba(168,110,255,.24);--muted:#a99cc9;
+ background:radial-gradient(900px 520px at 90% -8%,rgba(139,60,255,.38),transparent 62%),radial-gradient(800px 480px at -10% 18%,rgba(76,29,149,.5),transparent 60%),linear-gradient(180deg,#0b0623,#06030f 70%);
+ background-attachment:fixed}
+body:not(.light)::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.55;
+ background-image:radial-gradient(1.2px 1.2px at 12% 18%,#fff,transparent),radial-gradient(1px 1px at 38% 72%,#cfa9ff,transparent),radial-gradient(1.4px 1.4px at 66% 28%,#fff,transparent),radial-gradient(1px 1px at 84% 64%,#e5d3ff,transparent),radial-gradient(1px 1px at 52% 10%,#fff,transparent),radial-gradient(1.2px 1.2px at 25% 90%,#cfa9ff,transparent),radial-gradient(1px 1px at 92% 92%,#fff,transparent);
+ background-size:420px 420px}
+#app{position:relative;z-index:1}
+body:not(.light) .card,body:not(.light) .set-card,body:not(.light) .chat-box{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(50,15,110,.28),inset 0 1px 0 rgba(255,255,255,.05);border-radius:20px}
+body:not(.light) .topbar{background:rgba(10,6,32,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom-color:var(--border)}
+.icon-btn{background:var(--input-bg);transition:.15s}
+.icon-btn:hover{border-color:var(--purple);box-shadow:0 0 14px #a855f755}
+.icon-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;display:block;margin:auto}
+.primary{box-shadow:0 4px 18px #9b4dff44;border-radius:14px}
+.mini-word{background:linear-gradient(90deg,#e9d5ff,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent}
+.chat-tab{backdrop-filter:blur(8px)}
+.chat-tab.active{box-shadow:0 0 16px #a855f755;background:linear-gradient(135deg,#7c3aed55,#a855f733)}
+/* hero */
+.hero{position:relative;overflow:hidden;border-radius:22px;padding:20px 20px 18px;margin-bottom:14px;border:1px solid var(--border);
+ background:radial-gradient(130px 130px at 92% 20%,rgba(168,85,247,.85),rgba(91,33,182,.4) 55%,transparent 72%),linear-gradient(135deg,rgba(76,29,149,.75),rgba(30,16,70,.7))}
+.hero::after{content:"✦";position:absolute;right:26px;bottom:14px;font-size:20px;color:#e9d5ff;opacity:.8}
+.hero-t{font-size:22px;font-weight:800}
+.hero-s{color:#cbb8f5;font-size:13px;margin-top:4px}
+body.light .hero{background:linear-gradient(135deg,#ede9fe,#ddd6fe)}
+body.light .hero-s{color:#6b21a8}
+/* tab feed */
+.feed-tabs{display:flex;gap:8px;margin:0 0 6px;padding:4px 2px 12px;overflow-x:auto;scrollbar-width:none}
+.feed-tabs::-webkit-scrollbar{display:none}
+.feed-tabs button{flex:1 0 auto;white-space:nowrap;border-radius:22px;padding:10px 16px;font-size:14px;font-weight:600;background:var(--card-bg);border:1px solid var(--border);color:var(--muted);transition:.15s}
+.feed-tabs button.on{color:#fff;border-color:#b57bff;background:linear-gradient(135deg,#7c3aed,#a855f7);box-shadow:0 4px 18px #9b4dff55}
+/* composer */
+.create{border-radius:22px}
+.create textarea{border-radius:16px;min-height:72px}
+#postBtn{border-radius:22px;padding:11px 26px}
+/* menu nổi */
+.bottom-nav{left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));height:64px;max-width:540px;margin:0 auto;padding:0 6px;border-radius:28px;border:1px solid var(--border);
+ box-shadow:0 12px 40px rgba(70,25,150,.45)}
+body:not(.light) .bottom-nav{background:rgba(18,10,42,.84);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.nav-btn{font-size:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0}
+.nav-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.nav-btn.active{color:#d8b4fe}
+.nav-btn.active svg{filter:drop-shadow(0 0 6px #a855f7)}
+.nav-plus{flex:0 0 58px;width:58px;height:58px;margin-top:-26px;border-radius:50%;border:3px solid rgba(12,6,32,.9);background:linear-gradient(135deg,#7c3aed,#c084fc);color:#fff;font-size:30px;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 26px #9b4dffaa}
+.nav-plus:active{transform:scale(.94)}
+.dot{top:6px;right:calc(50% - 18px)}
+/* hồ sơ */
+#profile .card.profile{background:linear-gradient(180deg,rgba(124,58,237,.5),transparent 130px),var(--card-bg);padding-top:26px}
+#profile .card.profile .avatar,#userProfile .card.profile .avatar{box-shadow:0 0 0 3px #a855f7,0 0 26px #a855f788}
+.friends-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.friends-top button{white-space:nowrap}
+@media(max-width:1024px){
+ .nova-layout{padding-bottom:120px!important}
+}
+@media(max-width:768px){
+ .topbar{height:58px;padding:0 12px}
+ .mini-word{font-size:16px;letter-spacing:3px}
+ .top-actions{gap:6px}
+ .icon-btn{width:36px;height:36px;font-size:15px}
+ .hero{padding:16px 16px 14px;border-radius:20px}
+ .hero-t{font-size:20px}
+ .nav-btn{font-size:10.5px}
+}
 </style>
 </head>
 
@@ -656,6 +722,7 @@ details.set-acc .input{margin-bottom:10px}
    <span class="mini-word">NOVA</span>
  </div>
  <div class="top-actions">
+  <button class="icon-btn" onclick="showPage('search')" title="Tìm kiếm"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
   <button class="icon-btn" onclick="showPage('games')" title="Game">🎮</button>
   <button class="icon-btn" onclick="showPage('notifications')">🔔<span id="notifBadge" class="badge">0</span></button>
   <button class="icon-btn" onclick="showPage('settings')">⚙</button>
@@ -686,6 +753,7 @@ details.set-acc .input{margin-bottom:10px}
  <main class="main">
 
   <section id="home" class="page active">
+   <div class="hero"><div class="hero-t">Chào <span id="heroName">bạn</span> 👋</div><div class="hero-s">Khám phá thế giới cùng NOVA</div></div>
    <div class="mob-chips" id="mobChips">
     <button data-w="moodBoxHome" onclick="toggleWidget(this)">💭 Tâm trạng</button>
     <button data-w="bdayBoxHome" onclick="toggleWidget(this)">🎂 Sinh nhật</button>
@@ -705,7 +773,7 @@ details.set-acc .input{margin-bottom:10px}
       <div id="postImageGrid" style="display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;"></div>
     </div>
 
-    <div class="post-opts">
+    <div class="post-opts" id="postOpts">
      <div class="opt-row">
       <span class="opt-label">Chế độ đăng</span>
       <div class="seg" id="privacySeg">
@@ -727,9 +795,15 @@ details.set-acc .input{margin-bottom:10px}
      </div>
     </div>
     <div class="row" style="margin-top:12px;gap:8px;">
-     <button class="secondary" style="padding:8px 12px;font-size:14px" onclick="document.getElementById('postImageFile').click()" title="Đính kèm ảnh">📷 Ảnh (Tối đa 8)</button>
+     <button class="secondary" style="padding:8px 12px;font-size:14px" onclick="document.getElementById('postImageFile').click()" title="Đính kèm ảnh (tối đa 8)">📷 Ảnh</button>
+     <button class="secondary" id="optToggle" style="padding:8px 12px;font-size:14px;flex:1" onclick="togglePostOpts()" title="Chế độ đăng · Ẩn danh · Nhạy cảm">⚙ <span id="optSummary"></span></button>
      <button class="primary" id="postBtn" onclick="createPost()">Đăng</button>
     </div>
+   </div>
+   <div class="feed-tabs" id="feedTabs">
+    <button class="on" data-f="foryou" onclick="setFeedMode('foryou')">✨ Dành cho bạn</button>
+    <button data-f="latest" onclick="setFeedMode('latest')">🕒 Mới nhất</button>
+    <button data-f="following" onclick="setFeedMode('following')">👥 Bạn bè</button>
    </div>
    <div id="feed"></div>
   </section>
@@ -743,7 +817,7 @@ details.set-acc .input{margin-bottom:10px}
   </section>
 
   <section id="friends" class="page">
-   <h2>👥 Bạn bè</h2>
+   <div class="friends-top"><h2>👥 Bạn bè</h2><button class="secondary" style="padding:8px 14px" onclick="showPage('groups')">❖ Group</button></div>
    <div class="card" style="margin-top:15px">
     <p class="muted" style="margin-bottom:12px">Nhập @tên, NOVA ID (NV-XXXX-XXXX) hoặc Gmail chính xác để kết bạn.</p>
     <div class="search-friend">
@@ -791,7 +865,7 @@ details.set-acc .input{margin-bottom:10px}
   </section>
 
   <section id="groups" class="page">
-   <h2>👥 Group & Thành viên</h2>
+   <div class="friends-top"><h2>👥 Group & Thành viên</h2><button class="secondary" style="padding:8px 14px" onclick="showPage('friends')">← Bạn bè</button></div>
    <div class="card" style="margin-top:15px">
     <input id="groupName" class="input" placeholder="Tên group mới" maxlength="40">
     <div class="muted" style="margin-bottom:4px">Chọn bạn bè để thêm vào group:</div>
@@ -814,6 +888,7 @@ details.set-acc .input{margin-bottom:10px}
     <div id="profileEmail" class="muted" style="cursor:pointer;word-break:break-all" title="Bấm để copy NOVA ID" onclick="copyUid()">--</div>
     <div id="profileMood" style="margin-top:8px"></div>
     <div id="profileBday" style="margin-top:6px"></div>
+    <div class="btn-row" style="justify-content:center;margin-top:14px"><button class="primary" onclick="showPage('settings')">✏️ Chỉnh sửa trang</button></div>
    </div>
    <div class="card stat-card">
     <div class="setting"><span>📝 Bài viết</span><strong id="postCount">0</strong></div>
@@ -1044,12 +1119,11 @@ details.set-acc .input{margin-bottom:10px}
 </div>
 
 <nav class="bottom-nav">
- <button class="nav-btn active" data-page="home" onclick="refreshFeed()"><span class="nav-icon">⌂</span>Feed</button>
- <button class="nav-btn" data-page="search" onclick="showPage('search')"><span class="nav-icon">⌕</span>Search</button>
- <button class="nav-btn" data-page="friends" onclick="showPage('friends')"><span class="nav-icon">♧</span>Friends<span id="friendDot" class="dot"></span></button>
- <button class="nav-btn" data-page="chat" onclick="showPage('chat')"><span class="nav-icon">◌</span>Chat</button>
- <button class="nav-btn" data-page="groups" onclick="showPage('groups')"><span class="nav-icon">❖</span>Group</button>
- <button class="nav-btn" data-page="profile" onclick="showPage('profile')"><span class="nav-icon">◉</span>Me</button>
+ <button class="nav-btn active" data-page="home" onclick="refreshFeed()"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Feed</button>
+ <button class="nav-btn" data-page="chat" onclick="showPage('chat')"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.5 7.2L4 20l1-4.5A8 8 0 1121 12z"/></svg>Chat</button>
+ <button class="nav-plus" onclick="composeNow()" title="Tạo bài viết">＋</button>
+ <button class="nav-btn" data-page="friends" onclick="showPage('friends')"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 5a3.5 3.5 0 010 6.5M18 14.2c2 .6 3.5 2.4 3.5 5.8"/></svg>Friends<span id="friendDot" class="dot"></span></button>
+ <button class="nav-btn" data-page="profile" onclick="showPage('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>Me</button>
 </nav>
 
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
@@ -1961,7 +2035,7 @@ window.showPage = page => {
   if (page === "games") closeGame(true); else if (curGame) closeGame();
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
   $(page).classList.add("active");
-  document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page === page));
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.page === page || (page === "groups" && b.dataset.page === "friends")));
   if (page === "home") renderFeed();
   if (page === "friends") { renderRequests(); renderFriendList(); }
   if (page === "chat") { renderChatTabs(); renderMessages(); }
@@ -2412,6 +2486,25 @@ function canViewPost(p){
 }
 const canViewPostOnFeed = canViewPost;
 
+window.togglePostOpts = () => $("postOpts").classList.toggle("show");
+function updatePostSummary(){
+  const el = $("optSummary"); if (!el) return;
+  const pv = $("postPrivacy")?.value || "PUBLIC";
+  el.textContent = ({ PUBLIC: "🌐", FRIENDS: "👥", ONLY_ME: "🔒" }[pv] || "🌐") + (($("postAnonymous")?.checked) ? " Ẩn danh" : " Hiện tên") + ($("postSensitive")?.checked ? " ⚠️" : "");
+}
+document.addEventListener("click", () => setTimeout(updatePostSummary, 60));
+document.addEventListener("change", updatePostSummary);
+setTimeout(updatePostSummary, 500);
+let feedMode = "foryou";
+window.setFeedMode = m => {
+  feedMode = m;
+  document.querySelectorAll("#feedTabs button").forEach(b => b.classList.toggle("on", b.dataset.f === m));
+  renderFeed();
+};
+window.composeNow = () => {
+  showPage("home"); window.scrollTo({ top: 0, behavior: "smooth" });
+  setTimeout(() => $("postText")?.focus(), 250);
+};
 function renderFeed(){
   if (!me) return;
   const focused = document.activeElement?.id || "";
@@ -2419,8 +2512,15 @@ function renderFeed(){
 
   const visiblePosts = posts.filter(p => !p.isShared && canViewPostOnFeed(p));
 
-  if (!visiblePosts.length) { $("feed").innerHTML = `<div class="card empty">Chưa có bài viết nào hiển thị.</div>`; return; }
-  $("feed").innerHTML = visiblePosts.map(p => postHTML(p, true, "feed")).join("");
+  let list = visiblePosts.slice();
+  if (feedMode === "following") list = list.filter(p => p.userId === me.id || ((p.isAnonymous ?? true) === false && isFriend(p.userId)));   // không để lộ ai là bạn qua bài ẩn danh
+  else if (feedMode === "latest") list.sort((a, b) => sortKey(b.createdAt) - sortKey(a.createdAt));
+  else {
+    const sc = p => ((p.likes || []).length + (p.comments || []).length * 2 + 3) / Math.pow((Date.now() - sortKey(p.createdAt)) / 3600000 + 2, 1.2);
+    list.sort((a, b) => sc(b) - sc(a));
+  }
+  if (!list.length) { $("feed").innerHTML = `<div class="card empty">${feedMode === "following" ? "Chưa có bài viết nào từ bạn bè." : "Chưa có bài viết nào hiển thị."}</div>`; return; }
+  $("feed").innerHTML = list.map(p => postHTML(p, true, "feed")).join("");
   if (keep) { const el = $(keep.id); if (el) { el.value = keep.val; el.focus(); } }
 }
 
@@ -4474,6 +4574,7 @@ function updateProfileView(){
   }
   $("profileName").textContent = me.name;
   if ($("profileBday")) $("profileBday").innerHTML = bdayBadge(me, true);
+  if ($("heroName")) $("heroName").textContent = me.name || "bạn";
   if ($("profileMood")) $("profileMood").innerHTML = moodBadge(me.mood); $("profileEmail").textContent = idLine(me) || "Đang tạo ID...";
   $("avatar").innerHTML = me.avatar ? `<img src="${escapeHTML(me.avatar)}" alt="">` : escapeHTML(initial(me.name));
   $("postCount").textContent = posts.filter(p => p.userId === me.id && !p.isShared).length;
