@@ -577,6 +577,8 @@ details.set-acc .input{margin-bottom:10px}
  #bdayPop .box{padding:22px 18px}
 }
 
+@keyframes bellshake{0%,100%{transform:rotate(0)}15%{transform:rotate(18deg)}30%{transform:rotate(-16deg)}45%{transform:rotate(12deg)}60%{transform:rotate(-10deg)}75%{transform:rotate(6deg)}}
+.icon-btn.shake{animation:bellshake .8s ease;border-color:var(--purple);box-shadow:0 0 16px #a855f799}
 #postOpts{display:none}#postOpts.show{display:block}
 /* ===== nova11 UI v2: giao diện tím vũ trụ, kính mờ, menu nổi ===== */
 :root{--purple:#a855f7}
@@ -641,6 +643,55 @@ body:not(.light) .bottom-nav{background:rgba(18,10,42,.84);backdrop-filter:blur(
  .hero{padding:16px 16px 14px;border-radius:20px}
  .hero-t{font-size:20px}
  .nav-btn{font-size:10.5px}
+}
+
+/* ===== nova11: trang cá nhân kiểu mới ===== */
+#profile .pf-head{text-align:center;padding:10px 0 4px;background:radial-gradient(260px 200px at 50% 0%,rgba(139,60,255,.35),transparent 70%)}
+.pf-ring{position:relative;width:128px;height:128px;margin:0 auto 14px;padding:4px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#3b82f6);box-shadow:0 0 34px rgba(139,60,255,.45)}
+.pf-ring .avatar{width:100%;height:100%;margin:0;font-size:46px;border:4px solid var(--bg);background:linear-gradient(135deg,#3a2a66,#1b1236);color:#e9d5ff}
+.pf-cam{position:absolute;right:0;bottom:4px;width:34px;height:34px;border-radius:50%;border:3px solid var(--bg);background:linear-gradient(135deg,#7c3aed,#c084fc);font-size:14px;padding:0;display:flex;align-items:center;justify-content:center}
+#profile .pf-name{font-size:clamp(22px,7vw,32px);font-weight:300;letter-spacing:.2em;text-transform:uppercase;margin:0;word-break:break-word;padding:0 8px}
+.pf-id{color:var(--muted);font-size:14px;margin-top:6px;cursor:pointer;word-break:break-all}
+.pf-bday{margin-top:10px;font-size:14px}
+.pf-bday .name-tag{background:none!important;border:0!important;padding:0!important;color:var(--muted)!important;font-size:14px!important}
+.pf-mood{margin-top:8px}
+.pf-stats{display:grid;grid-template-columns:repeat(4,1fr);text-align:center;margin:18px 0 0;padding:16px 0;border-bottom:1px solid var(--border)}
+.pf-stats strong{display:block;font-size:22px;font-weight:800}
+.pf-stats span{display:block;font-size:12.5px;color:var(--muted);margin-top:3px}
+.pf-actions{display:flex;gap:10px;margin:16px 0 4px}
+.pf-actions .primary{flex:1;padding:12px;border-radius:16px}
+.pf-actions .secondary{width:52px;border-radius:16px;font-size:17px}
+#profile .pf-tabs{border-bottom:0;padding-bottom:0;margin:12px 0 14px;overflow-x:auto;scrollbar-width:none;gap:8px}
+#profile .pf-tabs::-webkit-scrollbar{display:none}
+#profile .pf-tabs .profile-tab-btn{flex:0 0 auto;padding:10px 20px;border-radius:22px;font-weight:600;font-size:14px;white-space:nowrap}
+#profile .pf-tabs .profile-tab-btn.active{background:#ede4ff;color:#2a1458;border-color:transparent;box-shadow:0 4px 16px rgba(190,150,255,.35)}
+body.light #profile .pf-tabs .profile-tab-btn.active{background:#7c3aed;color:#fff}
+#profile .profile-column>h3{display:none}
+#profile .profile-column{background:none;border:0;box-shadow:none;padding:0}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.photo-cell{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;border:1px solid var(--border);cursor:pointer;background:var(--input-bg)}
+.photo-cell img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-cell span{position:absolute;font-size:11px;color:#fff;text-shadow:0 1px 4px #000}
+.pc-l{left:7px;bottom:6px}.pc-n{right:7px;top:6px;background:#0008;padding:1px 7px;border-radius:10px}.pc-s{left:7px;top:6px}
+
+/* ===== nova11: trang cá nhân v2 (header, lưới Khám phá) ===== */
+.pf-bar{display:none}
+.pf-explore{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+.pf-explore .pf-h{display:block!important;font-size:20px;margin:0}
+.pf-view{display:flex;gap:6px}
+.pf-view button{width:36px;height:36px;border-radius:12px;border:1px solid var(--border);background:var(--input-bg);color:var(--muted);font-size:16px}
+.pf-view button.on{background:#ede4ff;color:#2a1458;border-color:transparent}
+body.light .pf-view button.on{background:#7c3aed;color:#fff}
+.photo-cell.txt{background:linear-gradient(160deg,rgba(124,58,237,.35),rgba(30,16,70,.7));display:flex;align-items:center;justify-content:center;padding:10px}
+.photo-cell .pc-t{font-size:12.5px;line-height:1.35;text-align:center;color:var(--text);word-break:break-word;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.pf-ring{width:124px;height:124px;padding:3px}
+.pf-ring .avatar{border-width:5px}
+@media(max-width:768px){
+ body.on-profile .topbar{display:none}
+ #profile .pf-bar{display:flex;align-items:center;gap:6px;margin:0 -2px 4px;padding:6px 0}
+ .pf-bar-title{flex:1;text-align:center;font-weight:700;font-size:17px}
+ .pf-bar-btn{width:38px;height:38px;border-radius:50%;border:0;background:transparent;color:var(--text);font-size:22px;display:flex;align-items:center;justify-content:center}
+ .pf-bar-btn:first-child{font-size:34px;line-height:1;padding-bottom:4px}
 }
 </style>
 </head>
@@ -881,34 +932,50 @@ body:not(.light) .bottom-nav{background:rgba(18,10,42,.84);backdrop-filter:blur(
   </section>
 
   <section id="profile" class="page">
-   <div class="card profile">
-    <div id="avatar" class="avatar editable" onclick="document.getElementById('avatarFile').click()">N</div>
-    <div class="avatar-hint" onclick="document.getElementById('avatarFile').click()">Đổi ảnh đại diện</div>
-    <div id="profileName" class="profile-name" style="margin-top:8px">Nova</div>
-    <div id="profileEmail" class="muted" style="cursor:pointer;word-break:break-all" title="Bấm để copy NOVA ID" onclick="copyUid()">--</div>
-    <div id="profileMood" style="margin-top:8px"></div>
-    <div id="profileBday" style="margin-top:6px"></div>
-    <div class="btn-row" style="justify-content:center;margin-top:14px"><button class="primary" onclick="showPage('settings')">✏️ Chỉnh sửa trang</button></div>
+   <div class="pf-bar">
+    <button class="pf-bar-btn" onclick="showPage('home')" title="Quay lại">‹</button>
+    <div class="pf-bar-title">NOVA - Trang Cá Nhân</div>
+    <button class="pf-bar-btn" onclick="showPage('settings')" title="Cài đặt">⚙</button>
+    <button class="pf-bar-btn" onclick="showPage('search')" title="Tìm kiếm"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
    </div>
-   <div class="card stat-card">
-    <div class="setting"><span>📝 Bài viết</span><strong id="postCount">0</strong></div>
-    <div class="setting"><span>🤝 Bạn bè</span><strong id="friendCount">0</strong></div>
-    <div class="setting"><span>👥 Group</span><strong id="groupCount">0</strong></div>
-    <div class="setting"><span>↗ Đã chia sẻ</span><strong id="shareCount">0</strong></div>
+   <div class="pf-head">
+    <div class="pf-ring"><div id="avatar" class="avatar editable" onclick="document.getElementById('avatarFile').click()" title="Đổi ảnh đại diện">N</div>
+     <button class="pf-cam" onclick="document.getElementById('avatarFile').click()" title="Đổi ảnh đại diện">📷</button></div>
+    <div id="profileName" class="profile-name pf-name">Nova</div>
+    <div id="profileEmail" class="pf-id" title="Bấm để copy NOVA ID" onclick="copyUid()">--</div>
+    <div id="profileBday" class="pf-bday"></div>
+    <div id="profileMood" class="pf-mood"></div>
+   </div>
+   <div class="pf-stats">
+    <div><strong id="friendCount">0</strong><span>Bạn bè</span></div>
+    <div><strong id="likeCount">0</strong><span>Lượt thích</span></div>
+    <div><strong id="postCount">0</strong><span>Bài viết</span></div>
+    <div><strong id="shareCount">0</strong><span>Đã chia sẻ</span></div>
+   </div>
+   <div class="pf-actions">
+    <button class="primary" onclick="showPage('settings')">✏️ Chỉnh sửa trang</button>
+    <button class="secondary" onclick="copyUid()" title="Copy NOVA ID">📋</button>
    </div>
 
    <!-- Thanh chuyển đổi tab trang cá nhân -->
-   <div class="profile-tabs">
-    <button class="profile-tab-btn active" onclick="switchProfileTab('posts', this)">📝 Bài đăng</button>
-    <button class="profile-tab-btn" onclick="switchProfileTab('shares', this)">↗ Bài đã chia sẻ</button>
-    <button class="profile-tab-btn" onclick="switchProfileTab('comments', this)">💬 Bình luận</button>
+   <div class="profile-tabs pf-tabs">
+    <button class="profile-tab-btn active" onclick="switchProfileTab('posts', this)">Bài viết</button>
+    <button class="profile-tab-btn" onclick="switchProfileTab('photos', this)">Ảnh</button>
+    <button class="profile-tab-btn" onclick="switchProfileTab('comments', this)">Bình luận</button>
+    <button class="profile-tab-btn" onclick="switchProfileTab('shares', this)">Đã chia sẻ</button>
    </div>
 
    <!-- Layout nội dung Trang cá nhân -->
    <div class="profile-content-columns">
     <div class="profile-column" id="profileColPosts" style="grid-column: span 2">
      <h3>📝 Bài viết của tôi</h3>
+     <div class="pf-explore"><h3 class="pf-h">Khám Phá</h3>
+      <div class="pf-view"><button id="pvGrid" class="on" onclick="setPostView('grid')" title="Dạng lưới">▦</button><button id="pvList" onclick="setPostView('list')" title="Dạng danh sách">☰</button></div></div>
      <div id="myPosts" style="margin-top:10px"></div>
+    </div>
+    <div class="profile-column" id="profileColPhotos" style="display:none; grid-column: span 2">
+     <h3>🖼️ Ảnh của tôi</h3>
+     <div id="myPhotos" style="margin-top:10px"></div>
     </div>
     <div class="profile-column" id="profileColShares" style="display:none; grid-column: span 2">
      <h3>↗ Bài viết đã chia sẻ</h3>
@@ -968,6 +1035,14 @@ body:not(.light) .bottom-nav{background:rgba(18,10,42,.84);backdrop-filter:blur(
      <div class="btn-row" style="margin-top:8px"><button class="primary" onclick="saveBirthday()">Lưu</button><button class="secondary" onclick="clearBirthday()">Xóa</button></div>
      <div class="set-sub">Gồm ngày, tháng và năm sinh (năm có thể để trống). Đến ngày sinh nhật, NOVA sẽ gửi lời chúc cho bạn 🎉 Bạn bè (nếu bạn cho phép) sẽ thấy nhắc sinh nhật.</div>
     </div>
+
+   <div class="set-title">Thông báo</div>
+   <div class="set-card">
+    <div class="set-row">
+     <div><div class="set-label">📳 Rung khi có thông báo mới</div><div class="set-sub">Rung điện thoại + chuông 🔔 lắc khi đang mở NOVA (chỉ Android/Chrome hỗ trợ rung)</div></div>
+     <button class="secondary" onclick="toggleVibrate()" id="vibBtn">Đang bật</button>
+    </div>
+   </div>
 
    <div class="set-title">Giao diện</div>
    <div class="set-card">
@@ -1702,7 +1777,7 @@ onAuthStateChanged(auth, async user => {
     }
   } else {
     me = null; currentChat = null; localKeys = {}; viewingUid = null; currentPage = "home";
-    friendMoods = []; notes = []; friendUsers = []; closeGame(); userCache.clear(); decCache.clear(); openComments.clear(); extraPosts.clear();
+    friendMoods = []; notifsReady = false; notes = []; friendUsers = []; closeGame(); userCache.clear(); decCache.clear(); openComments.clear(); extraPosts.clear();
     $("app").style.display = "none";
     $("auth").style.display = "flex";
     showLogin();
@@ -1718,14 +1793,14 @@ function listen(q, cb){
 function stopListeners(){
   unsubs.forEach(u => u()); unsubs = [];
   if (msgUnsub) { msgUnsub(); msgUnsub = null; }
-  posts = []; incoming = []; outgoing = []; friendships = []; chats = []; notifs = []; myShares = [];
+  notifsReady = false; posts = []; incoming = []; outgoing = []; friendships = []; chats = []; notifs = []; myShares = [];
 }
 function startListeners(){
   listen(query(collection(db,"posts"), orderBy("createdAt","desc"), limit(100)), s => {
     posts = s.docs.map(d => ({ id: d.id, ...d.data() }));
     renderFeed(); updateProfileView();
     if (pvPostId) renderPostView();
-    if (currentPage === "profile") { renderMyPosts(); renderMyComments(); renderMyShares(); }
+    if (currentPage === "profile") { renderMyPosts(); renderMyComments(); renderMyShares(); if ($("profileColPhotos")?.style.display === "block") renderMyPhotos(); }
     if (currentPage === "userProfile" && viewingUid) { renderUserPosts(viewingUid); renderUserShares(viewingUid); }
     if (currentPage === "search") searchEverything();
   });
@@ -1760,8 +1835,11 @@ function startListeners(){
     if (currentPage === "profile") renderMyShares();
   });
   listen(query(collection(db,"notifications"), where("to","==",me.id)), s => {
+    const prevIds = new Set(notifs.map(n => n.id)), firstLoad = !notifsReady; notifsReady = true;
     notifs = s.docs.map(d => ({ id: d.id, ...d.data() }));
     notifs.sort((a,b) => sortKey(b.createdAt) - sortKey(a.createdAt));
+    const fresh = notifs.filter(n => !n.read && !prevIds.has(n.id) && n.from !== me.id);
+    if (!firstLoad && fresh.length) notifyAlert(fresh[0]);
     const unread = notifs.filter(n => !n.read).length;
     const b = $("notifBadge"); b.textContent = unread > 9 ? "9+" : unread; b.classList.toggle("show", unread > 0);
     renderNotifications();
@@ -2042,7 +2120,8 @@ window.showPage = page => {
   if (page === "groups") { renderGroups(); renderGroupPicker(); }
   if (page === "notifications") renderNotifications();
   if (page === "profile") { updateProfileView(); renderMyPosts(); renderMyShares(); renderMyComments(); }
-  if (page === "settings") { initBdayForm(); $("newName").value = me?.name || ""; $("newHandle").value = me?.handle || ""; $("myNidLine").textContent = me?.nid ? "NOVA ID của bạn: " + me.nid + " (cố định)" : ""; }
+  document.body.classList.toggle("on-profile", page === "profile");
+  if (page === "settings") { renderVibBtn(); initBdayForm(); $("newName").value = me?.name || ""; $("newHandle").value = me?.handle || ""; $("myNidLine").textContent = me?.nid ? "NOVA ID của bạn: " + me.nid + " (cố định)" : ""; }
   if (page === "search") searchEverything();
   if (changed) window.scrollTo(0,0);
 };
@@ -2201,7 +2280,9 @@ window.switchProfileTab = (tab, btn) => {
   $("profileColPosts").style.display = tab === "posts" ? "block" : "none";
   $("profileColShares").style.display = tab === "shares" ? "block" : "none";
   $("profileColComments").style.display = tab === "comments" ? "block" : "none";
+  $("profileColPhotos").style.display = tab === "photos" ? "block" : "none";
   
+  if (tab === "photos") renderMyPhotos();
   if (tab === "posts") renderMyPosts();
   if (tab === "shares") renderMyShares();
   if (tab === "comments") renderMyComments();
@@ -2524,12 +2605,40 @@ function renderFeed(){
   if (keep) { const el = $(keep.id); if (el) { el.value = keep.val; el.focus(); } }
 }
 
+function renderMyPhotos(){
+  const box = $("myPhotos"); if (!box || !me) return;
+  const items = [];
+  posts.filter(p => p.userId === me.id && !p.isShared).forEach(p => {
+    const imgs = p.images || (p.image ? [p.image] : []);
+    imgs.forEach((src, i) => items.push({ p, src, i, n: imgs.length }));
+  });
+  if (!items.length) { box.innerHTML = `<p class="muted">Bạn chưa đăng ảnh nào.</p>`; return; }
+  box.innerHTML = `<div class="photo-grid">` + items.map(({ p, src, i, n }) => `<div class="photo-cell" onclick="openPostView('${p.id}')">
+    <img loading="lazy" src="${escapeHTML(src)}" alt="">${n > 1 ? `<span class="pc-n">${i + 1}/${n}</span>` : ""}
+    <span class="pc-l">♥ ${(p.likes || []).length}</span>${p.sensitive ? `<span class="pc-s">⚠️</span>` : ""}</div>`).join("") + `</div>`;
+}
+
+let myPostView = "grid";
+window.setPostView = v => {
+  myPostView = v;
+  $("pvGrid")?.classList.toggle("on", v === "grid"); $("pvList")?.classList.toggle("on", v === "list");
+  renderMyPosts();
+};
 function renderMyPosts(){
   if (!me) return;
   const box = $("myPosts"); if (!box) return;
   const myPostList = posts.filter(p => p.userId === me.id && !p.isShared);
   if (!myPostList.length) { box.innerHTML = `<p class="muted" style="margin-top:10px">Bạn chưa đăng bài viết nào.</p>`; return; }
-  box.innerHTML = myPostList.map(p => postHTML(p, true, "me")).join("");
+  if (myPostView === "list") { box.innerHTML = myPostList.map(p => postHTML(p, true, "me")).join(""); return; }
+  box.innerHTML = `<div class="photo-grid">` + myPostList.map(p => {
+    const imgs = p.images || (p.image ? [p.image] : []);
+    const likes = `<span class="pc-l">♥ ${(p.likes || []).length}</span>`;
+    const lock = (p.privacy === "ONLY_ME" ? "🔒" : p.privacy === "FRIENDS" ? "👥" : "") + (p.sensitive ? "⚠️" : "");
+    const flag = lock ? `<span class="pc-s">${lock}</span>` : "";
+    if (imgs.length) return `<div class="photo-cell" onclick="openPostView('${p.id}')"><img loading="lazy" src="${escapeHTML(imgs[0])}" alt="">${imgs.length > 1 ? `<span class="pc-n">1/${imgs.length}</span>` : ""}${likes}${flag}</div>`;
+    const t = (p.text || "").slice(0, 90);
+    return `<div class="photo-cell txt" onclick="openPostView('${p.id}')"><div class="pc-t">${escapeHTML(t)}${(p.text || "").length > 90 ? "…" : ""}</div>${likes}${flag}</div>`;
+  }).join("") + `</div><p class="muted" style="text-align:center;font-size:13px;margin:18px 0 6px">Không còn kết quả nào khác</p>`;
 }
 
 function renderMyComments() {
@@ -2904,10 +3013,16 @@ function bdayDays(b){
   if (n < t0) n = new Date(t0.getFullYear() + 1, b.m - 1, b.d);
   return Math.round((n - t0) / 864e5);
 }
-function bdayAge(b){
+function bdayAge(b){   // tuổi sẽ tròn ở lần sinh nhật gần nhất sắp tới (hôm nay = tuổi vừa tròn)
   if (!b?.y) return 0;
   const t = new Date(); const n = new Date(t.getFullYear(), t.getMonth(), t.getDate() + bdayDays(b));
   return n.getFullYear() - b.y;
+}
+function bdayCurAge(b){   // tuổi hiện tại
+  if (!b?.y) return 0;
+  const t = new Date(); let a = t.getFullYear() - b.y;
+  if (bdayDays(b) !== 0 && new Date(t.getFullYear(), b.m - 1, b.d) > t) a--;
+  return a;
 }
 const bdayFull = b => pad2(b.d) + "/" + pad2(b.m) + (b.y ? "/" + b.y : "");
 function bdayShown(u, isFr){
@@ -2917,7 +3032,7 @@ function bdayShown(u, isFr){
 function bdayBadge(u, self){
   const b = u?.birthday; if (!b || !b.d || !b.m) return "";
   const today = bdayDays(b) === 0;
-  return `<span class="name-tag" style="margin-left:0;font-size:13px">🎂 ${bdayFull(b)}${b.y ? " · " + bdayAge(b) + " tuổi" + (today ? "" : " (sắp tới)") : ""}${self ? " · " + (BDAY_VIS[b.vis] || "") : ""}${today ? " · 🎉 Hôm nay!" : ""}</span>`;
+  return `<span class="name-tag" style="margin-left:0;font-size:13px">🎂 ${bdayFull(b)}${b.y ? " (" + bdayCurAge(b) + " tuổi)" : ""}${self ? " · " + (BDAY_VIS[b.vis] || "") : ""}${today ? " · 🎉 Hôm nay!" : ""}</span>`;
 }
 function wishBtn(u){
   if (!u || u.id === me.id || bdayDays(u.birthday) !== 0) return "";
@@ -4516,6 +4631,21 @@ window.deleteGroup = async gid => {
   } catch (e) { console.error(e); toast("Lỗi"); }
 };
 
+/* ===== RUNG / ÂM BÁO KHI CÓ THÔNG BÁO MỚI ===== */
+let notifsReady = false;
+const vibOn = () => lsGet("nova_vibrate") !== "0";
+function notifyAlert(n){
+  if (vibOn()) { try { navigator.vibrate && navigator.vibrate([180, 90, 180, 90, 260]); } catch {} }
+  const b = document.querySelector(".top-actions .icon-btn[onclick*=notifications]");
+  if (b) { b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake"); }
+  if (document.visibilityState === "visible") toast("🔔 " + (n.text || "Bạn có thông báo mới"), 3500);
+}
+window.toggleVibrate = () => {
+  const on = !vibOn(); lsSet("nova_vibrate", on ? "1" : "0"); renderVibBtn();
+  if (on) { try { navigator.vibrate && navigator.vibrate(200); } catch {} toast(navigator.vibrate ? "Đã bật rung khi có thông báo 📳" : "Đã bật, nhưng thiết bị/trình duyệt này không hỗ trợ rung"); }
+  else toast("Đã tắt rung");
+};
+function renderVibBtn(){ const b = $("vibBtn"); if (b) b.textContent = vibOn() ? "Đang bật" : "Đang tắt"; }
 const NOTIF_ICON = { friend_request: "🤝", friend_accept: "✅", group_add: "👥", group_kick: "🚪", birthday: "🎂", birthday_wish: "🎁" };
 const NOTIF_GO = { friend_request: "Xem lời mời", friend_accept: "Xem trang cá nhân", group_add: "Mở group", group_kick: "Xem danh sách group", birthday: "Cảm ơn Nova", birthday_wish: "Xem trang cá nhân" };
 function renderNotifications(){
@@ -4579,7 +4709,8 @@ function updateProfileView(){
   $("avatar").innerHTML = me.avatar ? `<img src="${escapeHTML(me.avatar)}" alt="">` : escapeHTML(initial(me.name));
   $("postCount").textContent = posts.filter(p => p.userId === me.id && !p.isShared).length;
   $("friendCount").textContent = friendships.length;
-  $("groupCount").textContent = chats.filter(c => c.type === "group").length;
+  if ($("groupCount")) $("groupCount").textContent = chats.filter(c => c.type === "group").length;
+  if ($("likeCount")) { const t = posts.filter(p => p.userId === me.id && !p.isShared).reduce((a, p) => a + (p.likes || []).length, 0); $("likeCount").textContent = t >= 10000 ? (t / 1000).toFixed(1) + "K" : t; }
   $("shareCount").textContent = myShares.length;
   renderSidebars();
 }
