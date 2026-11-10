@@ -726,10 +726,22 @@ html.a11y-invert img,html.a11y-invert video,html.a11y-invert .avatar{filter:inve
 .a11y-sel{background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:9px 10px;font-size:14px;max-width:190px}
 .a11y-time{display:flex;gap:8px;align-items:center;padding:0 0 13px}
 .a11y-time input{background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px}
-#sttFab{position:fixed;right:16px;bottom:calc(96px + env(safe-area-inset-bottom));width:52px;height:52px;border-radius:50%;border:0;font-size:22px;background:linear-gradient(135deg,#7c3aed,#c084fc);box-shadow:0 8px 24px #9b4dffaa;z-index:9000;display:none}
-#sttFab.show{display:block}
-#sttFab.recording{background:#ef4444;animation:sttp 1s infinite}
-@keyframes sttp{50%{box-shadow:0 0 0 14px #ef444444}}
+
+#atFab{position:fixed;width:54px;height:54px;border-radius:16px;z-index:9500;display:none;background:rgba(40,40,52,.78);border:1px solid rgba(255,255,255,.22);box-shadow:0 6px 22px rgba(0,0,0,.45);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);touch-action:none;user-select:none;-webkit-user-select:none;align-items:center;justify-content:center;opacity:.9;cursor:grab}
+#atFab.show{display:flex}
+#atFab.held{opacity:1;cursor:grabbing;transform:scale(1.06)}
+#atFab i{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.28);display:block;position:relative}
+#atFab i::after{content:"";position:absolute;inset:6px;border-radius:50%;background:rgba(255,255,255,.9)}
+#atMenu{position:fixed;inset:0;z-index:9600;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);padding:20px}
+#atMenu.show{display:flex}
+#atMenu .atbox{width:100%;max-width:340px;background:rgba(32,32,44,.94);border:1px solid rgba(255,255,255,.14);border-radius:28px;padding:16px 14px 18px;color:#fff}
+#atMenu .attitle{text-align:center;font-weight:700;margin-bottom:12px;opacity:.85}
+#atMenu .atgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+#atMenu .atbtn{background:rgba(255,255,255,.09);border:1px solid transparent;border-radius:18px;color:#fff;padding:12px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:78px}
+#atMenu .atbtn span{font-size:22px;line-height:1}
+#atMenu .atbtn small{font-size:11px;opacity:.85;text-align:center;line-height:1.2}
+#atMenu .atbtn.on{border-color:#c084fc;background:rgba(168,85,247,.3)}
+#atMenu .atbtn:active{background:rgba(255,255,255,.22)}
 #pinLock{position:fixed;inset:0;z-index:99999;background:radial-gradient(600px 400px at 50% 0%,#4c1d95,#07041a 70%);display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;color:#fff}
 #pinLock.show{display:flex}
 #pinLock .pt{font-size:20px;font-weight:700;margin-bottom:6px;text-align:center}
@@ -1111,7 +1123,7 @@ html.a11y-invert img,html.a11y-invert video,html.a11y-invert .avatar{filter:inve
    <div class="set-title">Trợ năng</div>
    <div class="set-card">
     <div class="set-row" style="cursor:pointer" onclick="showPage('a11y')">
-     <div><div class="set-label">♿ Trợ năng & tiện ích</div><div class="set-sub">Cỡ chữ, tương phản, lọc màu, đọc to, nhập bằng giọng nói, khóa PIN...</div></div>
+     <div><div class="set-label">♿ Trợ năng & tiện ích</div><div class="set-sub">Cỡ chữ, tương phản, lọc màu, đọc to, nút trợ năng nổi, khóa PIN...</div></div>
      <span style="font-size:22px;color:var(--muted)">›</span>
     </div>
    </div>
@@ -2991,7 +3003,7 @@ window.deleteMood = async () => {
 
 /* ===================== TRỢ NĂNG & TIỆN ÍCH (miễn phí, lưu trên thiết bị) ===================== */
 const A11Y_DEF = { size: 100, bold: 0, contrast: 0, solid: 0, shapes: 0, onoff: 0, filter: "none", warm: 0, dim: 0, theme: "manual",
-  font: 0, spacing: 0, tts: 0, stt: 0, touch: 0, focus: 0, motion: 0, hap: 0, quiet: 0, qFrom: "22:00", qTo: "07:00", pinAfter: 0 };
+  fab: 0, fabX: 1, fabY: 0.6, font: 0, spacing: 0, tts: 0, touch: 0, focus: 0, motion: 0, hap: 0, quiet: 0, qFrom: "22:00", qTo: "07:00", pinAfter: 0 };
 let A11Y = { ...A11Y_DEF };
 try { const raw = localStorage.getItem("nova_a11y"); if (raw) Object.assign(A11Y, JSON.parse(raw)); } catch {}
 function a11ySave(){ try { localStorage.setItem("nova_a11y", JSON.stringify(A11Y)); } catch {} }
@@ -3037,7 +3049,7 @@ function a11yApply(){
   $("a11yWarm").style.background = `rgba(255,140,30,${A11Y.warm / 100})`;
   $("a11yDim").style.background = `rgba(0,0,0,${A11Y.dim / 100})`;
   if (A11Y.font && !lexendLoaded) { lexendLoaded = true; const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;800&display=swap"; document.head.appendChild(l); }
-  a11yTheme();
+  a11yTheme(); atSync();
 }
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", a11yTheme);
 
@@ -3064,32 +3076,79 @@ document.addEventListener("click", e => {
   ttsEl = el; el.classList.add("speaking"); speechSynthesis.speak(u);
 });
 
-/* --- nhập bằng giọng nói --- */
-const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-let sttTarget = null, sttRec = null;
-function sttFab(){
-  let f = $("sttFab");
-  if (!f) { f = document.createElement("button"); f.id = "sttFab"; f.textContent = "🎤"; f.title = "Nhập bằng giọng nói";
-    f.onmousedown = f.ontouchstart = e => e.preventDefault(); f.onclick = sttToggle; document.body.appendChild(f); }
+
+/* --- nút trợ năng nổi (kiểu AssistiveTouch) --- */
+function atEl(){
+  let f = $("atFab");
+  if (f) return f;
+  f = document.createElement("div"); f.id = "atFab"; f.setAttribute("role", "button"); f.setAttribute("aria-label", "Nút trợ năng"); f.innerHTML = "<i></i>";
+  document.body.appendChild(f);
+  let sx = 0, sy = 0, ox = 0, oy = 0, drag = false, down = false;
+  f.addEventListener("pointerdown", e => { down = true; drag = false; sx = e.clientX; sy = e.clientY; const r = f.getBoundingClientRect(); ox = r.left; oy = r.top; f.setPointerCapture(e.pointerId); f.classList.add("held"); });
+  f.addEventListener("pointermove", e => {
+    if (!down) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (!drag && Math.hypot(dx, dy) > 7) drag = true;
+    if (drag) { f.style.left = Math.max(0, Math.min(innerWidth - f.offsetWidth, ox + dx)) + "px"; f.style.top = Math.max(0, Math.min(innerHeight - f.offsetHeight, oy + dy)) + "px"; f.style.right = "auto"; f.style.bottom = "auto"; }
+  });
+  const end = e => {
+    if (!down) return; down = false; f.classList.remove("held");
+    if (drag) {
+      const r = f.getBoundingClientRect();
+      A11Y.fabX = (r.left + r.width / 2) < innerWidth / 2 ? 0 : 1;
+      A11Y.fabY = Math.max(0.05, Math.min(0.92, r.top / Math.max(1, innerHeight - r.height)));
+      a11ySave(); atPlace(true);
+    } else atToggle();
+  };
+  f.addEventListener("pointerup", end); f.addEventListener("pointercancel", () => { down = false; f.classList.remove("held"); });
+  addEventListener("resize", () => atPlace());
   return f;
 }
-document.addEventListener("focusin", e => {
-  if (!A11Y.stt || !SpeechRec) return;
-  const t = e.target;
-  if (t.matches('textarea,input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=time]):not([type=hidden]):not([type=password]):not([type=number])')) { sttTarget = t; sttFab().classList.add("show"); }
-});
-document.addEventListener("focusout", () => setTimeout(() => { if (!sttRec && document.activeElement !== sttTarget) $("sttFab")?.classList.remove("show"); }, 300));
-function sttToggle(){
-  if (sttRec) { sttRec.stop(); return; }
-  const r = new SpeechRec(); r.lang = "vi-VN"; r.interimResults = false;
-  r.onresult = ev => {
-    const txt = [...ev.results].map(x => x[0].transcript).join(" ").trim();
-    if (sttTarget && txt) { sttTarget.value = (sttTarget.value ? sttTarget.value + " " : "") + txt; sttTarget.dispatchEvent(new Event("input", { bubbles: true })); }
-  };
-  r.onend = () => { sttRec = null; $("sttFab")?.classList.remove("recording"); };
-  r.onerror = ev => toast("Không nhận được giọng nói (" + ev.error + ")");
-  sttRec = r; $("sttFab").classList.add("recording");
-  try { r.start(); } catch {}
+function atPlace(anim){
+  const f = $("atFab"); if (!f) return;
+  const w = f.offsetWidth || 54, h = f.offsetHeight || 54, m = 6;
+  f.style.transition = anim ? "left .25s ease, top .25s ease" : "none";
+  f.style.right = "auto"; f.style.bottom = "auto";
+  f.style.left = (A11Y.fabX ? innerWidth - w - m : m) + "px";
+  f.style.top = Math.max(m, Math.min(innerHeight - h - m, A11Y.fabY * (innerHeight - h))) + "px";
+}
+function atSync(){
+  const app = $("app"), logged = app && app.style.display !== "none" && getComputedStyle(app).display !== "none";
+  const show = !!A11Y.fab && logged;
+  if (!show) { $("atFab")?.classList.remove("show"); atClose(); return; }
+  const f = atEl(); if (!f.classList.contains("show")) { f.classList.add("show"); atPlace(); }
+}
+setInterval(atSync, 1500);
+function atItems(){
+  const pg = p => () => showPage(p);
+  const it = [
+    ["🏠", "Trang chủ", () => refreshFeed()],
+    ["🔔", "Thông báo", pg("notifications")],
+    ["💬", "Chat", pg("chat")],
+    ["👤", "Cá nhân", pg("profile")],
+    ["🔍", "Tìm kiếm", pg("search")],
+    ["♿", "Trợ năng", pg("a11y")],
+    ["A＋", "Chữ to hơn", () => { A11Y.size = Math.min(150, A11Y.size + 10); a11ySave(); a11yApply(); if (currentPage === "a11y") renderA11y(); toast("Cỡ chữ " + A11Y.size + "%"); }, false],
+    ["A－", "Chữ nhỏ hơn", () => { A11Y.size = Math.max(90, A11Y.size - 10); a11ySave(); a11yApply(); if (currentPage === "a11y") renderA11y(); toast("Cỡ chữ " + A11Y.size + "%"); }, false],
+    ["◐", "Tương phản", () => { A11Y.contrast = A11Y.contrast ? 0 : 1; a11ySave(); a11yApply(); if (currentPage === "a11y") renderA11y(); }, false, !!A11Y.contrast],
+    ["🔊", "Đọc to", () => { a11ySet("tts", A11Y.tts ? 0 : 1); if (currentPage === "a11y") renderA11y(); toast(A11Y.tts ? "Đã bật đọc to — chạm vào bài viết" : "Đã tắt đọc to"); }, false, !!A11Y.tts],
+    ["🌓", "Sáng / Tối", () => toggleTheme(), false],
+    ["⬆", "Lên đầu trang", () => window.scrollTo({ top: 0, behavior: "smooth" })]
+  ];
+  if (pinIsSet()) it.push(["🔒", "Khóa PIN", () => pinLockNow()]);
+  it.push(["✕", "Ẩn nút này", () => { a11ySet("fab", 0); if (currentPage === "a11y") renderA11y(); toast("Đã ẩn nút. Bật lại ở Cài đặt → Trợ năng"); }]);
+  return it;
+}
+let atOpen = false;
+function atToggle(){ atOpen ? atClose() : atShowMenu(); }
+function atClose(){ atOpen = false; $("atMenu")?.classList.remove("show"); }
+function atShowMenu(){
+  let m = $("atMenu");
+  if (!m) { m = document.createElement("div"); m.id = "atMenu"; document.body.appendChild(m); m.addEventListener("click", e => { if (e.target === m) atClose(); }); }
+  const items = atItems();
+  m.innerHTML = `<div class="atbox"><div class="attitle">Trợ năng</div><div class="atgrid">${items.map((x, i) => `<button class="atbtn ${x[4] ? "on" : ""}" data-i="${i}"><span>${x[0]}</span><small>${x[1]}</small></button>`).join("")}</div></div>`;
+  m.querySelectorAll(".atbtn").forEach(b => b.onclick = () => { const x = items[+b.dataset.i]; if (x[3] !== false) atClose(); x[2](); if (x[3] === false) atShowMenu(); });
+  m.classList.add("show"); atOpen = true;
 }
 
 /* --- rung nhẹ khi bấm --- */
@@ -3156,12 +3215,11 @@ window.pinDisable = async () => {
 
 /* --- trang Trợ năng --- */
 window.a11ySet = (k, v) => {
-  if (k === "stt" && v && !SpeechRec) { toast("Trình duyệt này không hỗ trợ nhập bằng giọng nói (dùng Chrome/Safari mới)"); renderA11y(); return; }
   if (k === "tts" && v && !window.speechSynthesis) { toast("Trình duyệt này không hỗ trợ đọc to"); renderA11y(); return; }
   A11Y[k] = v; a11ySave(); a11yApply();
   if (k === "tts" && !v) speechSynthesis?.cancel();
-  if (k === "stt" && !v) $("sttFab")?.classList.remove("show");
   if (k === "hap" && v) navigator.vibrate?.(30);
+  if (k === "fab") { atSync(); if (v) toast("Đã bật nút trợ năng — kéo để di chuyển, chạm để mở"); else atClose(); }
   if (k === "theme" && v === "manual") toast("Đã tắt tự động theo hệ thống");
 };
 window.a11yReset = () => { if (!confirm("Đặt lại toàn bộ tùy chọn trợ năng về mặc định?")) return; A11Y = { ...A11Y_DEF }; a11ySave(); a11yApply(); renderA11y(); toast("Đã đặt lại trợ năng"); };
@@ -3198,10 +3256,10 @@ function renderA11y(){
     ${row("Giãn dòng & chữ", "Khoảng cách rộng hơn, dễ đọc đoạn dài", tgl("spacing"))}
     ${row("Đọc to khi chạm", "Chạm vào bài viết hoặc tin nhắn để nghe đọc, chạm lần nữa để dừng", tgl("tts"))}
     <div class="set-row" style="border-top:0"><div class="set-sub">Nghe thử giọng đọc</div><button class="secondary" onclick="a11yTest()">▶ Đọc thử</button></div>
-    ${row("Nhập bằng giọng nói", "Hiện nút 🎤 khi bấm vào ô nhập chữ (Chrome/Safari)", tgl("stt"))}
    </div>
 
    <div class="set-title">Thao tác</div><div class="set-card">
+    ${row("Nút trợ năng nổi", "Hiện nút tròn kéo đi được trên màn hình, chạm vào để mở menu nhanh (về trang chủ, đổi cỡ chữ, tương phản, đọc to, khóa PIN...)", tgl("fab"))}
     ${row("Vùng chạm lớn", "Nút và ô nhập cao hơn, dễ bấm", tgl("touch"))}
     ${row("Viền focus rõ", "Viền vàng khi dùng bàn phím", tgl("focus"))}
     ${row("Giảm chuyển động", "Tắt hiệu ứng động, pháo giấy, nhấp nháy", tgl("motion"))}
