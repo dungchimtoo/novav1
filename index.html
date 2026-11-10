@@ -727,21 +727,21 @@ html.a11y-invert img,html.a11y-invert video,html.a11y-invert .avatar{filter:inve
 .a11y-time{display:flex;gap:8px;align-items:center;padding:0 0 13px}
 .a11y-time input{background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px}
 
-#atFab{position:fixed;width:54px;height:54px;border-radius:16px;z-index:9500;display:none;background:rgba(40,40,52,.78);border:1px solid rgba(255,255,255,.22);box-shadow:0 6px 22px rgba(0,0,0,.45);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);touch-action:none;user-select:none;-webkit-user-select:none;align-items:center;justify-content:center;opacity:.9;cursor:grab}
+#atFab{position:fixed;left:0;top:0;width:54px;height:54px;border-radius:16px;z-index:9500;display:none;background:rgba(40,40,52,.9);border:1px solid rgba(255,255,255,.22);box-shadow:0 4px 14px rgba(0,0,0,.45);touch-action:none;user-select:none;-webkit-user-select:none;align-items:center;justify-content:center;opacity:.92;cursor:grab;will-change:transform;contain:layout paint}
 #atFab.show{display:flex}
-#atFab.held{opacity:1;cursor:grabbing;transform:scale(1.06)}
+#atFab.held{opacity:1;cursor:grabbing}
 #atFab i{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.28);display:block;position:relative}
 #atFab i::after{content:"";position:absolute;inset:6px;border-radius:50%;background:rgba(255,255,255,.9)}
-#atMenu{position:fixed;inset:0;z-index:9600;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.45);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);padding:20px}
+#atMenu{position:fixed;inset:0;z-index:9600;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:20px}
 #atMenu.show{display:flex}
-#atMenu .atbox{width:100%;max-width:340px;background:rgba(32,32,44,.94);border:1px solid rgba(255,255,255,.14);border-radius:28px;padding:16px 14px 18px;color:#fff}
+#atMenu .atbox{width:100%;max-width:340px;background:#20202c;border:1px solid rgba(255,255,255,.14);border-radius:28px;padding:16px 14px 18px;color:#fff}
 #atMenu .attitle{text-align:center;font-weight:700;margin-bottom:12px;opacity:.85}
 #atMenu .atgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-#atMenu .atbtn{background:rgba(255,255,255,.09);border:1px solid transparent;border-radius:18px;color:#fff;padding:12px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:78px}
+#atMenu .atbtn{background:#2e2e3c;border:1px solid transparent;border-radius:18px;color:#fff;padding:12px 4px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:78px}
 #atMenu .atbtn span{font-size:22px;line-height:1}
 #atMenu .atbtn small{font-size:11px;opacity:.85;text-align:center;line-height:1.2}
 #atMenu .atbtn.on{border-color:#c084fc;background:rgba(168,85,247,.3)}
-#atMenu .atbtn:active{background:rgba(255,255,255,.22)}
+#atMenu .atbtn:active{background:#45455a}
 #pinLock{position:fixed;inset:0;z-index:99999;background:radial-gradient(600px 400px at 50% 0%,#4c1d95,#07041a 70%);display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;color:#fff}
 #pinLock.show{display:flex}
 #pinLock .pt{font-size:20px;font-weight:700;margin-bottom:6px;text-align:center}
@@ -3078,47 +3078,53 @@ document.addEventListener("click", e => {
 
 
 /* --- nút trợ năng nổi (kiểu AssistiveTouch) --- */
+let atX = 0, atY = 0, atRaf = 0, atSyncTimer = 0;
+function atMove(x, y, anim){
+  const f = $("atFab"); if (!f) return;
+  atX = x; atY = y;
+  f.style.transition = anim ? "transform .22s ease" : "none";
+  f.style.transform = `translate3d(${x}px,${y}px,0)`;
+}
 function atEl(){
   let f = $("atFab");
   if (f) return f;
   f = document.createElement("div"); f.id = "atFab"; f.setAttribute("role", "button"); f.setAttribute("aria-label", "Nút trợ năng"); f.innerHTML = "<i></i>";
   document.body.appendChild(f);
-  let sx = 0, sy = 0, ox = 0, oy = 0, drag = false, down = false;
-  f.addEventListener("pointerdown", e => { down = true; drag = false; sx = e.clientX; sy = e.clientY; const r = f.getBoundingClientRect(); ox = r.left; oy = r.top; f.setPointerCapture(e.pointerId); f.classList.add("held"); });
+  let sx = 0, sy = 0, ox = 0, oy = 0, drag = false, down = false, nx = 0, ny = 0;
+  const W = () => f.offsetWidth || 54;
+  f.addEventListener("pointerdown", e => { down = true; drag = false; sx = e.clientX; sy = e.clientY; ox = atX; oy = atY; f.setPointerCapture(e.pointerId); });
   f.addEventListener("pointermove", e => {
     if (!down) return;
     const dx = e.clientX - sx, dy = e.clientY - sy;
-    if (!drag && Math.hypot(dx, dy) > 7) drag = true;
-    if (drag) { f.style.left = Math.max(0, Math.min(innerWidth - f.offsetWidth, ox + dx)) + "px"; f.style.top = Math.max(0, Math.min(innerHeight - f.offsetHeight, oy + dy)) + "px"; f.style.right = "auto"; f.style.bottom = "auto"; }
+    if (!drag && Math.hypot(dx, dy) > 7) { drag = true; f.classList.add("held"); }
+    if (!drag) return;
+    nx = Math.max(0, Math.min(innerWidth - W(), ox + dx)); ny = Math.max(0, Math.min(innerHeight - W(), oy + dy));
+    if (!atRaf) atRaf = requestAnimationFrame(() => { atRaf = 0; atMove(nx, ny, false); });
   });
-  const end = e => {
+  f.addEventListener("pointerup", () => {
     if (!down) return; down = false; f.classList.remove("held");
     if (drag) {
-      const r = f.getBoundingClientRect();
-      A11Y.fabX = (r.left + r.width / 2) < innerWidth / 2 ? 0 : 1;
-      A11Y.fabY = Math.max(0.05, Math.min(0.92, r.top / Math.max(1, innerHeight - r.height)));
+      A11Y.fabX = (atX + W() / 2) < innerWidth / 2 ? 0 : 1;
+      A11Y.fabY = Math.max(0.05, Math.min(0.92, atY / Math.max(1, innerHeight - W())));
       a11ySave(); atPlace(true);
     } else atToggle();
-  };
-  f.addEventListener("pointerup", end); f.addEventListener("pointercancel", () => { down = false; f.classList.remove("held"); });
+  });
+  f.addEventListener("pointercancel", () => { down = false; f.classList.remove("held"); });
   addEventListener("resize", () => atPlace());
   return f;
 }
 function atPlace(anim){
   const f = $("atFab"); if (!f) return;
-  const w = f.offsetWidth || 54, h = f.offsetHeight || 54, m = 6;
-  f.style.transition = anim ? "left .25s ease, top .25s ease" : "none";
-  f.style.right = "auto"; f.style.bottom = "auto";
-  f.style.left = (A11Y.fabX ? innerWidth - w - m : m) + "px";
-  f.style.top = Math.max(m, Math.min(innerHeight - h - m, A11Y.fabY * (innerHeight - h))) + "px";
+  const w = f.offsetWidth || 54, m = 6;
+  atMove(A11Y.fabX ? innerWidth - w - m : m, Math.max(m, Math.min(innerHeight - w - m, A11Y.fabY * (innerHeight - w))), anim);
 }
 function atSync(){
-  const app = $("app"), logged = app && app.style.display !== "none" && getComputedStyle(app).display !== "none";
-  const show = !!A11Y.fab && logged;
-  if (!show) { $("atFab")?.classList.remove("show"); atClose(); return; }
+  if (!A11Y.fab) { $("atFab")?.classList.remove("show"); atClose(); if (atSyncTimer) { clearInterval(atSyncTimer); atSyncTimer = 0; } return; }
+  if (!atSyncTimer) atSyncTimer = setInterval(atSync, 2000);
+  const app = $("app"), logged = app && app.style.display !== "none";
+  if (!logged) { $("atFab")?.classList.remove("show"); atClose(); return; }
   const f = atEl(); if (!f.classList.contains("show")) { f.classList.add("show"); atPlace(); }
 }
-setInterval(atSync, 1500);
 function atItems(){
   const pg = p => () => showPage(p);
   const it = [
@@ -3214,6 +3220,12 @@ window.pinDisable = async () => {
 };
 
 /* --- trang Trợ năng --- */
+let liveRaf = 0;
+window.a11yLive = (k, v) => {      // kéo thanh trượt: chỉ cập nhật phần nhẹ (lớp phủ), cỡ chữ áp dụng khi thả tay
+  if (k !== "warm" && k !== "dim") return;
+  A11Y[k] = v;
+  if (!liveRaf) liveRaf = requestAnimationFrame(() => { liveRaf = 0; $("a11yWarm").style.background = `rgba(255,140,30,${A11Y.warm / 100})`; $("a11yDim").style.background = `rgba(0,0,0,${A11Y.dim / 100})`; });
+};
 window.a11ySet = (k, v) => {
   if (k === "tts" && v && !window.speechSynthesis) { toast("Trình duyệt này không hỗ trợ đọc to"); renderA11y(); return; }
   A11Y[k] = v; a11ySave(); a11yApply();
@@ -3233,7 +3245,7 @@ function renderA11y(){
   const row = (l, sub, ctl) => `<div class="set-row"><div><div class="set-label">${l}</div>${sub ? `<div class="set-sub">${sub}</div>` : ""}</div>${ctl}</div>`;
   const tgl = k => `<label class="tgl"><input type="checkbox" ${A11Y[k] ? "checked" : ""} onchange="a11ySet('${k}',this.checked?1:0)"><span class="tgl-slider"></span></label>`;
   const rng = (l, sub, k, min, max, step, unit, fn) => `<div class="a11y-range"><div class="top"><div><div class="set-label">${l}</div>${sub ? `<div class="set-sub">${sub}</div>` : ""}</div><b id="a11yv-${k}">${A11Y[k]}${unit}</b></div>
-    <input type="range" min="${min}" max="${max}" step="${step}" value="${A11Y[k]}" oninput="a11ySet('${k}',+this.value);document.getElementById('a11yv-${k}').textContent=this.value+'${unit}'"></div>`;
+    <input type="range" min="${min}" max="${max}" step="${step}" value="${A11Y[k]}" oninput="a11yLive('${k}',+this.value);document.getElementById('a11yv-${k}').textContent=this.value+'${unit}'" onchange="a11ySet('${k}',+this.value)"></div>`;
   const sel = (k, opts, extra = "") => `<select class="a11y-sel" onchange="a11ySet('${k}',${typeof A11Y_DEF[k] === "number" ? "+this.value" : "this.value"});${extra}">${opts.map(([v, t]) => `<option value="${v}" ${String(A11Y[k]) === String(v) ? "selected" : ""}>${t}</option>`).join("")}</select>`;
   box.innerHTML = `
    <div class="card" style="margin-top:14px"><b>👁 Xem trước</b><p style="margin-top:8px">Xin chào! Đây là đoạn chữ mẫu để bạn xem cỡ chữ, độ đậm và độ tương phản đang chọn.</p><p class="muted" style="margin-top:4px;font-size:13px">Chữ phụ nhỏ hơn trông như thế này.</p></div>
