@@ -693,6 +693,56 @@ body.light .pf-view button.on{background:#7c3aed;color:#fff}
  .pf-bar-btn{width:38px;height:38px;border-radius:50%;border:0;background:transparent;color:var(--text);font-size:22px;display:flex;align-items:center;justify-content:center}
  .pf-bar-btn:first-child{font-size:34px;line-height:1;padding-bottom:4px}
 }
+
+/* ===== nova11: TRỢ NĂNG ===== */
+html.a11y-zoom #app{zoom:var(--a11y-zoom)}
+html.a11y-zoom #app .topbar,html.a11y-zoom #app .bottom-nav{zoom:calc(1 / var(--a11y-zoom))}
+body.a11y-bold,body.a11y-bold *{font-weight:700!important}
+body.a11y-contrast:not(.light){--text:#fff;--muted:#e6dcfa;--border:rgba(235,220,255,.75);--card-bg:#0f0a22;--input-bg:#1b1338}
+body.a11y-contrast.light{--text:#000;--muted:#1f1f2b;--border:#000;--card-bg:#fff;--input-bg:#f1f1f5}
+body.a11y-contrast .muted,body.a11y-contrast .set-sub{color:var(--muted)!important}
+body.a11y-solid *,body.a11y-solid *::before{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.a11y-solid:not(.light){--card-bg:#140c2c}
+body.a11y-solid:not(.light) .topbar{background:#0a0620!important}
+body.a11y-solid:not(.light) .bottom-nav{background:#120a2a!important}
+body.a11y-solid::before{display:none}
+body.a11y-motion *,body.a11y-motion *::before,body.a11y-motion *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+body.a11y-motion .confetti{display:none}
+body.a11y-shapes a{text-decoration:underline}
+body.a11y-shapes button:not(.nav-plus):not(.pf-cam){outline:1.5px solid var(--border);outline-offset:-1px}
+body.a11y-onoff .tgl-slider::after{content:"TẮT";position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:8px;font-weight:800;color:var(--muted)}
+body.a11y-onoff .tgl input:checked + .tgl-slider::after{content:"BẬT";left:5px;right:auto;color:#fff}
+body.a11y-font,body.a11y-font *{font-family:"Lexend",system-ui,sans-serif!important}
+body.a11y-spacing *{line-height:1.7!important;letter-spacing:.02em!important;word-spacing:.1em!important}
+body.a11y-touch button,body.a11y-touch .nav-btn,body.a11y-touch select,body.a11y-touch input:not([type=checkbox]):not([type=range]){min-height:48px}
+body.a11y-touch .icon-btn{min-width:48px}
+body.a11y-focus :focus-visible{outline:3px solid #ffd60a!important;outline-offset:2px}
+html.a11y-invert img,html.a11y-invert video,html.a11y-invert .avatar{filter:invert(1) hue-rotate(180deg)}
+.a11y-ov{position:fixed;inset:0;pointer-events:none;z-index:9990}
+.speaking{outline:2px dashed #ffd60a!important;outline-offset:3px}
+.a11y-range{padding:13px 0;border-bottom:1px solid var(--border)}
+.a11y-range input[type=range]{width:100%;margin-top:10px;accent-color:#a855f7}
+.a11y-range .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.a11y-sel{background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:12px;padding:9px 10px;font-size:14px;max-width:190px}
+.a11y-time{display:flex;gap:8px;align-items:center;padding:0 0 13px}
+.a11y-time input{background:var(--input-bg);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px}
+#sttFab{position:fixed;right:16px;bottom:calc(96px + env(safe-area-inset-bottom));width:52px;height:52px;border-radius:50%;border:0;font-size:22px;background:linear-gradient(135deg,#7c3aed,#c084fc);box-shadow:0 8px 24px #9b4dffaa;z-index:9000;display:none}
+#sttFab.show{display:block}
+#sttFab.recording{background:#ef4444;animation:sttp 1s infinite}
+@keyframes sttp{50%{box-shadow:0 0 0 14px #ef444444}}
+#pinLock{position:fixed;inset:0;z-index:99999;background:radial-gradient(600px 400px at 50% 0%,#4c1d95,#07041a 70%);display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;color:#fff}
+#pinLock.show{display:flex}
+#pinLock .pt{font-size:20px;font-weight:700;margin-bottom:6px;text-align:center}
+#pinLock .ps{font-size:13px;color:#cbb8f5;min-height:18px;margin-bottom:18px;text-align:center}
+#pinLock .dots{display:flex;gap:14px;margin-bottom:26px;height:16px}
+#pinLock .dots i{width:14px;height:14px;border-radius:50%;border:2px solid #cbb8f5}
+#pinLock .dots i.on{background:#e9d5ff;border-color:#e9d5ff}
+#pinLock .pad{display:grid;grid-template-columns:repeat(3,76px);gap:14px}
+#pinLock .pad button{height:76px;border-radius:50%;border:1px solid #ffffff33;background:#ffffff14;color:#fff;font-size:26px}
+#pinLock .pad button:active{background:#ffffff33}
+#pinLock .pl{margin-top:22px;background:none;border:0;color:#cbb8f5;font-size:14px;text-decoration:underline}
+#pinLock.err .dots{animation:pinerr .35s}
+@keyframes pinerr{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
 </style>
 </head>
 
@@ -988,6 +1038,12 @@ body.light .pf-view button.on{background:#7c3aed;color:#fff}
    </div>
   </section>
 
+  <section id="a11y" class="page">
+   <div class="friends-top"><h2>♿ Trợ năng</h2><button class="secondary" style="padding:8px 14px" onclick="showPage('settings')">← Cài đặt</button></div>
+   <p class="muted" style="margin:6px 0 0;font-size:13px">Các tùy chọn này lưu ngay trên thiết bị này và hoàn toàn miễn phí, không dùng Firebase.</p>
+   <div id="a11yBody"></div>
+  </section>
+
   <section id="settings" class="page">
    <h2>⚙️ Cài đặt</h2>
 
@@ -1049,6 +1105,14 @@ body.light .pf-view button.on{background:#7c3aed;color:#fff}
     <div class="set-row">
      <div><div class="set-label">🌌 Chế độ màu</div><div class="set-sub">Chuyển qua lại giữa nền tối và nền sáng</div></div>
      <button class="secondary" onclick="toggleTheme()" id="themeBtn">Chuyển Sáng</button>
+    </div>
+   </div>
+
+   <div class="set-title">Trợ năng</div>
+   <div class="set-card">
+    <div class="set-row" style="cursor:pointer" onclick="showPage('a11y')">
+     <div><div class="set-label">♿ Trợ năng & tiện ích</div><div class="set-sub">Cỡ chữ, tương phản, lọc màu, đọc to, nhập bằng giọng nói, khóa PIN...</div></div>
+     <span style="font-size:22px;color:var(--muted)">›</span>
     </div>
    </div>
 
@@ -1509,6 +1573,7 @@ document.addEventListener("click", e => {
 }, true);
 
 window.toggleTheme = () => {
+  if (typeof A11Y !== "undefined" && A11Y.theme === "auto") { A11Y.theme = "manual"; a11ySave(); }
   const light = document.body.classList.toggle("light");
   localStorage.setItem("nova_theme", light ? "light" : "dark");
   $("themeBtn").textContent = light ? "Chuyển Tối" : "Chuyển Sáng";
@@ -2121,6 +2186,7 @@ window.showPage = page => {
   if (page === "notifications") renderNotifications();
   if (page === "profile") { updateProfileView(); renderMyPosts(); renderMyShares(); renderMyComments(); }
   document.body.classList.toggle("on-profile", page === "profile");
+  if (page === "a11y") renderA11y();
   if (page === "settings") { renderVibBtn(); initBdayForm(); $("newName").value = me?.name || ""; $("newHandle").value = me?.handle || ""; $("myNidLine").textContent = me?.nid ? "NOVA ID của bạn: " + me.nid + " (cố định)" : ""; }
   if (page === "search") searchEverything();
   if (changed) window.scrollTo(0,0);
@@ -2921,6 +2987,238 @@ window.deleteMood = async () => {
   } catch (e) { console.error(e); toast("Xóa thất bại"); }
 };
 
+
+
+/* ===================== TRỢ NĂNG & TIỆN ÍCH (miễn phí, lưu trên thiết bị) ===================== */
+const A11Y_DEF = { size: 100, bold: 0, contrast: 0, solid: 0, shapes: 0, onoff: 0, filter: "none", warm: 0, dim: 0, theme: "manual",
+  font: 0, spacing: 0, tts: 0, stt: 0, touch: 0, focus: 0, motion: 0, hap: 0, quiet: 0, qFrom: "22:00", qTo: "07:00", pinAfter: 0 };
+let A11Y = { ...A11Y_DEF };
+try { const raw = localStorage.getItem("nova_a11y"); if (raw) Object.assign(A11Y, JSON.parse(raw)); } catch {}
+function a11ySave(){ try { localStorage.setItem("nova_a11y", JSON.stringify(A11Y)); } catch {} }
+
+function a11yFilters(){
+  if (document.getElementById("a11ySvg")) return;
+  const I = [[1,0,0],[0,1,0],[0,0,1]];
+  const S = { protan: [[.152286,1.052583,-.204868],[.114503,.786281,.099216],[-.003882,-.048116,1.051998]],
+              deutan: [[.367322,.860646,-.227968],[.280085,.672501,.047413],[-.011820,.042940,.968881]],
+              tritan: [[1.255528,-.076749,-.178779],[-.078411,.930809,.147602],[.004733,.691367,.303900]] };
+  const M = { protan: [[1,0,0],[.7,1,0],[.7,0,1]], deutan: [[1,0,0],[.7,1,0],[.7,0,1]], tritan: [[1,0,.7],[0,1,.7],[0,0,0]] };
+  const mm = (a, b) => a.map(r => b[0].map((_, j) => r.reduce((t, v, k) => t + v * b[k][j], 0)));
+  let f = "";
+  for (const k of Object.keys(S)) {
+    const D = I.map((r, i) => r.map((v, j) => v - S[k][i][j]));           // sai khác so với mắt bị mù màu
+    const C = mm(M[k], D).map((r, i) => r.map((v, j) => v + I[i][j]));    // dịch phần mất sang kênh nhìn thấy được
+    f += `<filter id="nf-${k}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${C.map(r => r.map(v => v.toFixed(4)).join(" ") + " 0 0").join(" ")} 0 0 0 1 0"/></filter>`;
+  }
+  const d = document.createElement("div"); d.id = "a11ySvg";
+  d.innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${f}</defs></svg>`;
+  document.body.appendChild(d);
+}
+function a11yOverlays(){
+  ["Warm", "Dim"].forEach(n => { if (!document.getElementById("a11y" + n)) { const d = document.createElement("div"); d.id = "a11y" + n; d.className = "a11y-ov"; document.body.appendChild(d); } });
+}
+let lexendLoaded = false;
+function a11yTheme(){
+  if (A11Y.theme !== "auto") return;
+  const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  document.body.classList.toggle("light", !dark);
+  const tb = $("themeBtn"); if (tb) tb.textContent = !dark ? "Chuyển Tối" : "Chuyển Sáng";
+}
+function a11yApply(){
+  a11yFilters(); a11yOverlays();
+  const h = document.documentElement, b = document.body, t = (el, c, on) => el.classList.toggle(c, !!on);
+  ["bold", "contrast", "solid", "shapes", "onoff", "font", "spacing", "touch", "focus", "motion"].forEach(k => t(b, "a11y-" + k, A11Y[k]));
+  h.style.setProperty("--a11y-zoom", A11Y.size / 100); t(h, "a11y-zoom", A11Y.size !== 100);
+  h.classList.remove("a11y-invert"); h.style.filter = "";
+  const f = A11Y.filter;
+  if (f === "gray") h.style.filter = "grayscale(1)";
+  else if (f === "invert") { h.style.filter = "invert(1) hue-rotate(180deg)"; h.classList.add("a11y-invert"); }
+  else if (f && f !== "none") h.style.filter = `url(#nf-${f})`;
+  $("a11yWarm").style.background = `rgba(255,140,30,${A11Y.warm / 100})`;
+  $("a11yDim").style.background = `rgba(0,0,0,${A11Y.dim / 100})`;
+  if (A11Y.font && !lexendLoaded) { lexendLoaded = true; const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;800&display=swap"; document.head.appendChild(l); }
+  a11yTheme();
+}
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", a11yTheme);
+
+function quietNow(){
+  if (!A11Y.quiet) return false;
+  const m = v => { const [h, mi] = String(v).split(":").map(Number); return h * 60 + (mi || 0); };
+  const n = new Date(), cur = n.getHours() * 60 + n.getMinutes(), a = m(A11Y.qFrom), z = m(A11Y.qTo);
+  return a === z ? false : (a < z ? (cur >= a && cur < z) : (cur >= a || cur < z));
+}
+
+/* --- đọc to --- */
+let ttsEl = null;
+document.addEventListener("click", e => {
+  if (!A11Y.tts || !window.speechSynthesis) return;
+  const el = e.target.closest(".post-text,.message:not(.locked):not(.recalled)");
+  if (!el || e.target.closest("a,button,input,textarea")) return;
+  const same = ttsEl === el, speaking = speechSynthesis.speaking;
+  speechSynthesis.cancel(); document.querySelectorAll(".speaking").forEach(x => x.classList.remove("speaking"));
+  if (same && speaking) { ttsEl = null; return; }
+  const txt = el.innerText.trim(); if (!txt) return;
+  const u = new SpeechSynthesisUtterance(txt); u.lang = "vi-VN";
+  const v = speechSynthesis.getVoices().find(x => /^vi/i.test(x.lang)); if (v) u.voice = v;
+  u.onend = u.onerror = () => { el.classList.remove("speaking"); if (ttsEl === el) ttsEl = null; };
+  ttsEl = el; el.classList.add("speaking"); speechSynthesis.speak(u);
+});
+
+/* --- nhập bằng giọng nói --- */
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+let sttTarget = null, sttRec = null;
+function sttFab(){
+  let f = $("sttFab");
+  if (!f) { f = document.createElement("button"); f.id = "sttFab"; f.textContent = "🎤"; f.title = "Nhập bằng giọng nói";
+    f.onmousedown = f.ontouchstart = e => e.preventDefault(); f.onclick = sttToggle; document.body.appendChild(f); }
+  return f;
+}
+document.addEventListener("focusin", e => {
+  if (!A11Y.stt || !SpeechRec) return;
+  const t = e.target;
+  if (t.matches('textarea,input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=time]):not([type=hidden]):not([type=password]):not([type=number])')) { sttTarget = t; sttFab().classList.add("show"); }
+});
+document.addEventListener("focusout", () => setTimeout(() => { if (!sttRec && document.activeElement !== sttTarget) $("sttFab")?.classList.remove("show"); }, 300));
+function sttToggle(){
+  if (sttRec) { sttRec.stop(); return; }
+  const r = new SpeechRec(); r.lang = "vi-VN"; r.interimResults = false;
+  r.onresult = ev => {
+    const txt = [...ev.results].map(x => x[0].transcript).join(" ").trim();
+    if (sttTarget && txt) { sttTarget.value = (sttTarget.value ? sttTarget.value + " " : "") + txt; sttTarget.dispatchEvent(new Event("input", { bubbles: true })); }
+  };
+  r.onend = () => { sttRec = null; $("sttFab")?.classList.remove("recording"); };
+  r.onerror = ev => toast("Không nhận được giọng nói (" + ev.error + ")");
+  sttRec = r; $("sttFab").classList.add("recording");
+  try { r.start(); } catch {}
+}
+
+/* --- rung nhẹ khi bấm --- */
+document.addEventListener("click", e => { if (A11Y.hap && navigator.vibrate && e.target.closest("button,.nav-btn,a,.set-row")) navigator.vibrate(12); }, true);
+
+/* --- khóa NOVA bằng PIN (chỉ lưu trên thiết bị này) --- */
+const pinHash = async p => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode("nova-pin:" + p)))].map(x => x.toString(16).padStart(2, "0")).join("");
+const pinIsSet = () => !!localStorage.getItem("nova_pin");
+let pinLocked = false, pinHiddenAt = 0;
+function pinPrompt(title, { cancel = false, forgot = false, sub = "" } = {}){
+  return new Promise(resolve => {
+    let el = $("pinLock");
+    if (!el) { el = document.createElement("div"); el.id = "pinLock"; document.body.appendChild(el); }
+    let val = "";
+    el.className = "show";
+    el.innerHTML = `<div class="pt">${title}</div><div class="ps">${sub}</div><div class="dots">${"<i></i>".repeat(6)}</div>
+      <div class="pad">${[1,2,3,4,5,6,7,8,9].map(n => `<button data-k="${n}">${n}</button>`).join("")}<button data-k="del">⌫</button><button data-k="0">0</button><button data-k="ok">✓</button></div>
+      ${cancel ? `<button class="pl" data-k="cancel">Hủy</button>` : ""}${forgot ? `<button class="pl" data-k="forgot">Quên PIN?</button>` : ""}`;
+    const paint = () => el.querySelectorAll(".dots i").forEach((d, i) => d.classList.toggle("on", i < val.length));
+    const done = v => { document.removeEventListener("keydown", kd, true); if (!pinLocked || v !== undefined) el.className = ""; resolve(v); };
+    const press = k => {
+      if (/^\d$/.test(k)) { if (val.length < 6) val += k; paint(); }
+      else if (k === "del") { val = val.slice(0, -1); paint(); }
+      else if (k === "ok") { if (val.length) done(val); }
+      else if (k === "cancel") done(null);
+      else if (k === "forgot") {
+        if (confirm("Quên PIN? NOVA sẽ tắt khóa PIN và đăng xuất để bạn đăng nhập lại bằng mật khẩu.")) { localStorage.removeItem("nova_pin"); pinLocked = false; el.className = ""; document.removeEventListener("keydown", kd, true); resolve(null); window.logout?.(); }
+      }
+    };
+    const kd = e => { if (/^\d$/.test(e.key)) press(e.key); else if (e.key === "Backspace") press("del"); else if (e.key === "Enter") press("ok"); };
+    document.addEventListener("keydown", kd, true);
+    el.onclick = e => { const b = e.target.closest("button"); if (b) press(b.dataset.k); };
+    paint();
+  });
+}
+async function pinLockNow(){
+  if (!pinIsSet() || pinLocked) return;
+  pinLocked = true;
+  while (pinLocked && pinIsSet()) {
+    const p = await pinPrompt("🔒 NOVA đã khóa", { forgot: true, sub: "Nhập mã PIN rồi bấm ✓" });
+    if (p === null) continue;
+    if (await pinHash(p) === localStorage.getItem("nova_pin")) { pinLocked = false; $("pinLock").className = ""; break; }
+    const el = $("pinLock"); el.classList.add("err"); setTimeout(() => el.classList.remove("err"), 400);
+  }
+  pinLocked = false; $("pinLock") && ($("pinLock").className = "");
+}
+document.addEventListener("visibilitychange", () => {
+  if (!pinIsSet()) return;
+  if (document.visibilityState === "hidden") pinHiddenAt = Date.now();
+  else if (pinHiddenAt && (A11Y.pinAfter === 0 || Date.now() - pinHiddenAt > A11Y.pinAfter * 1000)) pinLockNow();
+});
+window.pinSetup = async () => {
+  const a = await pinPrompt("Đặt mã PIN (4–6 số)", { cancel: true, sub: "Bấm ✓ khi nhập xong" }); if (a === null) return;
+  if (a.length < 4) { toast("PIN tối thiểu 4 số"); return; }
+  const b = await pinPrompt("Nhập lại mã PIN", { cancel: true }); if (b === null) return;
+  if (a !== b) { toast("Hai lần nhập không khớp"); return; }
+  localStorage.setItem("nova_pin", await pinHash(a)); toast("Đã bật khóa PIN 🔒"); renderA11y();
+};
+window.pinDisable = async () => {
+  const a = await pinPrompt("Nhập PIN hiện tại để tắt", { cancel: true }); if (a === null) return;
+  if (await pinHash(a) !== localStorage.getItem("nova_pin")) { toast("PIN không đúng"); return; }
+  localStorage.removeItem("nova_pin"); toast("Đã tắt khóa PIN"); renderA11y();
+};
+
+/* --- trang Trợ năng --- */
+window.a11ySet = (k, v) => {
+  if (k === "stt" && v && !SpeechRec) { toast("Trình duyệt này không hỗ trợ nhập bằng giọng nói (dùng Chrome/Safari mới)"); renderA11y(); return; }
+  if (k === "tts" && v && !window.speechSynthesis) { toast("Trình duyệt này không hỗ trợ đọc to"); renderA11y(); return; }
+  A11Y[k] = v; a11ySave(); a11yApply();
+  if (k === "tts" && !v) speechSynthesis?.cancel();
+  if (k === "stt" && !v) $("sttFab")?.classList.remove("show");
+  if (k === "hap" && v) navigator.vibrate?.(30);
+  if (k === "theme" && v === "manual") toast("Đã tắt tự động theo hệ thống");
+};
+window.a11yReset = () => { if (!confirm("Đặt lại toàn bộ tùy chọn trợ năng về mặc định?")) return; A11Y = { ...A11Y_DEF }; a11ySave(); a11yApply(); renderA11y(); toast("Đã đặt lại trợ năng"); };
+window.a11yTest = () => {
+  if (!window.speechSynthesis) { toast("Không hỗ trợ đọc to"); return; }
+  speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance("Xin chào, đây là giọng đọc của NOVA."); u.lang = "vi-VN";
+  const v = speechSynthesis.getVoices().find(x => /^vi/i.test(x.lang)); if (v) u.voice = v; speechSynthesis.speak(u);
+};
+function renderA11y(){
+  const box = $("a11yBody"); if (!box) return;
+  const row = (l, sub, ctl) => `<div class="set-row"><div><div class="set-label">${l}</div>${sub ? `<div class="set-sub">${sub}</div>` : ""}</div>${ctl}</div>`;
+  const tgl = k => `<label class="tgl"><input type="checkbox" ${A11Y[k] ? "checked" : ""} onchange="a11ySet('${k}',this.checked?1:0)"><span class="tgl-slider"></span></label>`;
+  const rng = (l, sub, k, min, max, step, unit, fn) => `<div class="a11y-range"><div class="top"><div><div class="set-label">${l}</div>${sub ? `<div class="set-sub">${sub}</div>` : ""}</div><b id="a11yv-${k}">${A11Y[k]}${unit}</b></div>
+    <input type="range" min="${min}" max="${max}" step="${step}" value="${A11Y[k]}" oninput="a11ySet('${k}',+this.value);document.getElementById('a11yv-${k}').textContent=this.value+'${unit}'"></div>`;
+  const sel = (k, opts, extra = "") => `<select class="a11y-sel" onchange="a11ySet('${k}',${typeof A11Y_DEF[k] === "number" ? "+this.value" : "this.value"});${extra}">${opts.map(([v, t]) => `<option value="${v}" ${String(A11Y[k]) === String(v) ? "selected" : ""}>${t}</option>`).join("")}</select>`;
+  box.innerHTML = `
+   <div class="card" style="margin-top:14px"><b>👁 Xem trước</b><p style="margin-top:8px">Xin chào! Đây là đoạn chữ mẫu để bạn xem cỡ chữ, độ đậm và độ tương phản đang chọn.</p><p class="muted" style="margin-top:4px;font-size:13px">Chữ phụ nhỏ hơn trông như thế này.</p></div>
+
+   <div class="set-title">Thị giác</div><div class="set-card">
+    ${rng("Cỡ chữ & giao diện", "Phóng to toàn bộ nội dung", "size", 90, 150, 5, "%")}
+    ${row("Chữ đậm", "Làm mọi chữ đậm hơn", tgl("bold"))}
+    ${row("Tương phản cao", "Chữ và viền rõ hơn, nền đặc hơn", tgl("contrast"))}
+    ${row("Giảm độ trong suốt", "Bỏ hiệu ứng kính mờ, dùng nền đặc", tgl("solid"))}
+    ${row("Hình dạng nút", "Thêm viền cho nút, gạch chân liên kết", tgl("shapes"))}
+    ${row("Nhãn Bật/Tắt", "Hiện chữ BẬT/TẮT trên công tắc", tgl("onoff"))}
+    ${row("Bộ lọc màu", "Hỗ trợ người khó phân biệt màu (gần đúng)", sel("filter", [["none", "Tắt"], ["gray", "Thang xám"], ["invert", "Đảo màu"], ["protan", "Hỗ trợ mù đỏ"], ["deutan", "Hỗ trợ mù lục"], ["tritan", "Hỗ trợ mù lam-vàng"]]))}
+    ${rng("Ánh sáng ấm (chống mỏi mắt ban đêm)", "", "warm", 0, 40, 1, "%")}
+    ${rng("Giảm độ sáng", "Tối hơn mức thấp nhất của màn hình", "dim", 0, 60, 1, "%")}
+    ${row("Chế độ màu", "Sáng/tối theo cài đặt máy", sel("theme", [["manual", "Tự chọn"], ["auto", "Theo hệ thống"]]))}
+   </div>
+
+   <div class="set-title">Đọc & nhập liệu</div><div class="set-card">
+    ${row("Phông chữ dễ đọc", "Lexend — thiết kế giúp đọc nhanh, đỡ mỏi (cần mạng lần đầu)", tgl("font"))}
+    ${row("Giãn dòng & chữ", "Khoảng cách rộng hơn, dễ đọc đoạn dài", tgl("spacing"))}
+    ${row("Đọc to khi chạm", "Chạm vào bài viết hoặc tin nhắn để nghe đọc, chạm lần nữa để dừng", tgl("tts"))}
+    <div class="set-row" style="border-top:0"><div class="set-sub">Nghe thử giọng đọc</div><button class="secondary" onclick="a11yTest()">▶ Đọc thử</button></div>
+    ${row("Nhập bằng giọng nói", "Hiện nút 🎤 khi bấm vào ô nhập chữ (Chrome/Safari)", tgl("stt"))}
+   </div>
+
+   <div class="set-title">Thao tác</div><div class="set-card">
+    ${row("Vùng chạm lớn", "Nút và ô nhập cao hơn, dễ bấm", tgl("touch"))}
+    ${row("Viền focus rõ", "Viền vàng khi dùng bàn phím", tgl("focus"))}
+    ${row("Giảm chuyển động", "Tắt hiệu ứng động, pháo giấy, nhấp nháy", tgl("motion"))}
+    ${row("Rung nhẹ khi bấm", "Phản hồi xúc giác (chỉ Android/Chrome)", tgl("hap"))}
+   </div>
+
+   <div class="set-title">Thông báo & riêng tư</div><div class="set-card">
+    ${row("Giờ yên tĩnh", "Không rung/hiện toast thông báo trong khung giờ này", tgl("quiet"))}
+    <div class="a11y-time">Từ <input type="time" value="${A11Y.qFrom}" onchange="a11ySet('qFrom',this.value)"> đến <input type="time" value="${A11Y.qTo}" onchange="a11ySet('qTo',this.value)"></div>
+    ${row("🔒 Khóa NOVA bằng mã PIN", pinIsSet() ? "Đang bật — hỏi PIN khi mở lại app. PIN chỉ lưu trên thiết bị này, ngăn người khác xem nhanh, không thay mật khẩu tài khoản." : "Hỏi mã PIN 4–6 số khi mở app. PIN chỉ lưu trên thiết bị này.", pinIsSet() ? `<button class="secondary" onclick="pinDisable()">Tắt PIN</button>` : `<button class="primary" style="padding:9px 14px" onclick="pinSetup()">Đặt PIN</button>`)}
+    ${pinIsSet() ? row("Tự khóa sau", "Tính từ lúc rời khỏi NOVA", sel("pinAfter", [[0, "Ngay lập tức"], [30, "30 giây"], [60, "1 phút"], [300, "5 phút"]])) : ""}
+   </div>
+
+   <div style="margin:18px 0 8px"><button class="secondary" style="width:100%" onclick="a11yReset()">↺ Đặt lại trợ năng về mặc định</button></div>`;
+}
+a11yApply();
+if (pinIsSet()) pinLockNow();
 
 /* ===== GHI CHÚ "MEMORY" (riêng tư, có ảnh) ===== */
 let notes = [], notesRemote = true, noteDraft = { text: "", img: "" };
@@ -4635,6 +4933,7 @@ window.deleteGroup = async gid => {
 let notifsReady = false;
 const vibOn = () => lsGet("nova_vibrate") !== "0";
 function notifyAlert(n){
+  if (quietNow()) return;
   if (vibOn()) { try { navigator.vibrate && navigator.vibrate([180, 90, 180, 90, 260]); } catch {} }
   const b = document.querySelector(".top-actions .icon-btn[onclick*=notifications]");
   if (b) { b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake"); }
