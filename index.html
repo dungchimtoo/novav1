@@ -802,6 +802,10 @@ body.light .crop-box{background:#fff;color:#1f2937}
 .chat-locked-container:not(.ro) .input{padding:15px;font-size:15px;border-radius:14px}
 .chat-locked-container:not(.ro) .primary,.chat-locked-container:not(.ro) .secondary{padding:14px;border-radius:14px}
 @media(max-width:768px){.chat-locked-container:not(.ro){min-height:max(200px,calc(100dvh - 370px));padding:20px 14px}}
+/* ===== NOVA update: màn hình khóa chiếm toàn khung chat ===== */
+.chat-window:has(.chat-locked-container:not(.ro)){padding:0;display:flex;flex-direction:column}
+.chat-window:has(.chat-locked-container:not(.ro)) #messages{flex:1 0 auto;display:flex}
+.chat-window:has(.chat-locked-container:not(.ro)) .chat-locked-container{flex:1 0 auto;margin:0;border:0;border-radius:0;max-width:none;width:100%;min-height:0}
 </style>
 </head>
 
@@ -4124,6 +4128,7 @@ async function autoUnlockAll(){
     }
     if (cur && !(keyFresh[c.id] > Date.now())) {
       vaultAdd(c.id, cur);
+      updateDoc(doc(db, "chats", c.id), { oldKeys: arrayUnion(cur) }).catch(() => {});
       delete localKeys[c.id];
       localStorage.removeItem("nova_key_permanent_" + c.id);
       dirty = true;
@@ -4155,7 +4160,8 @@ window.unlockWithPassword = async () => {
     if (!ok || !kwSession?.priv) { toast("Không tạo được khóa bảo mật"); return; }
     const k = await kwRestore(c, kwSession.priv);
     if (!k) {
-      toast("Chưa có bản sao khóa cho cuộc trò chuyện này — hãy nhập mã 24 ký tự bên dưới 1 lần");
+      await requestKeyFromPartner(c);
+      toast("Chưa có khóa để mở bằng mật khẩu. NOVA đã nhắc người trong cuộc trò chuyện mở app để cấp lại khóa — khi họ mở, chat tự mở khóa. Hoặc nhập mã 24 ký tự bên dưới.", 9000);
       return;
     }
     saveKey(c.id, k);
@@ -4201,7 +4207,7 @@ async function renderMessages(stick = false){
   const isUnlocked = !!(curKey && await verifyKey(c, curKey));
   if (tok !== renderToken) return;
 
-  if (!isUnlocked && !msgDocs.length) {
+  if (!isUnlocked && (!msgDocs.length || !getAllKeys(c).length)) {
     const isPwUser = !!auth.currentUser?.providerData?.some(p => p.providerId === "password");
     const hasWrap = !!c.wraps?.[me.id];
     const pwBlock = isPwUser ? `
@@ -5258,11 +5264,13 @@ window.forgetChatKey = async () => {
   if (!c) { toast("Chưa chọn cuộc trò chuyện"); return; }
   if (c.type === "group" && c.owner !== me.id) { toast("Chỉ chủ nhóm tạo lại được mã — hãy nhờ chủ nhóm gửi lại mã 24 ký tự cho bạn"); return; }
   if (!confirm("Quên mã? Tạo mã 24 ký tự MỚI cho cuộc trò chuyện này.\n\n• Bạn bè và cuộc trò chuyện vẫn được giữ nguyên.\n• Tin nhắn cũ gửi bằng mã đã quên sẽ KHÔNG đọc lại được (trừ khi tìm lại mã cũ rồi bấm 'Thêm mã cũ').\n• Cần gửi mã mới cho người còn lại.\n\nTiếp tục?")) return;
-  const oldKey = getKey(c);
+  let oldKey = getKey(c);
+  if (!oldKey && kwSession?.priv) oldKey = await kwRestore(c, kwSession.priv);
   if (oldKey) vaultAdd(c.id, oldKey);
+  const olds = [...new Set([oldKey, ...vaultGet(c.id)].filter(Boolean))];
   const key = generateChatKey();
   try {
-    await updateDoc(doc(db, "chats", c.id), { keyCheck: await makeKeyCheck(key), keyRotatedAt: serverTimestamp(), wraps: deleteField() });
+    await updateDoc(doc(db, "chats", c.id), { keyCheck: await makeKeyCheck(key), keyRotatedAt: serverTimestamp(), wraps: deleteField(), ...(olds.length ? { oldKeys: arrayUnion(...olds) } : {}) });
     c.wraps = {};
     saveKey(c.id, key);
     await kwSave(c.id, key);
@@ -5275,6 +5283,17 @@ window.forgetChatKey = async () => {
   } catch (e) { console.error(e); toast("Không tạo được mã mới (kiểm tra Rules Firestore)"); }
 };
 
+async function requestKeyFromPartner(c){
+  const k = "nova_keyreq_" + c.id, last = Number(lsGet(k) || 0);
+  if (Date.now() - last < 10 * 60 * 1000) return;
+  lsSet(k, String(Date.now()));
+  for (const uid of (c.members || [])) {
+    if (uid === me.id) continue;
+    try {
+      await addDoc(collection(db, "notifications"), { to: uid, from: me.id, text: `${me.name} cần bạn mở NOVA và mở khóa cuộc trò chuyện để cấp lại khóa tin nhắn cho họ`, read: false, createdAt: serverTimestamp() });
+    } catch {}
+  }
+}
 window.forgotPassword = async () => {
   const user = auth.currentUser, email = user?.email;
   if (!email || !user.providerData.some(p => p.providerId === "password")) { toast("Tài khoản Google không có mật khẩu NOVA — hãy dùng mã 24 ký tự hoặc 'Quên mã khóa'"); return; }
