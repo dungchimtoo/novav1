@@ -5288,13 +5288,19 @@ async function doResetChatKey(c, emailTo){
   try {
     await updateDoc(doc(db, "chats", c.id), { keyCheck: await makeKeyCheck(key), keyRotatedAt: serverTimestamp(), wraps: deleteField(), ...(olds.length ? { oldKeys: arrayUnion(...olds) } : {}) });
     c.wraps = {};
-    saveKey(c.id, key);
-    await kwSave(c.id, key);
+    if (emailTo) {
+      // Mã mới chỉ nằm trong Gmail: khóa chat lại, phải nhập mã từ email mới mở được
+      delete localKeys[c.id]; persistKeys();
+      localStorage.removeItem("nova_key_permanent_" + c.id);
+    } else {
+      saveKey(c.id, key);
+      await kwSave(c.id, key);
+    }
     decCache.clear();
     panelAutoFor = null;
     await renderChatTabs();
     await renderMessages(true);
-    if (emailTo) toast(`Đã gửi mã khóa mới về ${emailTo}. Tin nhắn cũ vẫn xem được. Gửi mã đó cho người còn lại để họ mở khóa.`, 9000);
+    if (emailTo) toast(`Đã gửi mã khóa mới về ${emailTo}. Mở Gmail, copy mã rồi nhập vào ô mở khóa. Tin nhắn cũ vẫn xem được sau khi mở.`, 9000);
     else { $("keyPanel").classList.add("open"); toast("Đã tạo mã mới — hãy copy và gửi cho người còn lại!"); }
   } catch (e) { console.error(e); toast("Không tạo được mã mới (kiểm tra Rules Firestore)"); }
 }
