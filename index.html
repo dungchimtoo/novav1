@@ -1495,7 +1495,7 @@ import {
   getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged,
   GoogleAuthProvider, signInWithPopup, updateProfile, sendPasswordResetEmail,
   EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser,
-  sendSignInLinkToEmail, isSignInWithEmailLink
+  sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, query, where, orderBy, limit,
@@ -2027,6 +2027,7 @@ onAuthStateChanged(auth, async user => {
       toast("Không truy cập được Firestore — kiểm tra Rules");
     }
   } else {
+    if (isSignInWithEmailLink(auth, location.href)) { setTimeout(() => signInViaResetLink(), 300); }
     me = null; currentChat = null; localKeys = {}; viewingUid = null; currentPage = "home";
     friendMoods = []; notifsReady = false; notes = []; friendUsers = []; closeGame(); userCache.clear(); decCache.clear(); openComments.clear(); extraPosts.clear();
     $("app").style.display = "none";
@@ -5296,9 +5297,9 @@ window.forgetChatKey = async () => {
   if (email && hasPw) {
     if (!confirm(`Gửi email xác nhận tới ${email} để tạo mã khóa MỚI?\n\n• Mở link trong email để xác nhận bạn là chủ tài khoản, NOVA sẽ tạo mã 24 ký tự mới.\n• Bạn bè và cuộc trò chuyện vẫn được giữ nguyên.\n• Tin cũ vẫn xem lại được khi người kia mở NOVA.\n• Cần gửi mã mới cho người còn lại.`)) return;
     try {
-      lsSet("nova_keyreset_pending", JSON.stringify({ chatId: c.id, uid: me.id, at: Date.now() }));
+      lsSet("nova_keyreset_pending", JSON.stringify({ chatId: c.id, uid: me.id, email, at: Date.now() }));
       await sendSignInLinkToEmail(auth, email, { url: location.origin + location.pathname + "?novaKeyReset=" + encodeURIComponent(c.id), handleCodeInApp: true });
-      toast(`Đã gửi email tới ${email} — mở link trong email (xem cả mục Spam). Trên iPhone: nếu link không mở được, nhấn giữ link → Sao chép, rồi vào chat này bấm "Dán link từ email".`, 12000);
+      toast(`Đã gửi email tới ${email} — bấm link trong email (xem cả mục Spam) rồi xác nhận là xong. Link mở ở trình duyệt nào cũng được.`, 12000);
     } catch (e) {
       console.error(e);
       const msg = e.code === "auth/operation-not-allowed" ? "Chưa bật 'Email link' trong Firebase: Authentication → Sign-in method → Email/Password → bật 'Email link (passwordless sign-in)'"
@@ -5311,14 +5312,29 @@ window.forgetChatKey = async () => {
   if (!confirm("Quên mã? Tạo mã 24 ký tự MỚI cho cuộc trò chuyện này.\n\n• Bạn bè và cuộc trò chuyện vẫn được giữ nguyên.\n• Cần gửi mã mới cho người còn lại.\n\nTiếp tục?")) return;
   await doResetChatKey(c);
 };
-async function processResetLink(link){
+let preVerified = null;
+async function signInViaResetLink(){
+  // Link mở ở trình duyệt chưa đăng nhập (iPhone hay mở bằng Safari/Gmail): xác minh luôn bằng chính link
+  const link = location.href;
+  let email = ""; try { email = JSON.parse(lsGet("nova_keyreset_pending") || "null")?.email || ""; } catch {}
+  if (!email) email = (prompt("Nhập email Gmail của tài khoản NOVA để xác nhận:") || "").trim();
+  if (!email) return;
+  try {
+    const dec = decodeURIComponent(link);
+    const chatId = (dec.match(/novaKeyReset=([A-Za-z0-9_-]+)/) || [])[1] || null;
+    preVerified = { chatId };
+    history.replaceState(null, "", location.pathname);
+    await signInWithEmailLink(auth, email, link);
+  } catch (e) { console.error(e); preVerified = null; toast("Link hết hạn/đã dùng hoặc sai email — hãy gửi lại email xác nhận", 9000); }
+}
+async function processResetLink(link, verified){
   let dec = link;
   try { dec = decodeURIComponent(dec); } catch {}
   try { dec = decodeURIComponent(dec); } catch {}
   let chatId = (dec.match(/novaKeyReset=([A-Za-z0-9_-]+)/) || [])[1] || null;
   if (!chatId) { try { chatId = JSON.parse(lsGet("nova_keyreset_pending") || "null")?.chatId; } catch {} }
   if (!chatId) chatId = currentChat;
-  try { await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credentialWithLink(auth.currentUser.email, link)); }
+  try { if (!verified) await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credentialWithLink(auth.currentUser.email, link)); }
   catch (e) { console.error(e); toast("Link đã hết hạn, đã được dùng, hoặc được gửi cho email khác tài khoản đang đăng nhập — hãy gửi lại email", 9000); return; }
   lsDel("nova_keyreset_pending");
   for (let i = 0; i < 20 && !chats.find(x => x.id === chatId); i++) await new Promise(r => setTimeout(r, 300));
@@ -5329,6 +5345,11 @@ async function processResetLink(link){
   await doResetChatKey(c);
 }
 async function handleKeyResetLink(){
+  if (me && preVerified) {
+    const pv = preVerified; preVerified = null;
+    await processResetLink(pv.chatId ? "novaKeyReset=" + pv.chatId : "", true);
+    return;
+  }
   if (!me || !isSignInWithEmailLink(auth, location.href)) return;
   const link = location.href;
   history.replaceState(null, "", location.pathname);
