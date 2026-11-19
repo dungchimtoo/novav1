@@ -4238,6 +4238,7 @@ async function renderMessages(stick = false){
         <div class="muted" style="font-size:12px;margin-top:12px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
           <span style="color:var(--purple);cursor:pointer;text-decoration:underline" onclick="forgetChatKey()">Quên mã khóa?</span>
           ${isPwUser ? `<span style="color:var(--purple);cursor:pointer;text-decoration:underline" onclick="forgotPassword()">Quên mật khẩu?</span>` : ""}
+          ${isPwUser ? `<span style="color:var(--purple);cursor:pointer;text-decoration:underline" onclick="pasteResetLink()">Dán link từ email</span>` : ""}
         </div>
       </div>
     `;
@@ -4264,6 +4265,7 @@ async function renderMessages(stick = false){
         <div class="muted" style="font-size:12px;margin-top:12px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
           <span style="color:var(--purple);cursor:pointer;text-decoration:underline" onclick="forgetChatKey()">Quên mã khóa?</span>
           ${isPwUser ? `<span style="color:var(--purple);cursor:pointer;text-decoration:underline" onclick="forgotPassword()">Quên mật khẩu?</span>` : ""}
+          ${isPwUser ? `<span style="color:var(--purple);cursor:pointer;text-decoration:underline" onclick="pasteResetLink()">Dán link từ email</span>` : ""}
         </div>
       </div>
     `;
@@ -5295,8 +5297,8 @@ window.forgetChatKey = async () => {
     if (!confirm(`Gửi email xác nhận tới ${email} để tạo mã khóa MỚI?\n\n• Mở link trong email để xác nhận bạn là chủ tài khoản, NOVA sẽ tạo mã 24 ký tự mới.\n• Bạn bè và cuộc trò chuyện vẫn được giữ nguyên.\n• Tin cũ vẫn xem lại được khi người kia mở NOVA.\n• Cần gửi mã mới cho người còn lại.`)) return;
     try {
       lsSet("nova_keyreset_pending", JSON.stringify({ chatId: c.id, uid: me.id, at: Date.now() }));
-      await sendSignInLinkToEmail(auth, email, { url: location.origin + location.pathname, handleCodeInApp: true });
-      toast(`Đã gửi email tới ${email} — mở link trong email để tạo mã khóa mới (xem cả mục Spam)`, 9000);
+      await sendSignInLinkToEmail(auth, email, { url: location.origin + location.pathname + "?novaKeyReset=" + encodeURIComponent(c.id), handleCodeInApp: true });
+      toast(`Đã gửi email tới ${email} — mở link trong email (xem cả mục Spam). Trên iPhone: nếu link không mở được, nhấn giữ link → Sao chép, rồi vào chat này bấm "Dán link từ email".`, 12000);
     } catch (e) {
       console.error(e);
       const msg = e.code === "auth/operation-not-allowed" ? "Chưa bật 'Email link' trong Firebase: Authentication → Sign-in method → Email/Password → bật 'Email link (passwordless sign-in)'"
@@ -5309,23 +5311,36 @@ window.forgetChatKey = async () => {
   if (!confirm("Quên mã? Tạo mã 24 ký tự MỚI cho cuộc trò chuyện này.\n\n• Bạn bè và cuộc trò chuyện vẫn được giữ nguyên.\n• Cần gửi mã mới cho người còn lại.\n\nTiếp tục?")) return;
   await doResetChatKey(c);
 };
-async function handleKeyResetLink(){
-  if (!me || !isSignInWithEmailLink(auth, location.href)) return;
-  const link = location.href;
-  let pend = null; try { pend = JSON.parse(lsGet("nova_keyreset_pending") || "null"); } catch {}
-  history.replaceState(null, "", location.pathname);
-  if (!pend || pend.uid !== me.id || Date.now() - pend.at > 3600000) { toast("Link không còn hiệu lực hoặc khác tài khoản — hãy bấm 'Quên mã khóa?' để gửi lại email", 8000); return; }
+async function processResetLink(link){
+  let dec = link;
+  try { dec = decodeURIComponent(dec); } catch {}
+  try { dec = decodeURIComponent(dec); } catch {}
+  let chatId = (dec.match(/novaKeyReset=([A-Za-z0-9_-]+)/) || [])[1] || null;
+  if (!chatId) { try { chatId = JSON.parse(lsGet("nova_keyreset_pending") || "null")?.chatId; } catch {} }
+  if (!chatId) chatId = currentChat;
   try { await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credentialWithLink(auth.currentUser.email, link)); }
-  catch (e) { console.error(e); toast("Link đã hết hạn hoặc đã được dùng — hãy gửi lại email", 8000); return; }
+  catch (e) { console.error(e); toast("Link đã hết hạn, đã được dùng, hoặc được gửi cho email khác tài khoản đang đăng nhập — hãy gửi lại email", 9000); return; }
   lsDel("nova_keyreset_pending");
-  for (let i = 0; i < 20 && !chats.find(x => x.id === pend.chatId); i++) await new Promise(r => setTimeout(r, 300));
-  const c = chats.find(x => x.id === pend.chatId);
-  if (!c) { toast("Không tìm thấy cuộc trò chuyện"); return; }
+  for (let i = 0; i < 20 && !chats.find(x => x.id === chatId); i++) await new Promise(r => setTimeout(r, 300));
+  const c = chats.find(x => x.id === chatId);
+  if (!c) { toast("Không tìm thấy cuộc trò chuyện này trong tài khoản của bạn"); return; }
   currentChat = c.id; showPage("chat"); attachMessages();
   toast("Đã xác nhận email — đang tạo mã khóa mới…");
   await doResetChatKey(c);
 }
-
+async function handleKeyResetLink(){
+  if (!me || !isSignInWithEmailLink(auth, location.href)) return;
+  const link = location.href;
+  history.replaceState(null, "", location.pathname);
+  await processResetLink(link);
+}
+window.pasteResetLink = async () => {
+  if (!me) return;
+  const l = (prompt("Dán link xác nhận trong email vào đây (nhấn giữ link trong email → Sao chép liên kết):") || "").trim();
+  if (!l) return;
+  if (!isSignInWithEmailLink(auth, l)) { toast("Đây không phải link xác nhận từ NOVA/Firebase — hãy copy lại đúng link trong email", 7000); return; }
+  await processResetLink(l);
+};
 async function requestKeyFromPartner(c){
   const k = "nova_keyreq_" + c.id, last = Number(lsGet(k) || 0);
   if (Date.now() - last < 10 * 60 * 1000) return;
