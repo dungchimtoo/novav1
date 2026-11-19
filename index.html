@@ -767,6 +767,31 @@ html.a11y-invert img,html.a11y-invert video,html.a11y-invert .avatar{filter:inve
 #pinLock .pl{margin-top:22px;background:none;border:0;color:#cbb8f5;font-size:14px;text-decoration:underline}
 #pinLock.err .dots{animation:pinerr .35s}
 @keyframes pinerr{25%{transform:translateX(-10px)}75%{transform:translateX(10px)}}
+/* ===== NOVA update: trang cá nhân người khác ===== */
+#userProfile .pf-head{text-align:center;padding:10px 0 4px;background:radial-gradient(260px 200px at 50% 0%,rgba(139,60,255,.35),transparent 70%)}
+#userProfile .pf-name{font-size:clamp(22px,7vw,32px);font-weight:300;letter-spacing:.2em;text-transform:uppercase;margin:0;word-break:break-word;padding:0 8px}
+#userProfile .pf-tabs{border-bottom:0;padding-bottom:0;margin:12px 0 14px;overflow-x:auto;scrollbar-width:none;gap:8px}
+#userProfile .pf-tabs::-webkit-scrollbar{display:none}
+#userProfile .pf-tabs .profile-tab-btn{flex:0 0 auto;padding:10px 20px;border-radius:22px;font-weight:600;font-size:14px;white-space:nowrap}
+#userProfile .pf-tabs .profile-tab-btn.active{background:#ede4ff;color:#2a1458;border-color:transparent;box-shadow:0 4px 16px rgba(190,150,255,.35)}
+body.light #userProfile .pf-tabs .profile-tab-btn.active{background:#7c3aed;color:#fff}
+#userProfile .profile-column>h3{display:none}
+#userProfile .profile-column{background:none;border:0;box-shadow:none;padding:0}
+@media(max-width:768px){
+ #userProfile .pf-bar{display:flex;align-items:center;gap:6px;margin:0 -2px 4px;padding:6px 0}
+ #userProfile .up-back{display:none}
+}
+
+/* ===== NOVA update: căn chỉnh ảnh (cropper) ===== */
+#cropModal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:500;padding:16px;overflow-y:auto}
+#cropModal.show{display:flex}
+.crop-box{width:100%;max-width:380px;background:#150d2e;color:#fff;border:1px solid var(--border);border-radius:20px;padding:16px;margin:auto}
+body.light .crop-box{background:#fff;color:#1f2937}
+.crop-stage{background:#000;border-radius:14px;overflow:hidden;margin:12px 0;touch-action:none}
+#cropCv{display:block;margin:0 auto;width:auto;max-width:100%;max-height:50vh;cursor:grab;touch-action:none}
+#cropCv:active{cursor:grabbing}
+.crop-zoom{display:flex;align-items:center;gap:10px}
+.crop-zoom input{flex:1;accent-color:#a855f7}
 </style>
 </head>
 
@@ -1048,12 +1073,14 @@ html.a11y-invert img,html.a11y-invert video,html.a11y-invert .avatar{filter:inve
      <div style="display:flex;gap:6px;">
       <button class="secondary" style="padding:6px 10px;font-size:13px" onclick="toggleKeyPanel()"><svg class="ico"><use href="#i-lock"/></svg><span class="lbl"> Mã</span></button>
       <button class="secondary" style="padding:6px 10px;font-size:13px" onclick="openBgModal()" title="Đổi nền cuộc trò chuyện"><svg class="ico"><use href="#i-palette"/></svg><span class="lbl"> Nền</span></button>
-      <button class="secondary" style="padding:6px 10px;font-size:13px;color:var(--danger);border-color:var(--danger);" onclick="lockChat()" title="Khóa lại"><svg class="ico"><use href="#i-lock"/></svg><span class="lbl"> Khóa lại</span></button>
+      <button id="lockBtn" class="secondary" style="padding:6px 10px;font-size:13px;color:var(--danger);border-color:var(--danger);" title="Khóa / Mở khóa cuộc trò chuyện"><svg class="ico"><use href="#i-lock"/></svg><span class="lbl"> Khóa lại</span></button>
+      <button class="secondary" style="padding:6px 10px;font-size:13px" onclick="clearChatMessages()" title="Xóa tất cả tin nhắn (giữ bạn bè)"><svg class="ico"><use href="#i-trash"/></svg><span class="lbl"> Xóa</span></button>
      </div>
     </div>
     <div id="keyPanel" class="chat-key">
      <div class="key-title">MÃ CUỘC TRÒ CHUYỆN — 24 KÝ TỰ (được lưu vĩnh viễn trên máy bạn)</div>
      <div id="chatKey" class="key-value">--</div>
+     <div id="chatKeyState" class="muted" style="font-size:12px;margin-top:4px"></div>
      <div class="key-actions" id="keyActions">
       <button onclick="copyChatKey()"><svg class="ico"><use href="#i-clipboard"/></svg> Copy</button>
       <button onclick="newChatKey()"><svg class="ico"><use href="#i-refresh"/></svg> Đổi mã</button>
@@ -1162,6 +1189,7 @@ html.a11y-invert img,html.a11y-invert video,html.a11y-invert .avatar{filter:inve
      <div id="stId" class="muted" style="word-break:break-all">--</div>
      <div class="btn-row" style="margin-top:8px">
       <button class="secondary" style="padding:6px 12px;font-size:13px" onclick="document.getElementById('avatarFile').click()">Đổi ảnh</button>
+      <button class="secondary" style="padding:6px 12px;font-size:13px" onclick="readjustAvatar()">Căn chỉnh</button>
       <button class="secondary" style="padding:6px 12px;font-size:13px" onclick="removeAvatar()">Xóa ảnh</button>
      </div>
     </div>
@@ -1303,26 +1331,44 @@ html.a11y-invert img,html.a11y-invert video,html.a11y-invert .avatar{filter:inve
   </section>
 
   <section id="userProfile" class="page">
-   <button class="secondary" style="margin-bottom:12px" onclick="goBack()"><svg class="ico"><use href="#i-arrow-left"/></svg> Quay lại</button>
-   <div class="card profile">
-    <div id="upAvatar" class="avatar">N</div>
-    <div id="upName" class="profile-name">--</div>
-    <div id="upEmail" class="muted" style="word-break:break-all">--</div>
-    <div id="upMood" style="margin-top:8px"></div>
-    <div id="upBday" style="margin-top:6px"></div>
-    <div id="upActions" class="btn-row" style="justify-content:center;margin-top:14px"></div>
+   <div class="pf-bar">
+    <button class="pf-bar-btn" onclick="goBack()" title="Quay lại"><svg class="ico"><use href="#i-chevron-left"/></svg></button>
+    <div class="pf-bar-title" id="upBarTitle">Trang cá nhân</div>
+    <button class="pf-bar-btn" onclick="showPage('search')" title="Tìm kiếm"><svg class="ico"><use href="#i-search"/></svg></button>
    </div>
+   <button class="secondary up-back" style="margin-bottom:12px" onclick="goBack()"><svg class="ico"><use href="#i-arrow-left"/></svg> Quay lại</button>
 
-   <!-- Tab cho trang cá nhân người khác -->
-   <div class="profile-tabs">
-    <button class="profile-tab-btn active" onclick="switchUPTab('posts', this)"><svg class="ico"><use href="#i-file"/></svg> Bài đăng</button>
-    <button class="profile-tab-btn" onclick="switchUPTab('shares', this)"><svg class="ico"><use href="#i-share"/></svg> Bài đã chia sẻ</button>
+   <div class="pf-head">
+    <div class="pf-ring"><div id="upAvatar" class="avatar" style="cursor:pointer" onclick="viewUserAvatar()" title="Xem ảnh đại diện">N</div></div>
+    <div id="upName" class="profile-name pf-name">--</div>
+    <div id="upEmail" class="pf-id" title="Bấm để copy NOVA ID" onclick="copyUserNid()">--</div>
+    <div id="upBday" class="pf-bday"></div>
+    <div id="upMood" class="pf-mood"></div>
+   </div>
+   <div class="pf-stats">
+    <div><strong id="upFriendCount">–</strong><span>Bạn bè</span></div>
+    <div><strong id="upLikeCount">0</strong><span>Lượt thích</span></div>
+    <div><strong id="upPostCount">0</strong><span>Bài viết</span></div>
+    <div><strong id="upShareCount">–</strong><span>Đã chia sẻ</span></div>
+   </div>
+   <div id="upActions" class="pf-actions"></div>
+
+   <div class="profile-tabs pf-tabs">
+    <button class="profile-tab-btn active" onclick="switchUPTab('posts', this)">Bài viết</button>
+    <button class="profile-tab-btn" onclick="switchUPTab('photos', this)">Ảnh</button>
+    <button class="profile-tab-btn" onclick="switchUPTab('shares', this)">Đã chia sẻ</button>
    </div>
 
    <div class="profile-content-columns">
     <div class="profile-column" id="upColPosts" style="grid-column: span 2">
      <h3><svg class="ico"><use href="#i-file"/></svg> Bài viết công khai</h3>
+     <div class="pf-explore"><h3 class="pf-h">Khám Phá</h3>
+      <div class="pf-view"><button id="upPvGrid" class="on" onclick="setUPView('grid')" title="Dạng lưới"><svg class="ico"><use href="#i-grid"/></svg></button><button id="upPvList" onclick="setUPView('list')" title="Dạng danh sách"><svg class="ico"><use href="#i-list"/></svg></button></div></div>
      <div id="upPosts" style="margin-top:10px"></div>
+    </div>
+    <div class="profile-column" id="upColPhotos" style="display:none; grid-column: span 2">
+     <h3><svg class="ico"><use href="#i-image"/></svg> Ảnh</h3>
+     <div id="upPhotos" style="margin-top:10px"></div>
     </div>
     <div class="profile-column" id="upColShares" style="display:none; grid-column: span 2">
      <h3><svg class="ico"><use href="#i-share"/></svg> Bài viết đã chia sẻ</h3>
@@ -1412,6 +1458,16 @@ html.a11y-invert img,html.a11y-invert video,html.a11y-invert .avatar{filter:inve
 <input id="floatImageFile" type="file" accept="image/*" style="display:none" onchange="sendFloatImage(this)">
 <input id="postImageFile" type="file" accept="image/*" multiple style="display:none" onchange="previewPostImage(this)">
 
+<div id="cropModal">
+ <div class="crop-box">
+  <h3 id="cropTitle">Căn chỉnh ảnh</h3>
+  <div class="muted" style="font-size:12px;margin-top:4px">Kéo ảnh để di chuyển · kéo thanh bên dưới (hoặc cuộn chuột) để phóng to</div>
+  <div class="seg" id="cropAspects" style="margin-top:10px"></div>
+  <div class="crop-stage"><canvas id="cropCv" width="340" height="340"></canvas></div>
+  <div class="crop-zoom"><svg class="ico"><use href="#i-search"/></svg><input id="cropZoom" type="range" min="1" max="4" step="0.01" value="1"></div>
+  <div class="btn-row" style="margin-top:14px"><button class="secondary" id="cropCancel" style="flex:1">Hủy</button><button class="primary" id="cropOk" style="flex:1">Xong</button></div>
+ </div>
+</div>
 <div id="toast"></div>
 
 <script type="module">
@@ -2294,7 +2350,7 @@ window.showPage = page => {
   if (page === "groups") { renderGroups(); renderGroupPicker(); }
   if (page === "notifications") renderNotifications();
   if (page === "profile") { updateProfileView(); renderMyPosts(); renderMyShares(); renderMyComments(); }
-  document.body.classList.toggle("on-profile", page === "profile");
+  document.body.classList.toggle("on-profile", page === "profile" || page === "userProfile");
   if (page === "a11y") renderA11y();
   if (page === "settings") { renderVibBtn(); initBdayForm(); $("newName").value = me?.name || ""; $("newHandle").value = me?.handle || ""; $("myNidLine").textContent = me?.nid ? "NOVA ID của bạn: " + me.nid + " (cố định)" : ""; }
   if (page === "search") searchEverything();
@@ -2345,7 +2401,8 @@ function renderPostImagePreviews() {
   container.style.display = "block";
   grid.innerHTML = currentPostImages.map((imgSrc, index) => `
     <div style="position:relative;aspect-ratio:1;overflow:hidden;border-radius:8px;border:1px solid var(--border)">
-      <img src="${escapeHTML(imgSrc)}" style="width:100%;height:100%;object-fit:cover">
+      <img src="${escapeHTML(imgSrc)}" style="width:100%;height:100%;object-fit:cover;cursor:pointer" onclick="editPostImageIndex(${index})">
+      <button onclick="editPostImageIndex(${index})" title="Căn chỉnh lại" style="position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.7);color:#fff;border:0;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;">${ico("edit")}</button>
       <button onclick="removePostImageIndex(${index})" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.7);color:#fff;border:0;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;">${ico("x")}</button>
     </div>
   `).join("");
@@ -2517,8 +2574,8 @@ function postHTML(p, withActions = true, ctx = "feed"){
 
     const imgInner = `<div style="display:grid; ${gridStyle} gap:6px; margin-top:10px;">
       ${imgs.map((imgSrc) => `
-        <div style="position:relative; overflow:hidden; border-radius:10px; max-height:250px;">
-          <img src="${escapeHTML(imgSrc)}" alt="Ảnh bài viết" class="post-image" data-zoom="1" style="margin-top:0; height:100%; object-fit:cover;">
+        <div style="position:relative; overflow:hidden; border-radius:10px; ${imgs.length === 1 ? "" : "max-height:250px;"}">
+          <img src="${escapeHTML(imgSrc)}" alt="Ảnh bài viết" class="post-image" data-zoom="1" style="margin-top:0; ${imgs.length === 1 ? "height:auto; max-height:560px;" : "height:100%;"} object-fit:cover;">
         </div>
       `).join("")}
     </div>`;
@@ -3776,8 +3833,7 @@ async function syncChatHeader(){
   const key = c ? getKey(c) : null;
   const ok = !!(key && await keyMatches(c, key));
   const isOwner = c && (c.type !== "group" || c.owner === me.id);
-  $("chatKey").textContent = key ? key : "Đã khóa";
-  $("keyActions").style.display = (c && isOwner && ok) ? "flex" : "none";
+  renderKeyPanel(c, key, ok, isOwner);
   $("messageInput").disabled = !c || !ok;
   $("messageInput").placeholder = !c ? "Chọn cuộc trò chuyện..." : (!ok ? "Cuộc trò chuyện đang khóa..." : "Nhập tin nhắn...");
   applyChatBg($("chatWindow"), c);
@@ -4547,29 +4603,67 @@ window.openUserProfile = async uid => {
 window.goBack = () => { viewingUid = null; showPage(prevPage || "home"); };
 function renderUPActions(uid){
   const box = $("upActions"); if (!box) return;
+  const copyBtn = `<button class="secondary" onclick="copyUserNid('${uid}')" title="Copy NOVA ID">${ico("clipboard")}</button>`;
+  let main;
   if (isFriend(uid)) {
-    box.innerHTML = `<button class="primary" onclick="openChatWith('${uid}')">${ico("comment")} Nhắn tin</button>`;
+    main = `<button class="primary" onclick="openChatWith('${uid}')">${ico("comment")} Nhắn tin</button>`;
   } else if (outgoing.some(r => r.to === uid)) {
-    box.innerHTML = `<button class="secondary" disabled>Đã gửi lời mời</button>`;
+    main = `<button class="secondary" style="flex:1;width:auto" disabled>Đã gửi lời mời</button>`;
   } else {
     const inc = incoming.find(r => r.from === uid);
-    box.innerHTML = inc
+    main = inc
       ? `<button class="primary" onclick="acceptRequest('${inc.id}','${uid}')">Chấp nhận kết bạn</button>`
-      : `<button class="primary" onclick="sendFriendRequest('${uid}')">+ Kết bạn</button>`;
+      : `<button class="primary" onclick="sendFriendRequest('${uid}')">${ico("user-plus")} Kết bạn</button>`;
   }
+  box.innerHTML = main + copyBtn;
 }
-
+let upView = "grid";
+function userPostList(uid){
+  return posts.filter(p => !p.isShared && p.userId === uid && (p.isAnonymous ?? true) === false && canViewPost(p));
+}
+function postCell(p){
+  const imgs = p.images || (p.image ? [p.image] : []);
+  const likes = `<span class="pc-l">${ico("heart")} ${(p.likes || []).length}</span>`;
+  const lock = (p.privacy === "FRIENDS" ? ico("users") : "") + (p.sensitive ? ico("alert") : "");
+  const flag = lock ? `<span class="pc-s">${lock}</span>` : "";
+  if (imgs.length) return `<div class="photo-cell" onclick="openPostView('${p.id}')"><img loading="lazy" src="${escapeHTML(imgs[0])}" alt="" ${isFlagged(p) ? 'style="filter:blur(14px)"' : ""}>${imgs.length > 1 ? `<span class="pc-n">1/${imgs.length}</span>` : ""}${likes}${flag}</div>`;
+  const t = (p.text || "").slice(0, 90);
+  return `<div class="photo-cell txt" onclick="openPostView('${p.id}')"><div class="pc-t">${isFlagged(p) ? "Nội dung nhạy cảm" : escapeHTML(t) + ((p.text || "").length > 90 ? "…" : "")}</div>${likes}${flag}</div>`;
+}
+function updateUPStats(uid){
+  const list = userPostList(uid);
+  if ($("upPostCount")) $("upPostCount").textContent = list.length;
+  if ($("upLikeCount")) $("upLikeCount").textContent = list.reduce((s, p) => s + (p.likes || []).length, 0);
+}
+async function loadUPCounts(uid){
+  let fc = "—", sc = "—";
+  try { fc = (await getDocs(query(collection(db,"friendships"), where("members","array-contains",uid)))).size; } catch {}
+  try { sc = (await getDocs(query(collection(db,"shares"), where("userId","==",uid)))).size; } catch {}
+  if (viewingUid !== uid) return;
+  if ($("upFriendCount")) $("upFriendCount").textContent = fc;
+  if ($("upShareCount")) $("upShareCount").textContent = sc;
+}
+function renderUserPhotos(uid){
+  const box = $("upPhotos"); if (!box) return;
+  const items = [];
+  userPostList(uid).forEach(p => { const imgs = p.images || (p.image ? [p.image] : []); imgs.forEach((src, i) => items.push({ p, src, i, n: imgs.length })); });
+  if (!items.length) { box.innerHTML = `<p class="muted">Chưa có ảnh nào.</p>`; return; }
+  box.innerHTML = `<div class="photo-grid">` + items.map(({ p, src, i, n }) => `<div class="photo-cell" onclick="openPostView('${p.id}')"><img loading="lazy" src="${escapeHTML(src)}" alt="" ${isFlagged(p) ? 'style="filter:blur(14px)"' : ""}>${n > 1 ? `<span class="pc-n">${i + 1}/${n}</span>` : ""}<span class="pc-l">${ico("heart")} ${(p.likes || []).length}</span></div>`).join("") + `</div>`;
+}
 function renderUserPosts(uid) {
   const box = $("upPosts");
   if (!box) return;
-  const userPosts = posts.filter(p => !p.isShared && p.userId === uid && (p.isAnonymous ?? true) === false && canViewPost(p));
-  if (!userPosts.length) {
+  const list = userPostList(uid);
+  updateUPStats(uid);
+  if (!list.length) {
     box.innerHTML = `<p class="muted" style="margin-top:10px">Người này chưa có bài đăng hiện tên nào (bài ẩn danh không hiện ở đây).</p>`;
-    return;
+  } else if (upView === "list") {
+    box.innerHTML = list.map(p => postHTML(p, true, "up")).join("");
+  } else {
+    box.innerHTML = `<div class="photo-grid">` + list.map(postCell).join("") + `</div><p class="muted" style="text-align:center;font-size:13px;margin:18px 0 6px">Không còn kết quả nào khác</p>`;
   }
-  box.innerHTML = userPosts.map(p => postHTML(p, true, "up")).join("");
+  if ($("upColPhotos")?.style.display === "block") renderUserPhotos(uid);
 }
-
 async function renderUserShares(uid){
   const box = $("upShares");
   if (!box) return;
@@ -4854,6 +4948,321 @@ function startMemory(){
 }
 renderGameLobby();
 fillEmojiPanels();
+
+/* ================= NOVA update ================= */
+
+/* ---------- 1. Trang cá nhân người khác ---------- */
+window.setUPView = v => {
+  upView = v;
+  $("upPvGrid")?.classList.toggle("on", v === "grid");
+  $("upPvList")?.classList.toggle("on", v === "list");
+  if (viewingUid) renderUserPosts(viewingUid);
+};
+window.viewUserAvatar = async () => {
+  if (!viewingUid) return;
+  const u = await getUser(viewingUid);
+  if (u.avatar) window.viewImage(u.avatar);
+};
+window.copyUserNid = async uid => {
+  uid = uid || viewingUid; if (!uid) return;
+  const u = await getUser(uid), val = u.nid || uid;
+  try { await navigator.clipboard.writeText(val); toast("Đã copy NOVA ID: " + val); }
+  catch { prompt("NOVA ID:", val); }
+};
+window.switchUPTab = (tab, btn) => {
+  document.querySelectorAll("#userProfile .profile-tab-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  $("upColPosts").style.display = tab === "posts" ? "block" : "none";
+  $("upColPhotos").style.display = tab === "photos" ? "block" : "none";
+  $("upColShares").style.display = tab === "shares" ? "block" : "none";
+  if (!viewingUid) return;
+  if (tab === "posts") renderUserPosts(viewingUid);
+  if (tab === "photos") renderUserPhotos(viewingUid);
+  if (tab === "shares") renderUserShares(viewingUid);
+};
+window.openUserProfile = async uid => {
+  if (!uid) return;
+  if (uid === me.id) { showPage("profile"); return; }
+  if (currentPage !== "userProfile") prevPage = currentPage;
+  viewingUid = uid;
+  const u = await getUser(uid);
+  renderAvatarBox($("upAvatar"), u);
+  $("upName").textContent = u.name || "Nova";
+  $("upBarTitle").textContent = u.name || "Trang cá nhân";
+  $("upEmail").textContent = idLine(u) || "Thành viên NOVA";
+  $("upMood").innerHTML = moodBadge(u.mood);
+  $("upBday").innerHTML = bdayBadge(u);
+  $("upFriendCount").textContent = "–"; $("upShareCount").textContent = "–";
+  document.querySelectorAll("#userProfile .pf-tabs .profile-tab-btn").forEach((b, i) => b.classList.toggle("active", i === 0));
+  $("upColPosts").style.display = "block"; $("upColPhotos").style.display = "none"; $("upColShares").style.display = "none";
+  renderUPActions(uid);
+  showPage("userProfile");
+  renderUserPosts(uid);
+  renderUserShares(uid);
+  loadUPCounts(uid);
+};
+
+/* ---------- 2. Căn chỉnh ảnh (cropper) ---------- */
+const POST_ASPECTS = [["Gốc", 0], ["1:1", 1], ["4:5", 0.8], ["4:3", 4 / 3], ["16:9", 16 / 9]];
+function openCropper(file, opt = {}){
+  return new Promise(resolve => {
+    const modal = $("cropModal"), cv = $("cropCv"), ctx = cv.getContext("2d"), zoomEl = $("cropZoom"), seg = $("cropAspects");
+    const url = URL.createObjectURL(file), img = new Image();
+    let done = false;
+    const finish = v => {
+      if (done) return; done = true;
+      modal.classList.remove("show");
+      cv.onpointerdown = cv.onpointermove = cv.onpointerup = cv.onpointercancel = cv.onwheel = null;
+      zoomEl.oninput = null; URL.revokeObjectURL(url); resolve(v);
+    };
+    img.onerror = () => { toast("Không đọc được ảnh này"); finish(null); };
+    img.onload = () => {
+      const iw = img.naturalWidth, ih = img.naturalHeight, VW = 340;
+      let ratio = 1, VH = 340, cover = 1, zoom = 1, s = 1, cx = iw / 2, cy = ih / 2;
+      const eff = r => r > 0 ? r : Math.min(2, Math.max(0.5, iw / ih));
+      const clamp = () => {
+        s = cover * zoom;
+        const hw = VW / (2 * s), hh = VH / (2 * s);
+        cx = Math.min(iw - hw, Math.max(hw, cx));
+        cy = Math.min(ih - hh, Math.max(hh, cy));
+      };
+      const draw = () => {
+        ctx.clearRect(0, 0, VW, VH);
+        ctx.drawImage(img, cx - VW / (2 * s), cy - VH / (2 * s), VW / s, VH / s, 0, 0, VW, VH);
+        if (opt.round) {
+          const r = Math.min(VW, VH) / 2 - 2;
+          ctx.save();
+          ctx.fillStyle = "rgba(0,0,0,.55)";
+          ctx.beginPath(); ctx.rect(0, 0, VW, VH); ctx.arc(VW / 2, VH / 2, r, 0, Math.PI * 2); ctx.fill("evenodd");
+          ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(VW / 2, VH / 2, r, 0, Math.PI * 2); ctx.stroke();
+          ctx.restore();
+        }
+      };
+      const setRatio = r => {
+        ratio = eff(r); VH = Math.round(VW / ratio);
+        cv.width = VW; cv.height = VH;
+        cover = Math.max(VW / iw, VH / ih);
+        zoom = 1; zoomEl.value = 1; cx = iw / 2; cy = ih / 2;
+        clamp(); draw();
+      };
+      const out = () => {
+        const long = opt.out || 900;
+        let ow, oh;
+        if (ratio >= 1) { ow = long; oh = Math.round(long / ratio); } else { oh = long; ow = Math.round(long * ratio); }
+        const srcW = VW / s;
+        if (ow > srcW) { const k = srcW / ow; ow = Math.round(ow * k); oh = Math.round(oh * k); }
+        const o = document.createElement("canvas"); o.width = Math.max(1, ow); o.height = Math.max(1, oh);
+        const octx = o.getContext("2d");
+        octx.fillStyle = "#fff"; octx.fillRect(0, 0, o.width, o.height);
+        octx.drawImage(img, cx - VW / (2 * s), cy - VH / (2 * s), VW / s, VH / s, 0, 0, o.width, o.height);
+        return o.toDataURL("image/jpeg", opt.quality || 0.8);
+      };
+      let drag = null;
+      cv.onpointerdown = e => { cv.setPointerCapture(e.pointerId); drag = { x: e.clientX, y: e.clientY }; };
+      cv.onpointermove = e => {
+        if (!drag) return;
+        const k = VW / cv.getBoundingClientRect().width;
+        cx -= (e.clientX - drag.x) * k / s; cy -= (e.clientY - drag.y) * k / s;
+        drag = { x: e.clientX, y: e.clientY }; clamp(); draw();
+      };
+      cv.onpointerup = cv.onpointercancel = () => { drag = null; };
+      cv.onwheel = e => {
+        e.preventDefault();
+        zoom = Math.min(4, Math.max(1, zoom + (e.deltaY < 0 ? 0.1 : -0.1)));
+        zoomEl.value = zoom; clamp(); draw();
+      };
+      zoomEl.oninput = () => { zoom = +zoomEl.value; clamp(); draw(); };
+
+      $("cropTitle").textContent = opt.title || "Căn chỉnh ảnh";
+      if (opt.aspects) {
+        seg.style.display = "flex";
+        seg.innerHTML = opt.aspects.map((a, i) => `<button type="button" data-i="${i}" class="${i === 0 ? "on" : ""}">${a[0]}</button>`).join("");
+        seg.querySelectorAll("button").forEach(b => b.onclick = () => {
+          seg.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+          setRatio(opt.aspects[+b.dataset.i][1]);
+        });
+        setRatio(opt.aspects[0][1]);
+      } else {
+        seg.style.display = "none"; seg.innerHTML = "";
+        setRatio(opt.aspect || 1);
+      }
+      $("cropOk").onclick = () => finish(out());
+      $("cropCancel").onclick = () => finish(null);
+      modal.classList.add("show");
+    };
+    img.src = url;
+  });
+}
+
+/* Đăng ảnh: căn chỉnh từng ảnh trước khi đính kèm */
+window.previewPostImage = async input => {
+  const files = Array.from(input.files || []).filter(f => f.type.startsWith("image/"));
+  input.value = "";
+  if (!files.length) return;
+  if (currentPostImages.length + files.length > 8) { toast("Bạn chỉ có thể đăng tối đa 8 ảnh trong một bài viết!"); return; }
+  let added = 0;
+  for (let i = 0; i < files.length; i++) {
+    const data = await openCropper(files[i], { aspects: POST_ASPECTS, out: 1000, title: `Căn chỉnh ảnh ${i + 1}/${files.length}` });
+    if (data && currentPostImages.length < 8) { currentPostImages.push(data); added++; }
+  }
+  renderPostImagePreviews();
+  if (added) toast(`Đã đính kèm ${currentPostImages.length} ảnh`);
+};
+window.editPostImageIndex = async i => {
+  const src = currentPostImages[i]; if (!src) return;
+  try {
+    const blob = await (await fetch(src)).blob();
+    const data = await openCropper(blob, { aspects: POST_ASPECTS, out: 1000, title: "Căn chỉnh lại ảnh" });
+    if (data) { currentPostImages[i] = data; renderPostImagePreviews(); }
+  } catch (e) { console.error(e); toast("Không mở được ảnh để chỉnh"); }
+};
+
+/* Ảnh đại diện: căn chỉnh hình tròn */
+async function saveAvatarData(dataUrl){
+  try {
+    await updateDoc(doc(db, "users", me.id), { avatar: dataUrl });
+    me.avatar = dataUrl;
+    userCache.set(me.id, { ...(userCache.get(me.id) || {}), id: me.id, avatar: dataUrl });
+    updateProfileView(); renderFriendList(); renderGroups(); renderSidebars();
+    toast("Đã cập nhật ảnh đại diện");
+  } catch (e) { console.error(e); toast("Không cập nhật được ảnh"); }
+}
+window.changeAvatar = async input => {
+  const file = input.files?.[0]; input.value = "";
+  if (!file) return;
+  if (!file.type.startsWith("image/")) { toast("Vui lòng chọn file ảnh hợp lệ"); return; }
+  const data = await openCropper(file, { aspect: 1, out: 320, round: true, title: "Căn chỉnh ảnh đại diện" });
+  if (data) await saveAvatarData(data);
+};
+window.readjustAvatar = async () => {
+  if (!me?.avatar) { toast("Bạn chưa có ảnh đại diện"); return; }
+  try {
+    const blob = await (await fetch(me.avatar)).blob();
+    const data = await openCropper(blob, { aspect: 1, out: 320, round: true, title: "Căn chỉnh ảnh đại diện" });
+    if (data) await saveAvatarData(data);
+  } catch (e) { console.error(e); toast("Không mở được ảnh"); }
+};
+
+/* ---------- 3. Chat: khóa thủ công, dãy mã, quên mã ---------- */
+let panelAutoFor = null;
+function renderKeyPanel(c, key, ok, isOwner){
+  const dots = "•••• •••• •••• •••• •••• ••••";
+  $("chatKey").textContent = !c ? "--" : (key ? key : dots);
+  $("chatKeyState").textContent = !c ? "" : ok ? "Đang mở khóa trên máy này"
+    : key ? "Mã trên máy đã cũ (mã đã bị đổi) — nhập mã mới hoặc dùng mật khẩu tài khoản"
+    : "Đang khóa — nhập mã 24 ký tự hoặc mật khẩu tài khoản để mở";
+  const b = (fn, icon, label) => `<button onclick="${fn}">${ico(icon)} ${label}</button>`;
+  let h = "";
+  if (c) {
+    if (ok) {
+      h += b("copyChatKey()", "clipboard", "Copy");
+      if (isOwner) h += b("newChatKey()", "refresh", "Đổi mã");
+      h += b("addOldKey()", "key", "Thêm mã cũ");
+      h += b("lockChat()", "lock", "Khóa lại");
+    } else {
+      h += b("focusUnlock()", "unlock", "Mở khóa");
+      h += b("addOldKey()", "key", "Thêm mã cũ");
+      h += b("forgetChatKey()", "help", "Quên mã?");
+    }
+    h += b("clearChatMessages()", "trash", "Xóa tin nhắn");
+  }
+  $("keyActions").innerHTML = h;
+  $("keyActions").style.display = "flex";
+  const lb = $("lockBtn");
+  if (lb) {
+    lb.innerHTML = `${ico(ok ? "lock" : "unlock")}<span class="lbl"> ${ok ? "Khóa lại" : "Mở khóa"}</span>`;
+    lb.onclick = () => (ok ? window.lockChat() : window.focusUnlock());
+    lb.style.color = ok ? "var(--danger)" : "";
+    lb.style.borderColor = ok ? "var(--danger)" : "";
+  }
+  if (c && !ok) {
+    if (panelAutoFor !== c.id) { $("keyPanel").classList.add("open"); panelAutoFor = c.id; }
+  } else panelAutoFor = null;
+}
+window.focusUnlock = () => {
+  $("keyPanel").classList.add("open");
+  const el = $("unlockPwInput") || $("unlockKeyInput");
+  if (el) { el.scrollIntoView({ block: "center", behavior: "smooth" }); el.focus(); }
+  else toast("Nhập mã 24 ký tự để mở khóa");
+};
+window.lockChat = async () => {
+  const c = chats.find(x => x.id === currentChat);
+  if (!c) { toast("Chưa chọn cuộc trò chuyện"); return; }
+  const cur = getKey(c);
+  if (!cur) { toast("Cuộc trò chuyện đang khóa sẵn"); return; }
+  if (!confirm("Khóa cuộc trò chuyện trên máy này?\n\nBạn có thể mở khóa lại bất cứ lúc nào bằng mật khẩu tài khoản hoặc mã 24 ký tự (bấm Copy mã trước khi khóa nếu cần).")) return;
+  lsSet("nova_manual_lock_" + c.id, "1");
+  delete localKeys[c.id];
+  persistKeys();
+  localStorage.removeItem("nova_key_permanent_" + c.id);
+  localStorage.removeItem("nova_key_vault_" + c.id);
+  decCache.clear();
+  panelAutoFor = null;
+  await renderChatTabs();
+  await renderMessages(true);
+  if (activeFloatChatId === c.id) attachFloatMessages(c.id);
+  toast("Đã khóa cuộc trò chuyện");
+};
+window.forgetChatKey = async () => {
+  const c = chats.find(x => x.id === currentChat);
+  if (!c) { toast("Chưa chọn cuộc trò chuyện"); return; }
+  if (c.type === "group" && c.owner !== me.id) { toast("Chỉ chủ nhóm tạo lại được mã — hãy nhờ chủ nhóm gửi lại mã 24 ký tự cho bạn"); return; }
+  if (!confirm("Quên mã? Tạo mã 24 ký tự MỚI cho cuộc trò chuyện này.\n\n• Bạn bè và cuộc trò chuyện vẫn được giữ nguyên.\n• Tin nhắn cũ gửi bằng mã đã quên sẽ KHÔNG đọc lại được (trừ khi tìm lại mã cũ rồi bấm 'Thêm mã cũ').\n• Cần gửi mã mới cho người còn lại.\n\nTiếp tục?")) return;
+  const oldKey = getKey(c);
+  if (oldKey) vaultAdd(c.id, oldKey);
+  const key = generateChatKey();
+  try {
+    await updateDoc(doc(db, "chats", c.id), { keyCheck: await makeKeyCheck(key), keyRotatedAt: serverTimestamp(), wraps: deleteField() });
+    c.wraps = {};
+    saveKey(c.id, key);
+    await kwSave(c.id, key);
+    decCache.clear();
+    panelAutoFor = null;
+    await renderChatTabs();
+    await renderMessages(true);
+    $("keyPanel").classList.add("open");
+    toast("Đã tạo mã mới — hãy copy và gửi cho người còn lại!");
+    if (msgDocs.length && confirm("Xóa luôn các tin nhắn cũ không còn đọc được?\n(Bạn bè vẫn được giữ nguyên)")) await wipeMessages(c, true);
+  } catch (e) { console.error(e); toast("Không tạo được mã mới (kiểm tra Rules Firestore)"); }
+};
+
+/* ---------- 4. Chat: xóa tất cả tin nhắn, giữ bạn bè ---------- */
+async function wipeMessages(c, all){
+  let snap;
+  try { snap = await getDocs(collection(db, "chats", c.id, "messages")); }
+  catch (e) { console.error(e); toast("Không tải được tin nhắn để xóa"); return; }
+  const hideLocal = () => { snap.docs.forEach(d => { hiddenMsgs[c.id + ":" + d.id] = true; }); persistHidden(); };
+  if (all) {
+    try {
+      let batch = writeBatch(db), n = 0;
+      for (const d of snap.docs) {
+        batch.delete(d.ref);
+        if (++n % 400 === 0) { await batch.commit(); batch = writeBatch(db); }
+      }
+      await batch.commit();
+      toast("Đã xóa tất cả tin nhắn — bạn bè vẫn được giữ nguyên");
+    } catch (e) {
+      console.error(e); hideLocal();
+      toast("Không đủ quyền xóa cho cả hai bên — đã xóa ở phía bạn");
+    }
+  } else {
+    hideLocal();
+    toast("Đã xóa tất cả tin nhắn ở phía bạn");
+  }
+  decCache.clear();
+  if (activeFloatChatId === c.id) renderFloat(false);
+  if (currentChat === c.id) await renderMessages(true);
+}
+window.clearChatMessages = async () => {
+  const c = chats.find(x => x.id === currentChat);
+  if (!c) { toast("Hãy chọn một cuộc trò chuyện trước"); return; }
+  const canAll = c.type !== "group" || c.owner === me.id;
+  let all = false;
+  if (canAll && confirm("Xóa TẤT CẢ tin nhắn trong cuộc trò chuyện này cho cả hai bên?\n\nBạn bè và khung chat vẫn được giữ lại, chỉ xóa tin nhắn. Không thể hoàn tác.\n\nOK = xóa cho tất cả\nHủy = chọn tiếp chỉ xóa phía bạn")) all = true;
+  else if (!confirm("Chỉ xóa tất cả tin nhắn ở phía bạn? (Người khác vẫn thấy bình thường)")) return;
+  await wipeMessages(c, all);
+};
 </script>
 </body>
 </html>
