@@ -5269,12 +5269,22 @@ window.lockChat = async () => {
   if (activeFloatChatId === c.id) attachFloatMessages(c.id);
   toast("Đã khóa cuộc trò chuyện");
 };
-async function doResetChatKey(c){
+async function doResetChatKey(c, emailTo){
   let oldKey = getKey(c);
   if (!oldKey && kwSession?.priv) oldKey = await kwRestore(c, kwSession.priv);
   if (oldKey) vaultAdd(c.id, oldKey);
   const olds = [...new Set([oldKey, ...vaultGet(c.id)].filter(Boolean))];
   const key = generateChatKey();
+  if (emailTo) {
+    try {
+      const r = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ service_id: EMAILJS.service, template_id: EMAILJS.template, user_id: EMAILJS.key,
+          template_params: { to_email: emailTo, code: key, app_name: "NOVA" } })
+      });
+      if (!r.ok) throw new Error(await r.text());
+    } catch (e) { console.error(e); toast("Không gửi được email (kiểm tra cấu hình EmailJS) — mã khóa chưa bị đổi: " + (e.message || ""), 9000); return; }
+  }
   try {
     await updateDoc(doc(db, "chats", c.id), { keyCheck: await makeKeyCheck(key), keyRotatedAt: serverTimestamp(), wraps: deleteField(), ...(olds.length ? { oldKeys: arrayUnion(...olds) } : {}) });
     c.wraps = {};
@@ -5284,16 +5294,23 @@ async function doResetChatKey(c){
     panelAutoFor = null;
     await renderChatTabs();
     await renderMessages(true);
-    $("keyPanel").classList.add("open");
-    toast("Đã tạo mã mới — hãy copy và gửi cho người còn lại!");
+    if (emailTo) toast(`Đã gửi mã khóa mới về ${emailTo}. Tin nhắn cũ vẫn xem được. Gửi mã đó cho người còn lại để họ mở khóa.`, 9000);
+    else { $("keyPanel").classList.add("open"); toast("Đã tạo mã mới — hãy copy và gửi cho người còn lại!"); }
   } catch (e) { console.error(e); toast("Không tạo được mã mới (kiểm tra Rules Firestore)"); }
 }
+// ==== EmailJS: điền 3 giá trị để NOVA gửi mã khóa mới về Gmail (để trống = dùng link xác nhận Firebase) ====
+const EMAILJS = { service: "", template: "", key: "" };
 window.forgetChatKey = async () => {
   const c = chats.find(x => x.id === currentChat);
   if (!c) { toast("Chưa chọn cuộc trò chuyện"); return; }
   if (c.type === "group" && c.owner !== me.id) { toast("Chỉ chủ nhóm tạo lại được mã — hãy nhờ chủ nhóm gửi lại mã 24 ký tự cho bạn"); return; }
   const user = auth.currentUser, email = user?.email;
   const hasPw = !!user?.providerData?.some(p => p.providerId === "password");
+  if (email && EMAILJS.service && EMAILJS.template && EMAILJS.key) {
+    if (!confirm(`Tạo mã khóa MỚI và gửi về ${email}?\n\n• Tin nhắn cũ vẫn xem được.\n• Bạn bè và cuộc trò chuyện giữ nguyên.\n• Gửi mã mới (trong email) cho người còn lại.`)) return;
+    await doResetChatKey(c, email);
+    return;
+  }
   if (email && hasPw) {
     if (!confirm(`Gửi email xác nhận tới ${email} để tạo mã khóa MỚI?\n\n• Mở link trong email để xác nhận bạn là chủ tài khoản, NOVA sẽ tạo mã 24 ký tự mới.\n• Bạn bè và cuộc trò chuyện vẫn được giữ nguyên.\n• Tin cũ vẫn xem lại được khi người kia mở NOVA.\n• Cần gửi mã mới cho người còn lại.`)) return;
     try {
