@@ -5299,7 +5299,7 @@ async function doResetChatKey(c, emailTo){
   } catch (e) { console.error(e); toast("Không tạo được mã mới (kiểm tra Rules Firestore)"); }
 }
 // ==== EmailJS: điền 3 giá trị để NOVA gửi mã khóa mới về Gmail (để trống = dùng link xác nhận Firebase) ====
-const EMAILJS = { service: "", template: "", key: "" };
+const EMAILJS = { service: "service_wkxg7aj", template: "template_ftreptw", key: "eLfFvEoE9OwFXwe0y" };
 window.forgetChatKey = async () => {
   const c = chats.find(x => x.id === currentChat);
   if (!c) { toast("Chưa chọn cuộc trò chuyện"); return; }
