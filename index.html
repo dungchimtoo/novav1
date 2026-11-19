@@ -806,6 +806,11 @@ body.light .crop-box{background:#fff;color:#1f2937}
 .chat-window:has(.chat-locked-container:not(.ro)){padding:0;display:flex;flex-direction:column}
 .chat-window:has(.chat-locked-container:not(.ro)) #messages{flex:1 0 auto;display:flex}
 .chat-window:has(.chat-locked-container:not(.ro)) .chat-locked-container{flex:1 0 auto;margin:0;border:0;border-radius:0;max-width:none;width:100%;min-height:0}
+/* ===== NOVA update: khi khóa chỉ hiện nhập mã / mật khẩu ===== */
+.chat-box.is-locked .chat-input,.chat-box.is-locked #emojiPanelMain,.chat-box.is-locked #keyPanel{display:none!important}
+.chat-box.is-locked .chat-head>div:last-child{display:none}
+.chat-box.is-locked .chat-window{height:calc(100dvh - 250px);min-height:380px}
+@media(max-width:768px){.chat-box.is-locked .chat-window{height:calc(100dvh - 290px)}}
 </style>
 </head>
 
@@ -1489,7 +1494,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import {
   getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged,
   GoogleAuthProvider, signInWithPopup, updateProfile, sendPasswordResetEmail,
-  EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser
+  EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser,
+  sendSignInLinkToEmail, isSignInWithEmailLink
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, collection, query, where, orderBy, limit,
@@ -2014,6 +2020,7 @@ onAuthStateChanged(auth, async user => {
       renderMood();
       loadNotes(); initBdayForm(); renderBdays();
       setTimeout(() => maybeBirthdayGreeting(), 900);
+      setTimeout(() => handleKeyResetLink(), 1500);
 
     } catch (e) {
       console.error(e);
@@ -4207,7 +4214,7 @@ async function renderMessages(stick = false){
   const isUnlocked = !!(curKey && await verifyKey(c, curKey));
   if (tok !== renderToken) return;
 
-  if (!isUnlocked && (!msgDocs.length || !getAllKeys(c).length)) {
+  if (!isUnlocked) {
     const isPwUser = !!auth.currentUser?.providerData?.some(p => p.providerId === "password");
     const hasWrap = !!c.wraps?.[me.id];
     const pwBlock = isPwUser ? `
@@ -5231,9 +5238,9 @@ function renderKeyPanel(c, key, ok, isOwner){
     lb.style.color = ok ? "var(--danger)" : "";
     lb.style.borderColor = ok ? "var(--danger)" : "";
   }
-  if (c && !ok) {
-    if (panelAutoFor !== c.id) { $("keyPanel").classList.add("open"); panelAutoFor = c.id; }
-  } else panelAutoFor = null;
+  document.querySelector("#chat .chat-box")?.classList.toggle("is-locked", !!c && !ok);
+  if (c && !ok) $("keyPanel").classList.remove("open");
+  panelAutoFor = null;
 }
 window.focusUnlock = () => {
   $("keyPanel").classList.add("open");
@@ -5259,11 +5266,7 @@ window.lockChat = async () => {
   if (activeFloatChatId === c.id) attachFloatMessages(c.id);
   toast("Đã khóa cuộc trò chuyện");
 };
-window.forgetChatKey = async () => {
-  const c = chats.find(x => x.id === currentChat);
-  if (!c) { toast("Chưa chọn cuộc trò chuyện"); return; }
-  if (c.type === "group" && c.owner !== me.id) { toast("Chỉ chủ nhóm tạo lại được mã — hãy nhờ chủ nhóm gửi lại mã 24 ký tự cho bạn"); return; }
-  if (!confirm("Quên mã? Tạo mã 24 ký tự MỚI cho cuộc trò chuyện này.\n\n• Bạn bè và cuộc trò chuyện vẫn được giữ nguyên.\n• Tin nhắn cũ gửi bằng mã đã quên sẽ KHÔNG đọc lại được (trừ khi tìm lại mã cũ rồi bấm 'Thêm mã cũ').\n• Cần gửi mã mới cho người còn lại.\n\nTiếp tục?")) return;
+async function doResetChatKey(c){
   let oldKey = getKey(c);
   if (!oldKey && kwSession?.priv) oldKey = await kwRestore(c, kwSession.priv);
   if (oldKey) vaultAdd(c.id, oldKey);
@@ -5281,7 +5284,47 @@ window.forgetChatKey = async () => {
     $("keyPanel").classList.add("open");
     toast("Đã tạo mã mới — hãy copy và gửi cho người còn lại!");
   } catch (e) { console.error(e); toast("Không tạo được mã mới (kiểm tra Rules Firestore)"); }
+}
+window.forgetChatKey = async () => {
+  const c = chats.find(x => x.id === currentChat);
+  if (!c) { toast("Chưa chọn cuộc trò chuyện"); return; }
+  if (c.type === "group" && c.owner !== me.id) { toast("Chỉ chủ nhóm tạo lại được mã — hãy nhờ chủ nhóm gửi lại mã 24 ký tự cho bạn"); return; }
+  const user = auth.currentUser, email = user?.email;
+  const hasPw = !!user?.providerData?.some(p => p.providerId === "password");
+  if (email && hasPw) {
+    if (!confirm(`Gửi email xác nhận tới ${email} để tạo mã khóa MỚI?\n\n• Mở link trong email để xác nhận bạn là chủ tài khoản, NOVA sẽ tạo mã 24 ký tự mới.\n• Bạn bè và cuộc trò chuyện vẫn được giữ nguyên.\n• Tin cũ vẫn xem lại được khi người kia mở NOVA.\n• Cần gửi mã mới cho người còn lại.`)) return;
+    try {
+      lsSet("nova_keyreset_pending", JSON.stringify({ chatId: c.id, uid: me.id, at: Date.now() }));
+      await sendSignInLinkToEmail(auth, email, { url: location.origin + location.pathname, handleCodeInApp: true });
+      toast(`Đã gửi email tới ${email} — mở link trong email để tạo mã khóa mới (xem cả mục Spam)`, 9000);
+    } catch (e) {
+      console.error(e);
+      const msg = e.code === "auth/operation-not-allowed" ? "Chưa bật 'Email link' trong Firebase: Authentication → Sign-in method → Email/Password → bật 'Email link (passwordless sign-in)'"
+        : e.code === "auth/unauthorized-continue-uri" ? `Thêm tên miền ${location.hostname} vào Firebase: Authentication → Settings → Authorized domains`
+        : authErr(e.code);
+      toast(msg, 10000);
+    }
+    return;
+  }
+  if (!confirm("Quên mã? Tạo mã 24 ký tự MỚI cho cuộc trò chuyện này.\n\n• Bạn bè và cuộc trò chuyện vẫn được giữ nguyên.\n• Cần gửi mã mới cho người còn lại.\n\nTiếp tục?")) return;
+  await doResetChatKey(c);
 };
+async function handleKeyResetLink(){
+  if (!me || !isSignInWithEmailLink(auth, location.href)) return;
+  const link = location.href;
+  let pend = null; try { pend = JSON.parse(lsGet("nova_keyreset_pending") || "null"); } catch {}
+  history.replaceState(null, "", location.pathname);
+  if (!pend || pend.uid !== me.id || Date.now() - pend.at > 3600000) { toast("Link không còn hiệu lực hoặc khác tài khoản — hãy bấm 'Quên mã khóa?' để gửi lại email", 8000); return; }
+  try { await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credentialWithLink(auth.currentUser.email, link)); }
+  catch (e) { console.error(e); toast("Link đã hết hạn hoặc đã được dùng — hãy gửi lại email", 8000); return; }
+  lsDel("nova_keyreset_pending");
+  for (let i = 0; i < 20 && !chats.find(x => x.id === pend.chatId); i++) await new Promise(r => setTimeout(r, 300));
+  const c = chats.find(x => x.id === pend.chatId);
+  if (!c) { toast("Không tìm thấy cuộc trò chuyện"); return; }
+  currentChat = c.id; showPage("chat"); attachMessages();
+  toast("Đã xác nhận email — đang tạo mã khóa mới…");
+  await doResetChatKey(c);
+}
 
 async function requestKeyFromPartner(c){
   const k = "nova_keyreq_" + c.id, last = Number(lsGet(k) || 0);
