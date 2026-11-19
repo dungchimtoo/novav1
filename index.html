@@ -4183,6 +4183,10 @@ async function renderMessages(stick = false){
           <input id="unlockKeyInput" class="input" maxlength="24" placeholder="Nhập mã 24 ký tự..." style="text-align:center;letter-spacing:2px;text-transform:uppercase;margin:0;" onkeydown="if(event.key==='Enter')unlockCurrentChat()">
           <button class="${isPwUser ? "secondary" : "primary"} full" onclick="unlockCurrentChat()">${ico("unlock")} Mở khóa bằng mã</button>
         </div>
+        <div class="muted" style="font-size:12px;margin-top:12px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+          <span style="color:var(--purple);cursor:pointer;text-decoration:underline" onclick="forgetChatKey()">Quên mã khóa?</span>
+          ${isPwUser ? `<span style="color:var(--purple);cursor:pointer;text-decoration:underline" onclick="forgotPassword()">Quên mật khẩu?</span>` : ""}
+        </div>
       </div>
     `;
     return;
@@ -4204,6 +4208,10 @@ async function renderMessages(stick = false){
         <div class="search-friend" style="margin-top:8px">
           <input id="unlockKeyInput" class="input" maxlength="24" placeholder="Nhập mã 24 ký tự mới..." style="letter-spacing:2px;text-transform:uppercase;margin:0" onkeydown="if(event.key==='Enter')unlockCurrentChat()">
           <button class="secondary" onclick="unlockCurrentChat()">${ico("unlock")} Nhập mã</button>
+        </div>
+        <div class="muted" style="font-size:12px;margin-top:12px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+          <span style="color:var(--purple);cursor:pointer;text-decoration:underline" onclick="forgetChatKey()">Quên mã khóa?</span>
+          ${isPwUser ? `<span style="color:var(--purple);cursor:pointer;text-decoration:underline" onclick="forgotPassword()">Quên mật khẩu?</span>` : ""}
         </div>
       </div>
     `;
@@ -5163,7 +5171,8 @@ function renderKeyPanel(c, key, ok, isOwner){
     } else {
       h += b("focusUnlock()", "unlock", "Mở khóa");
       h += b("addOldKey()", "key", "Thêm mã cũ");
-      h += b("forgetChatKey()", "help", "Quên mã?");
+      h += b("forgetChatKey()", "help", "Quên mã khóa?");
+      if (auth.currentUser?.providerData?.some(p => p.providerId === "password")) h += b("forgotPassword()", "key", "Quên mật khẩu?");
     }
     h += b("clearChatMessages()", "trash", "Xóa tin nhắn");
   }
@@ -5225,6 +5234,14 @@ window.forgetChatKey = async () => {
     toast("Đã tạo mã mới — hãy copy và gửi cho người còn lại!");
     if (msgDocs.length && confirm("Xóa luôn các tin nhắn cũ không còn đọc được?\n(Bạn bè vẫn được giữ nguyên)")) await wipeMessages(c, true);
   } catch (e) { console.error(e); toast("Không tạo được mã mới (kiểm tra Rules Firestore)"); }
+};
+
+window.forgotPassword = async () => {
+  const user = auth.currentUser, email = user?.email;
+  if (!email || !user.providerData.some(p => p.providerId === "password")) { toast("Tài khoản Google không có mật khẩu NOVA — hãy dùng mã 24 ký tự hoặc 'Quên mã khóa'"); return; }
+  if (!confirm(`Gửi email đặt lại mật khẩu tới ${email}?\n\nLưu ý: nếu đặt lại bằng email, mở khóa chat bằng mật khẩu sẽ không dùng được cho các cuộc trò chuyện cũ. Khi đó hãy nhập mã 24 ký tự, hoặc dùng 'Quên mã khóa' để tạo mã mới.`)) return;
+  try { await sendPasswordResetEmail(auth, email); toast("Đã gửi email đặt lại mật khẩu — kiểm tra hộp thư (cả mục Spam)"); }
+  catch (e) { toast(authErr(e.code)); }
 };
 
 /* ---------- 4. Chat: xóa tất cả tin nhắn, giữ bạn bè ---------- */
