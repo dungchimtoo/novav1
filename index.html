@@ -792,6 +792,16 @@ body.light .crop-box{background:#fff;color:#1f2937}
 #cropCv:active{cursor:grabbing}
 .crop-zoom{display:flex;align-items:center;gap:10px}
 .crop-zoom input{flex:1;accent-color:#a855f7}
+/* ===== NOVA update: giao diện mở khóa chat to, đầy khung ===== */
+.chat-locked-container:not(.ro){max-width:none;width:100%;margin:0;min-height:max(274px,calc(100dvh - 396px));padding:28px 20px;border-radius:16px;justify-content:center;background:radial-gradient(420px 260px at 50% 0%,rgba(139,60,255,.30),transparent 70%),var(--input-bg);border:1px solid var(--border)}
+.chat-locked-container:not(.ro) .chat-locked-icon{width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#7c3aed,#c084fc);color:#fff;box-shadow:0 0 34px rgba(168,85,247,.55);margin-bottom:16px}
+.chat-locked-container:not(.ro) .chat-locked-icon .ico{width:38px;height:38px}
+.chat-locked-container:not(.ro) .chat-locked-title{font-size:20px;font-weight:800}
+.chat-locked-container:not(.ro) .chat-locked-desc{font-size:14px;max-width:340px;margin-left:auto;margin-right:auto}
+.chat-locked-container:not(.ro) .chat-locked-form{max-width:340px;width:100%;margin:0 auto}
+.chat-locked-container:not(.ro) .input{padding:15px;font-size:15px;border-radius:14px}
+.chat-locked-container:not(.ro) .primary,.chat-locked-container:not(.ro) .secondary{padding:14px;border-radius:14px}
+@media(max-width:768px){.chat-locked-container:not(.ro){min-height:max(200px,calc(100dvh - 370px));padding:20px 14px}}
 </style>
 </head>
 
@@ -4019,13 +4029,17 @@ async function ensureKeypair(pw){
   if (!me || !pw) return false;
   try {
     const ref = doc(db, "users", me.id), sn = await getDoc(ref), kd = sn.data()?.keyData;
+    let regen = false;
     if (kd?.pub && kd?.priv) {
-      const priv = await kwUnwrapPriv(kd, pw);
-      const pub = await crypto.subtle.importKey("spki", unb64(kd.pub), { name: "RSA-OAEP", hash: "SHA-256" }, false, ["encrypt"]);
-      kwSession = { pub, priv };
-      lsSet("nova_kw_priv_" + me.id, kd.priv);
-      await autoUnlockAll();
-      return true;
+      let priv = null;
+      try { priv = await kwUnwrapPriv(kd, pw); } catch { regen = true; }
+      if (priv) {
+        const pub = await crypto.subtle.importKey("spki", unb64(kd.pub), { name: "RSA-OAEP", hash: "SHA-256" }, false, ["encrypt"]);
+        kwSession = { pub, priv };
+        lsSet("nova_kw_priv_" + me.id, kd.priv);
+        await autoUnlockAll();
+        return true;
+      }
     }
     const pair = await crypto.subtle.generateKey({ name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" }, true, ["encrypt", "decrypt"]);
     const pubB64 = b64(await crypto.subtle.exportKey("spki", pair.publicKey));
@@ -4033,9 +4047,34 @@ async function ensureKeypair(pw){
     await setDoc(ref, { keyData: { pub: pubB64, ...wrapped } }, { merge: true });
     kwSession = { pub: pair.publicKey, priv: pair.privateKey };
     lsSet("nova_kw_priv_" + me.id, wrapped.priv);
+    if (regen) {
+      toast("Mật khẩu đã được đặt lại nên khóa bảo mật được tạo mới. Hãy nhờ người trong cuộc trò chuyện mở NOVA 1 lần — tin nhắn cũ sẽ tự mở lại bằng mật khẩu mới.", 7000);
+      notifyKeyReset();
+    }
     await autoUnlockAll();
     return true;
   } catch (e) { console.warn("ensureKeypair:", e); return false; }
+}
+async function notifyKeyReset(){
+  try {
+    const sn = await getDocs(query(collection(db, "chats"), where("members", "array-contains", me.id)));
+    for (const d of sn.docs) { try { await updateDoc(d.ref, { lastAt: serverTimestamp() }); } catch {} }
+  } catch (e) { console.warn("notifyKeyReset:", e); }
+}
+const wrapChecked = {};
+async function wrapsStale(c){
+  if (!c.wraps?.[me.id]) return true;
+  if (wrapChecked[c.id] && Date.now() - wrapChecked[c.id] < 60000) return false;
+  wrapChecked[c.id] = Date.now();
+  for (const uid of (c.members || [])) {
+    try {
+      const sn = await getDoc(doc(db, "users", uid));
+      const pubB64 = sn.data()?.keyData?.pub;
+      if (!pubB64) continue;
+      if (!String(c.wraps?.[uid] || "").endsWith("." + pubB64.slice(-16))) return true;
+    } catch {}
+  }
+  return false;
 }
 async function kwRewrap(oldPw, newPw){
   if (!me) return;
@@ -4057,7 +4096,7 @@ async function kwSave(chatId, key){
       const pubB64 = sn.data()?.keyData?.pub;
       if (!pubB64) continue;
       const pub = await crypto.subtle.importKey("spki", unb64(pubB64), { name: "RSA-OAEP", hash: "SHA-256" }, false, ["encrypt"]);
-      wraps[uid] = b64(await crypto.subtle.encrypt({ name: "RSA-OAEP" }, pub, new TextEncoder().encode(key)));
+      wraps[uid] = b64(await crypto.subtle.encrypt({ name: "RSA-OAEP" }, pub, new TextEncoder().encode(key))) + "." + pubB64.slice(-16);
       added++;
     } catch {}
   }
@@ -4069,7 +4108,7 @@ async function kwRestore(c, priv){
   const w = c?.wraps?.[me?.id];
   if (!w || !priv) return null;
   try {
-    const plain = await crypto.subtle.decrypt({ name: "RSA-OAEP" }, priv, unb64(w));
+    const plain = await crypto.subtle.decrypt({ name: "RSA-OAEP" }, priv, unb64(String(w).split(".")[0]));
     const key = new TextDecoder().decode(plain);
     return (await verifyKey(c, key)) ? key : null;
   } catch { return null; }
@@ -4080,7 +4119,7 @@ async function autoUnlockAll(){
   for (const c of chats) {
     const cur = getKey(c);
     if (cur && await verifyKey(c, cur)) {
-      if (!c.wraps?.[me.id]) await kwSave(c.id, cur);
+      if (await wrapsStale(c)) await kwSave(c.id, cur);
       continue;
     }
     if (cur && !(keyFresh[c.id] > Date.now())) {
@@ -5174,6 +5213,7 @@ function renderKeyPanel(c, key, ok, isOwner){
       h += b("forgetChatKey()", "help", "Quên mã khóa?");
       if (auth.currentUser?.providerData?.some(p => p.providerId === "password")) h += b("forgotPassword()", "key", "Quên mật khẩu?");
     }
+    if (Object.keys(hiddenMsgs).some(k => k.startsWith(c.id + ":"))) h += b("unhideAllMessages()", "eye", "Hiện lại tin đã ẩn");
     h += b("clearChatMessages()", "trash", "Xóa tin nhắn");
   }
   $("keyActions").innerHTML = h;
@@ -5232,7 +5272,6 @@ window.forgetChatKey = async () => {
     await renderMessages(true);
     $("keyPanel").classList.add("open");
     toast("Đã tạo mã mới — hãy copy và gửi cho người còn lại!");
-    if (msgDocs.length && confirm("Xóa luôn các tin nhắn cũ không còn đọc được?\n(Bạn bè vẫn được giữ nguyên)")) await wipeMessages(c, true);
   } catch (e) { console.error(e); toast("Không tạo được mã mới (kiểm tra Rules Firestore)"); }
 };
 
@@ -5278,7 +5317,17 @@ window.clearChatMessages = async () => {
   let all = false;
   if (canAll && confirm("Xóa TẤT CẢ tin nhắn trong cuộc trò chuyện này cho cả hai bên?\n\nBạn bè và khung chat vẫn được giữ lại, chỉ xóa tin nhắn. Không thể hoàn tác.\n\nOK = xóa cho tất cả\nHủy = chọn tiếp chỉ xóa phía bạn")) all = true;
   else if (!confirm("Chỉ xóa tất cả tin nhắn ở phía bạn? (Người khác vẫn thấy bình thường)")) return;
+  const typed = prompt("Để tránh xóa nhầm, hãy gõ XOA rồi bấm OK để xác nhận xóa tất cả tin nhắn:");
+  if ((typed || "").trim().toUpperCase() !== "XOA") { toast("Đã hủy — không có tin nhắn nào bị xóa"); return; }
   await wipeMessages(c, all);
+};
+window.unhideAllMessages = async () => {
+  const c = chats.find(x => x.id === currentChat); if (!c) return;
+  Object.keys(hiddenMsgs).forEach(k => { if (k.startsWith(c.id + ":")) delete hiddenMsgs[k]; });
+  persistHidden();
+  if (activeFloatChatId === c.id) renderFloat(false);
+  await renderMessages(true); await syncChatHeader();
+  toast("Đã hiện lại các tin nhắn từng bị ẩn trên máy này");
 };
 </script>
 </body>
